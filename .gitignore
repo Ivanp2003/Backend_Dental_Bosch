@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# env
+.env
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# uploads temporales si quieres ignorarlos
+uploads/tmp
+
+# sistema
+.DS_Store
+Thumbs.db
