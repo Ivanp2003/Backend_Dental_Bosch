@@ -3,10 +3,13 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   host: process.env.HOST_MAILTRAP,
   port: parseInt(process.env.PORT_MAILTRAP),
-  secure: process.env.PORT_MAILTRAP === '465', // true para 465, false para otros
+  secure: false, // false para puerto 587
   auth: {
     user: process.env.USER_MAILTRAP,
     pass: process.env.PASS_MAILTRAP
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
