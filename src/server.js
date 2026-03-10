@@ -57,8 +57,32 @@ app.get('/', (req, res) => {
     entorno: process.env.NODE_ENV,
     baseDatos: process.env.NODE_ENV === 'production' ? 'MongoDB Atlas' : 'MongoDB Local',
     endpoints: {
-      auth: '/api/auth',
-      documentacion: 'Próximamente'
+      auth: {
+        registro: 'POST /api/auth/registro',
+        login: 'POST /api/auth/login',
+        confirmar: 'GET /api/auth/confirmar/:token',
+        recuperarPassword: 'POST /api/auth/recuperar-password',
+        restablecerPassword: 'POST /api/auth/restablecer-password/:token',
+        actualizarPassword: 'PUT /api/auth/actualizar-password',
+        perfil: 'GET /api/auth/perfil',
+        verificarToken: 'GET /api/auth/verificar-token',
+        google: {
+          iniciar: 'GET /api/auth/google',
+          callback: 'GET /api/auth/google/callback'
+        }
+      },
+      doctores: {
+        todos: 'GET /api/doctores',
+        porId: 'GET /api/doctores/:id',
+        perfil: 'GET /api/doctores/perfil/doctor',
+        actualizarPerfil: 'PUT /api/doctores/perfil/doctor'
+      },
+      pacientes: {
+        todos: 'GET /api/pacientes',
+        porId: 'GET /api/pacientes/:id',
+        perfil: 'GET /api/pacientes/perfil/paciente',
+        actualizarPerfil: 'PUT /api/pacientes/perfil/paciente'
+      }
     }
   });
 });
