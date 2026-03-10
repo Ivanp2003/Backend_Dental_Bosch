@@ -39,7 +39,4 @@ const doctorSchema = new mongoose.Schema({
   versionKey: false
 });
 
-// Índices
-doctorSchema.index({ usuario: 1 });
-
 module.exports = mongoose.model('Doctor', doctorSchema);

@@ -34,7 +34,20 @@ const usuarioSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
-    trim: true
+    trim: true,
+    validate: {
+      validator: function(v) {
+        // Si está vacío, es válido (sparse: true)
+        if (!v) return true;
+        
+        // Limpiar caracteres no numéricos y verificar longitud
+        const cleaned = v.replace(/[^0-9]/g, '');
+        
+        // Aceptar entre 5 y 13 dígitos (formatos ecuatorianos y otros)
+        return cleaned.length >= 5 && cleaned.length <= 13;
+      },
+      message: 'La cédula debe contener entre 5 y 13 dígitos'
+    }
   },
   telefono: {
     type: String,
@@ -72,19 +85,13 @@ const usuarioSchema = new mongoose.Schema({
   versionKey: false
 });
 
-// Índices
-usuarioSchema.index({ email: 1 });
-usuarioSchema.index({ cedula: 1 });
-usuarioSchema.index({ googleId: 1 });
-
 // Encriptar password antes de guardar
-usuarioSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  if (!this.password) return next();
+usuarioSchema.pre('save', async function() {
+  if (!this.isModified('password')) return;
+  if (!this.password) return;
   
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Método para comparar passwords
@@ -96,7 +103,7 @@ usuarioSchema.methods.compararPassword = async function(passwordIngresado) {
 usuarioSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
-  delete obj.tokenConfirmacion;
+  // delete obj.tokenConfirmacion; // Comentado para que aparezca en MongoDB
   delete obj.tokenRecuperacion;
   delete obj.tokenExpiracion;
   return obj;

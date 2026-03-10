@@ -59,6 +59,7 @@ exports.registro = async (req, res, next) => {
 
     // Generar token de confirmación
     const tokenConfirmacion = generarToken();
+    console.log('Token generado:', tokenConfirmacion);
 
     // Crear usuario
     const usuario = await Usuario.create({
@@ -69,8 +70,10 @@ exports.registro = async (req, res, next) => {
       rol: rol || 'paciente',
       cedula,
       telefono,
-      tokenConfirmacion: hashToken(tokenConfirmacion)
+      tokenConfirmacion: tokenConfirmacion // Guardar token original, no hasheado
     });
+    
+    console.log(' Usuario creado con tokenConfirmacion:', !!usuario.tokenConfirmacion);
 
     // Crear registro adicional según el rol
     if (usuario.rol === 'doctor') {
@@ -104,10 +107,9 @@ exports.confirmarCuenta = async (req, res, next) => {
   try {
     const { token } = req.params;
 
-    const tokenHash = hashToken(token);
-
+    // Buscar usuario por token original (no hasheado)
     const usuario = await Usuario.findOne({
-      tokenConfirmacion: tokenHash
+      tokenConfirmacion: token
     });
 
     if (!usuario) {
@@ -154,8 +156,8 @@ exports.recuperarPassword = async (req, res, next) => {
     // Generar token de recuperación
     const tokenRecuperacion = generarToken();
 
-    // Guardar token hasheado con expiración de 1 hora
-    usuario.tokenRecuperacion = hashToken(tokenRecuperacion);
+    // Guardar token original con expiración de 1 hora
+    usuario.tokenRecuperacion = tokenRecuperacion; // Token original, no hasheado
     usuario.tokenExpiracion = Date.now() + 3600000; // 1 hora
     await usuario.save();
 
@@ -180,10 +182,9 @@ exports.restablecerPassword = async (req, res, next) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    const tokenHash = hashToken(token);
-
+    // Buscar usuario por token original (no hasheado)
     const usuario = await Usuario.findOne({
-      tokenRecuperacion: tokenHash,
+      tokenRecuperacion: token,
       tokenExpiracion: { $gt: Date.now() }
     }).select('+password');
 

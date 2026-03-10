@@ -36,7 +36,4 @@ const pacienteSchema = new mongoose.Schema({
   versionKey: false
 });
 
-// Índices
-pacienteSchema.index({ usuario: 1 });
-
 module.exports = mongoose.model('Paciente', pacienteSchema);

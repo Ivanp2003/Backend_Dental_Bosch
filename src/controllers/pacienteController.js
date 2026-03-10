@@ -37,7 +37,8 @@ exports.obtenerPerfil = async (req, res, next) => {
 // @access  Private (Paciente)
 exports.actualizarPerfil = async (req, res, next) => {
   try {
-    const { nombre, apellido, telefono, cedula } = req.body;
+    // Desestructurar con valores por defecto para evitar undefined
+    const { nombre = '', apellido = '', telefono = '', cedula = '' } = req.body || {};
 
     const usuario = await Usuario.findById(req.usuario.id);
 
@@ -56,7 +57,7 @@ exports.actualizarPerfil = async (req, res, next) => {
       });
     }
 
-    // Actualizar campos básicos
+    // Actualizar campos básicos si se proporcionan
     if (nombre) usuario.nombre = nombre;
     if (apellido) usuario.apellido = apellido;
     if (telefono) usuario.telefono = telefono;

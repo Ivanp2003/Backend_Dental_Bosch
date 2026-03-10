@@ -3,8 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
-const connectDB = require('./config/database');
-const crearDoctorAdmin = require('./config/seeder'); //Dr ADMINISTRADOR
+const connectDB = require('./database');
+const createAdminDoctor = require('./seeds/AdminDoctor'); // Nuevo sistema de seeds
 require('./config/passport'); // Cargar configuración de Passport
 const { errorHandler, notFound } = require('./middlewares/errorHandler');
 
@@ -15,8 +15,13 @@ const pacienteRoutes = require('./routers/pacienteRoutes');
 
 // Conectar a la base de datos
 connectDB().then(() => {
-  // Crear doctor administrador por defecto
-  crearDoctorAdmin(); // ← AGREGAR
+  // Crear doctor administrador por defecto con manejo de errores
+  createAdminDoctor().catch(error => {
+    console.error('Error en el sistema de seeds:', error.message);
+  });
+}).catch(error => {
+  console.error('Error al conectar a la base de datos:', error.message);
+  process.exit(1);
 });
 
 // Crear aplicación Express
@@ -94,7 +99,7 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   console.log(`
                                                            
-🦷  SISTEMA DE GESTIÓN ODONTOLÓGICA - DENTAL BOSCH  🦷   
+SISTEMA DE GESTIÓN ODONTOLÓGICA - DENTAL BOSCH    
                                                             
     Servidor: http://localhost:${PORT}                      
     Entorno: ${process.env.NODE_ENV}                              

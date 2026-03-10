@@ -7,12 +7,7 @@ const connectDB = async () => {
       ? process.env.MONGODB_URI_PRODUCTION 
       : process.env.MONGODB_URI_LOCAL;
 
-    const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    };
-
-    await mongoose.connect(MONGODB_URI, options);
+    await mongoose.connect(MONGODB_URI);
     
     const environment = process.env.NODE_ENV === 'production' ? 'PRODUCCIÓN (Atlas)' : 'LOCAL';
     

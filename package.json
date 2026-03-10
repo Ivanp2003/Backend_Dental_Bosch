@@ -2,8 +2,10 @@
   "name": "backend_dental_bosch",
   "version": "1.0.0",
   "description": "API RESTful para la gestión de un consultorio dental con Node.js, Express, MongoDB y autenticación JWT.",
-  "main": "src/index.js",
+  "main": "src/server.js",
   "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
