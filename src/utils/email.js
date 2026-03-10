@@ -76,7 +76,16 @@ const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
 
 // Enviar email de confirmación
 exports.enviarEmailConfirmacion = async (email, nombre, token) => {
+  // LOGGING PARA DEBUG
+  console.log(' Intentando enviar email de confirmación...');
+  console.log('Destinatario:', email);
+  console.log('Nombre:', nombre);
+  console.log('SendGrid API Key existe:', !!process.env.SENDGRID_API_KEY);
+  console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+  console.log('URL_FRONTEND:', process.env.URL_FRONTEND);
+
   const urlConfirmacion = `${process.env.URL_FRONTEND}confirmar-cuenta/${token}`;
+  console.log('URL de confirmación:', urlConfirmacion);
   
   const contenido = `
     <p>Hola <strong>${nombre}</strong>,</p>
@@ -90,18 +99,36 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
     html: plantillaHTML('Confirma tu cuenta', contenido, urlConfirmacion, 'Confirmar Cuenta')
   };
 
+  console.log(' Mensaje a enviar:', JSON.stringify(msg, null, 2));
+
   try {
-    await sgMail.send(msg);
-    console.log('✅ Email de confirmación enviado a:', email);
+    const result = await sgMail.send(msg);
+    console.log(' Email de confirmación enviado exitosamente');
+    console.log('Resultado SendGrid:', result);
   } catch (error) {
-    console.error('❌ Error al enviar email de confirmación:', error.message);
+    console.error(' Error al enviar email de confirmación:', error.message);
+    console.error('Código de error:', error.code);
+    console.error('Status:', error.response?.status);
+    
+    if (error.response) {
+      console.error('Body completo del error:', JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
 
 // Enviar email de recuperación de contraseña
 exports.enviarEmailRecuperacion = async (email, nombre, token) => {
+  // LOGGING PARA DEBUG
+  console.log(' Intentando enviar email de recuperación...');
+  console.log('Destinatario:', email);
+  console.log('Nombre:', nombre);
+  console.log('SendGrid API Key existe:', !!process.env.SENDGRID_API_KEY);
+  console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+
   const urlRecuperacion = `${process.env.URL_FRONTEND}recuperar-password/${token}`;
+  console.log('URL de recuperación:', urlRecuperacion);
   
   const contenido = `
     <p>Hola <strong>${nombre}</strong>,</p>
@@ -116,17 +143,35 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
     html: plantillaHTML('Recuperar Contraseña', contenido, urlRecuperacion, 'Restablecer Contraseña')
   };
 
+  console.log(' Mensaje de recuperación a enviar:', JSON.stringify(msg, null, 2));
+
   try {
-    await sgMail.send(msg);
-    console.log('✅ Email de recuperación enviado a:', email);
+    const result = await sgMail.send(msg);
+    console.log(' Email de recuperación enviado exitosamente');
+    console.log('Resultado SendGrid:', result);
   } catch (error) {
-    console.error('❌ Error al enviar email de recuperación:', error.message);
+    console.error(' Error al enviar email de recuperación:', error.message);
+    console.error('Código de error:', error.code);
+    console.error('Status:', error.response?.status);
+    
+    if (error.response) {
+      console.error('Body completo del error:', JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
 
 // Enviar email de bienvenida
 exports.enviarEmailBienvenida = async (email, nombre, rol) => {
+  // LOGGING PARA DEBUG
+  console.log(' Intentando enviar email de bienvenida...');
+  console.log('Destinatario:', email);
+  console.log('Nombre:', nombre);
+  console.log('Rol:', rol);
+  console.log('SendGrid API Key existe:', !!process.env.SENDGRID_API_KEY);
+  console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+
   const contenido = `
     <p>¡Hola <strong>${nombre}</strong>!</p>
     <p>Tu cuenta ha sido confirmada exitosamente.</p>
@@ -143,17 +188,34 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
     html: plantillaHTML('Cuenta Confirmada', contenido, process.env.URL_FRONTEND, 'Ir al Sistema')
   };
 
+  console.log(' Mensaje de bienvenida a enviar:', JSON.stringify(msg, null, 2));
+
   try {
-    await sgMail.send(msg);
-    console.log('✅ Email de bienvenida enviado a:', email);
+    const result = await sgMail.send(msg);
+    console.log(' Email de bienvenida enviado exitosamente');
+    console.log('Resultado SendGrid:', result);
   } catch (error) {
-    console.error('❌ Error al enviar email de bienvenida:', error.message);
+    console.error(' Error al enviar email de bienvenida:', error.message);
+    console.error('Código de error:', error.code);
+    console.error('Status:', error.response?.status);
+    
+    if (error.response) {
+      console.error('Body completo del error:', JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
 
 // Enviar email de aprobación de doctor
 exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
+  // LOGGING PARA DEBUG
+  console.log(' Intentando enviar email de aprobación...');
+  console.log('Destinatario:', email);
+  console.log('Nombre doctor:', nombre);
+  console.log('SendGrid API Key existe:', !!process.env.SENDGRID_API_KEY);
+  console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+
   const contenido = `
     <p>¡Hola <strong>Dr. ${nombre}</strong>!</p>
     <p>Tu cuenta de doctor ha sido <strong>aprobada</strong> exitosamente.</p>
@@ -167,17 +229,35 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
     html: plantillaHTML('Cuenta Aprobada', contenido, process.env.URL_FRONTEND, 'Iniciar Sesión')
   };
 
+  console.log(' Mensaje de aprobación a enviar:', JSON.stringify(msg, null, 2));
+
   try {
-    await sgMail.send(msg);
-    console.log('✅ Email de aprobación enviado a:', email);
+    const result = await sgMail.send(msg);
+    console.log(' Email de aprobación enviado exitosamente');
+    console.log('Resultado SendGrid:', result);
   } catch (error) {
-    console.error('❌ Error al enviar email de aprobación:', error.message);
+    console.error(' Error al enviar email de aprobación:', error.message);
+    console.error('Código de error:', error.code);
+    console.error('Status:', error.response?.status);
+    
+    if (error.response) {
+      console.error('Body completo del error:', JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
 
 // Enviar email de rechazo de doctor
 exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
+  // LOGGING PARA DEBUG
+  console.log(' Intentando enviar email de rechazo...');
+  console.log('Destinatario:', email);
+  console.log('Nombre:', nombre);
+  console.log('Motivo:', motivo || 'No especificado');
+  console.log('SendGrid API Key existe:', !!process.env.SENDGRID_API_KEY);
+  console.log('EMAIL_FROM:', process.env.EMAIL_FROM);
+
   const contenido = `
     <p>Hola <strong>${nombre}</strong>,</p>
     <p>Lamentamos informarte que tu solicitud de registro como doctor ha sido <strong>rechazada</strong>.</p>
@@ -192,11 +272,21 @@ exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
     html: plantillaHTML('Solicitud Rechazada', contenido, null, null)
   };
 
+  console.log(' Mensaje de rechazo a enviar:', JSON.stringify(msg, null, 2));
+
   try {
-    await sgMail.send(msg);
-    console.log('✅ Email de rechazo enviado a:', email);
+    const result = await sgMail.send(msg);
+    console.log(' Email de rechazo enviado exitosamente');
+    console.log('Resultado SendGrid:', result);
   } catch (error) {
-    console.error('❌ Error al enviar email de rechazo:', error.message);
+    console.error(' Error al enviar email de rechazo:', error.message);
+    console.error('Código de error:', error.code);
+    console.error('Status:', error.response?.status);
+    
+    if (error.response) {
+      console.error('Body completo del error:', JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
