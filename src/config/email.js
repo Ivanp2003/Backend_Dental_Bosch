@@ -10,7 +10,9 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  //FORZAR IPv4
+  family: 4
 });
 
 // Verificar conexión
