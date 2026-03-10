@@ -1,4 +1,4 @@
-const transporter = require('../config/email');
+const sgMail = require('../config/sendgrid');
 
 // Plantilla HTML base
 const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
@@ -83,14 +83,20 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
     <p>Gracias por registrarte en nuestro sistema. Para activar tu cuenta, haz clic en el siguiente botón:</p>
   `;
 
-  const mailOptions = {
-    from: `"Dental Bosch" <${process.env.USER_MAILTRAP}>`,
+  const msg = {
     to: email,
+    from: 'noreply@dentalbosch.com', // Usa el email verificado en SendGrid
     subject: 'Confirma tu cuenta - Dental Bosch',
     html: plantillaHTML('Confirma tu cuenta', contenido, urlConfirmacion, 'Confirmar Cuenta')
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await sgMail.send(msg);
+    console.log('✅ Email de confirmación enviado a:', email);
+  } catch (error) {
+    console.error('❌ Error al enviar email de confirmación:', error.message);
+    throw error;
+  }
 };
 
 // Enviar email de recuperación de contraseña
@@ -103,14 +109,20 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
     <p><strong>Este enlace expira en 1 hora.</strong></p>
   `;
 
-  const mailOptions = {
-    from: `"Dental Bosch" <${process.env.USER_MAILTRAP}>`,
+  const msg = {
     to: email,
+    from: 'noreply@dentalbosch.com',
     subject: 'Recuperar contraseña - Dental Bosch',
     html: plantillaHTML('Recuperar Contraseña', contenido, urlRecuperacion, 'Restablecer Contraseña')
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await sgMail.send(msg);
+    console.log('✅ Email de recuperación enviado a:', email);
+  } catch (error) {
+    console.error('❌ Error al enviar email de recuperación:', error.message);
+    throw error;
+  }
 };
 
 // Enviar email de bienvenida
@@ -124,14 +136,20 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
     }
   `;
 
-  const mailOptions = {
-    from: `"Dental Bosch" <${process.env.USER_MAILTRAP}>`,
+  const msg = {
     to: email,
+    from: 'noreply@dentalbosch.com',
     subject: '¡Bienvenido a Dental Bosch!',
     html: plantillaHTML('Cuenta Confirmada', contenido, process.env.URL_FRONTEND, 'Ir al Sistema')
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await sgMail.send(msg);
+    console.log('✅ Email de bienvenida enviado a:', email);
+  } catch (error) {
+    console.error('❌ Error al enviar email de bienvenida:', error.message);
+    throw error;
+  }
 };
 
 // Enviar email de aprobación de doctor
@@ -142,14 +160,20 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
     <p>Ya puedes iniciar sesión y comenzar a atender pacientes.</p>
   `;
 
-  const mailOptions = {
-    from: `"Dental Bosch" <${process.env.USER_MAILTRAP}>`,
+  const msg = {
     to: email,
+    from: 'noreply@dentalbosch.com',
     subject: 'Cuenta aprobada - Dental Bosch',
     html: plantillaHTML('Cuenta Aprobada', contenido, process.env.URL_FRONTEND, 'Iniciar Sesión')
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await sgMail.send(msg);
+    console.log('✅ Email de aprobación enviado a:', email);
+  } catch (error) {
+    console.error('❌ Error al enviar email de aprobación:', error.message);
+    throw error;
+  }
 };
 
 // Enviar email de rechazo de doctor
@@ -161,12 +185,18 @@ exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
     <p>Si consideras que esto es un error, por favor contacta con nuestro equipo de soporte.</p>
   `;
 
-  const mailOptions = {
-    from: `"Dental Bosch" <${process.env.USER_MAILTRAP}>`,
+  const msg = {
     to: email,
+    from: 'noreply@dentalbosch.com',
     subject: 'Solicitud rechazada - Dental Bosch',
     html: plantillaHTML('Solicitud Rechazada', contenido, null, null)
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await sgMail.send(msg);
+    console.log('✅ Email de rechazo enviado a:', email);
+  } catch (error) {
+    console.error('❌ Error al enviar email de rechazo:', error.message);
+    throw error;
+  }
 };
