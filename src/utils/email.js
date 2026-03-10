@@ -85,7 +85,7 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
   const msg = {
     to: email,
-    from: 'noreply@dentalbosch.com', // Usa el email verificado en SendGrid
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
     subject: 'Confirma tu cuenta - Dental Bosch',
     html: plantillaHTML('Confirma tu cuenta', contenido, urlConfirmacion, 'Confirmar Cuenta')
   };
@@ -111,7 +111,7 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
   const msg = {
     to: email,
-    from: 'noreply@dentalbosch.com',
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
     subject: 'Recuperar contraseña - Dental Bosch',
     html: plantillaHTML('Recuperar Contraseña', contenido, urlRecuperacion, 'Restablecer Contraseña')
   };
@@ -138,7 +138,7 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
   const msg = {
     to: email,
-    from: 'noreply@dentalbosch.com',
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
     subject: '¡Bienvenido a Dental Bosch!',
     html: plantillaHTML('Cuenta Confirmada', contenido, process.env.URL_FRONTEND, 'Ir al Sistema')
   };
@@ -162,7 +162,7 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
 
   const msg = {
     to: email,
-    from: 'noreply@dentalbosch.com',
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
     subject: 'Cuenta aprobada - Dental Bosch',
     html: plantillaHTML('Cuenta Aprobada', contenido, process.env.URL_FRONTEND, 'Iniciar Sesión')
   };
@@ -187,7 +187,7 @@ exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
 
   const msg = {
     to: email,
-    from: 'noreply@dentalbosch.com',
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
     subject: 'Solicitud rechazada - Dental Bosch',
     html: plantillaHTML('Solicitud Rechazada', contenido, null, null)
   };
