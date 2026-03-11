@@ -75,7 +75,8 @@ app.get('/', (req, res) => {
         todos: 'GET /api/doctores',
         porId: 'GET /api/doctores/:id',
         perfil: 'GET /api/doctores/perfil/doctor',
-        actualizarPerfil: 'PUT /api/doctores/perfil/doctor'
+        actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
+        cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)'
       },
       pacientes: {
         todos: 'GET /api/pacientes',

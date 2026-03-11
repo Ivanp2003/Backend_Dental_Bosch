@@ -2,6 +2,7 @@ const Doctor = require('../models/Doctor');
 const Usuario = require('../models/Usuario');
 const { validarCedula } = require('../utils/validators');
 const cloudinary = require('../config/cloudinary');
+const { enviarEmailAprobacionDoctor, enviarEmailRechazoDoctor } = require('../utils/email');
 
 // @desc    Obtener perfil del doctor
 // @route   GET /api/doctores/perfil
@@ -163,6 +164,74 @@ exports.obtenerDoctorPorId = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: doctor
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Cambiar estado de doctor (aprobado/rechazado)
+// @route   PUT /api/doctores/:id/estado
+// @access  Private (Admin)
+exports.cambiarEstadoDoctor = async (req, res, next) => {
+  try {
+    const { estado } = req.body;
+    
+    // Validar que el estado sea válido
+    if (!['aprobado', 'rechazado'].includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Estado inválido. Debe ser "aprobado" o "rechazado"'
+      });
+    }
+
+    // Verificar que el usuario autenticado sea admin
+    const usuarioAutenticado = await Usuario.findById(req.usuario.id);
+    if (!usuarioAutenticado || usuarioAutenticado.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        mensaje: 'Acceso denegado. Se requiere rol de administrador.'
+      });
+    }
+
+    // Buscar el doctor
+    const doctor = await Doctor.findById(req.params.id).populate('usuario');
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Doctor no encontrado'
+      });
+    }
+
+    // Actualizar estado del usuario
+    const usuarioDoctor = await Usuario.findById(doctor.usuario._id);
+    usuarioDoctor.estado = estado;
+    await usuarioDoctor.save();
+
+    // Enviar email según el estado
+    if (estado === 'aprobado') {
+      await enviarEmailAprobacionDoctor(
+        usuarioDoctor.email,
+        usuarioDoctor.nombre + ' ' + usuarioDoctor.apellido
+      );
+    } else if (estado === 'rechazado') {
+      await enviarEmailRechazoDoctor(
+        usuarioDoctor.email,
+        usuarioDoctor.nombre + ' ' + usuarioDoctor.apellido,
+        req.body.motivo || 'No se proporcionó un motivo específico'
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: `Doctor ${estado} exitosamente`,
+      data: {
+        doctorId: doctor._id,
+        nombre: usuarioDoctor.nombre + ' ' + usuarioDoctor.apellido,
+        email: usuarioDoctor.email,
+        estado: usuarioDoctor.estado
+      }
     });
 
   } catch (error) {

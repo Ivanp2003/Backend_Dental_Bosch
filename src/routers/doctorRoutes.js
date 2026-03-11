@@ -6,7 +6,8 @@ const {
   obtenerPerfil,
   actualizarPerfil,
   obtenerDoctores,
-  obtenerDoctorPorId
+  obtenerDoctorPorId,
+  cambiarEstadoDoctor
 } = require('../controllers/doctorController');
 
 // ========== RUTAS PÚBLICAS ==========
@@ -27,5 +28,8 @@ router.get('/perfil/doctor', obtenerPerfil);
 
 // Actualizar perfil del doctor autenticado (con opción de subir foto)
 router.put('/perfil/doctor', upload.single('foto'), actualizarPerfil);
+
+// Cambiar estado de doctor (solo admin)
+router.put('/:id/estado', cambiarEstadoDoctor);
 
 module.exports = router;
