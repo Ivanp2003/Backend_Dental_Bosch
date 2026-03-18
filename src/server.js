@@ -107,7 +107,7 @@ app.get('/', (req, res) => {
 
     version: '1.0.0',
 
-    sprint: 'Sprint 1 - Autenticación y Usuarios',
+    sprint: 'Sprint 2 - Gestión de Doctores',
 
     entorno: process.env.NODE_ENV,
 
@@ -151,7 +151,15 @@ app.get('/', (req, res) => {
 
         perfil: 'GET /api/doctores/perfil/doctor',
 
-        actualizarPerfil: 'PUT /api/doctores/perfil/doctor'
+        actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
+
+        pendientes: 'GET /api/doctores/pendientes (Admin)',
+
+        aprobados: 'GET /api/doctores/aprobados/lista (Público)',
+
+        cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)',
+
+        eliminar: 'DELETE /api/doctores/:id (Admin)'
 
       },
 
@@ -257,7 +265,7 @@ SISTEMA DE GESTIÓN ODONTOLÓGICA - DENTAL BOSCH
 
     Base de datos: ${process.env.NODE_ENV === 'production' ? 'MongoDB Atlas' : 'MongoDB Local'}                
 
-    Sprint: Sprint 1 - Autenticación y Usuarios
+    Sprint: Sprint 2 - Gestión de Doctores
 
   `);
 

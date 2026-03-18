@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { protegerRuta } = require('../middlewares/authMiddleware');
+const { protegerRuta, autorizarRoles } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/upload');
 const {
   obtenerPerfil,
   actualizarPerfil,
   obtenerDoctores,
-  obtenerDoctorPorId
+  obtenerDoctorPorId,
+  cambiarEstadoDoctor,
+  obtenerDoctoresPendientes,
+  obtenerDoctoresAprobados,
+  eliminarDoctor
 } = require('../controllers/doctorController');
 
 // ========== RUTAS PÚBLICAS ==========
@@ -16,6 +20,9 @@ router.get('/', obtenerDoctores);
 
 // Obtener doctor por ID
 router.get('/:id', obtenerDoctorPorId);
+
+// Obtener doctores aprobados (público)
+router.get('/aprobados/lista', obtenerDoctoresAprobados);
 
 // ========== RUTAS PROTEGIDAS ==========
 
@@ -27,5 +34,16 @@ router.get('/perfil/doctor', obtenerPerfil);
 
 // Actualizar perfil del doctor autenticado (con opción de subir foto)
 router.put('/perfil/doctor', upload.single('foto'), actualizarPerfil);
+
+// ========== RUTAS DE ADMINISTRADOR ==========
+
+// Obtener doctores pendientes de aprobación (Admin)
+router.get('/pendientes', autorizarRoles('admin'), obtenerDoctoresPendientes);
+
+// Cambiar estado de doctor (aprobar/rechazar) (Admin)
+router.put('/:id/estado', autorizarRoles('admin'), cambiarEstadoDoctor);
+
+// Eliminar doctor (Admin)
+router.delete('/:id', autorizarRoles('admin'), eliminarDoctor);
 
 module.exports = router;
