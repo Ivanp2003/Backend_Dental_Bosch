@@ -62,10 +62,11 @@ app.use(cors({
   origin: function (origin, callback) {
     // Permitir orígenes específicos o sin origen (Postman, etc.)
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
       'https://dental-bosch-frontend.onrender.com',
-      'https://dental-bosch.vercel.app'
+      'https://dental-bosch.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001'
+
     ];
     
     // En producción, usar la variable de entorno o la lista de orígenes permitidos
