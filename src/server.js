@@ -59,45 +59,13 @@ const app = express();
 // Middlewares globales
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir orígenes específicos o sin origen (Postman, etc.)
-    const allowedOrigins = [
-      'https://dental-bosch-frontend.onrender.com',
-      'https://dental-bosch.vercel.app',
-      'http://localhost:3000',
-      'http://localhost:3001'
-
-    ];
-    
-    // En producción, usar la variable de entorno o la lista de orígenes permitidos
-    if (process.env.NODE_ENV === 'production') {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    }
-    
-    // En desarrollo, permitir cualquier origen
-    return callback(null, true);
-  },
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.CORS_ORIGIN || 'https://dental-bosch.vercel.app'
+    : true, // En desarrollo permitir cualquier origen
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// Middleware adicional para manejar preflight requests
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
 
 app.use(express.json());
 
