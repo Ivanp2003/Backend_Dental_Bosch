@@ -63,35 +63,9 @@ exports.actualizarPerfil = async (req, res, next) => {
     if (telefono) usuario.telefono = telefono;
     if (cedula) usuario.cedula = cedula;
 
-    // Subir foto si se proporciona
-    if (req.file) {
-      try {
-        // Subir a Cloudinary
-        const resultado = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              folder: 'dental-bosch/avatars',
-              transformation: [
-                { width: 400, height: 400, crop: 'fill' },
-                { quality: 'auto' }
-              ]
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          stream.end(req.file.buffer);
-        });
-
-        usuario.foto = resultado.secure_url;
-      } catch (error) {
-        console.error('Error al subir imagen:', error);
-        return res.status(500).json({
-          success: false,
-          mensaje: 'Error al subir la imagen'
-        });
-      }
+    // Subir foto si se proporcionó en el middleware
+    if (req.fotoUrl) {
+      usuario.foto = req.fotoUrl;
     }
 
     await usuario.save();

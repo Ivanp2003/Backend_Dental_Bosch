@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta } = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/upload');
+const { uploadPhotoToCloudinary } = require('../middlewares/upload');
 const {
   obtenerPerfil,
   actualizarPerfil,
@@ -26,6 +26,6 @@ router.use(protegerRuta);
 router.get('/perfil/paciente', obtenerPerfil);
 
 // Actualizar perfil del paciente autenticado (con opción de subir foto)
-router.put('/perfil/paciente', upload.single('foto'), actualizarPerfil);
+router.put('/perfil/paciente', uploadPhotoToCloudinary, actualizarPerfil);
 
 module.exports = router;

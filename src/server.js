@@ -26,6 +26,8 @@ const doctorRoutes = require('./routers/doctorRoutes');
 
 const pacienteRoutes = require('./routers/pacienteRoutes');
 
+const testRoutes = require('./routers/testRoutes'); // Rutas de prueba para Cloudinary
+
 
 
 // Conectar a la base de datos
@@ -212,6 +214,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/doctores', doctorRoutes);
 
 app.use('/api/pacientes', pacienteRoutes);
+
+// Rutas de prueba para Cloudinary (solo desarrollo)
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/test', testRoutes);
+}
 
 
 

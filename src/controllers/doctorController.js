@@ -54,9 +54,9 @@ exports.actualizarPerfil = async (req, res, next) => {
     await doctor.save();
 
     // Si se subió una foto, actualizarla en el usuario
-    if (req.file) {
+    if (req.fotoUrl) {
       await Usuario.findByIdAndUpdate(req.usuario.id, {
-        foto: req.file.path
+        foto: req.fotoUrl
       });
     }
 

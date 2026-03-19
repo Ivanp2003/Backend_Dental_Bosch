@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta, autorizarRoles } = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/upload');
+const { uploadPhotoToCloudinary } = require('../middlewares/upload');
 const {
   obtenerPerfil,
   actualizarPerfil,
@@ -33,7 +33,7 @@ router.use(protegerRuta);
 router.get('/perfil/doctor', obtenerPerfil);
 
 // Actualizar perfil del doctor autenticado (con opción de subir foto)
-router.put('/perfil/doctor', upload.single('foto'), actualizarPerfil);
+router.put('/perfil/doctor', uploadPhotoToCloudinary, actualizarPerfil);
 
 // ========== RUTAS DE ADMINISTRADOR ==========
 
