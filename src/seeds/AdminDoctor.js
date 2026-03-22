@@ -3,7 +3,7 @@ const Doctor = require('../models/Doctor');
 
 const createAdminDoctor = async () => {
   try {
-    console.log('🔍 Verificando si existe administrador...');
+    console.log('Verificando si existe administrador...');
     
     // Verificar si ya existe el admin
     const adminExiste = await Usuario.findOne({ 
@@ -11,15 +11,15 @@ const createAdminDoctor = async () => {
     });
 
     if (adminExiste) {
-      console.log('✅ Doctor Administrador ya existe');
-      console.log('   Email: admin@dentalbosch.com');
+      console.log('Doctor Administrador ya existe');
+      console.log('Email: admin@dentalbosch.com');
       return;
     }
 
-    console.log('📝 Creando Doctor Administrador por defecto...');
+    console.log('Creando Doctor Administrador por defecto...');
 
     // Crear usuario administrador
-    console.log('1️⃣ Creando usuario...');
+    console.log('1️ Creando usuario...');
     const usuarioAdmin = await Usuario.create({
       nombre: 'Admin',
       apellido: 'Dental Bosch',

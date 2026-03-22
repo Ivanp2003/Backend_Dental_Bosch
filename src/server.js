@@ -60,14 +60,44 @@ const app = express();
 
 // Middlewares globales
 
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CORS_ORIGIN || 'https://dental-bosch.vercel.app'
-    : true, // En desarrollo permitir cualquier origen
+// Configuración de orígenes permitidos
+const getAllowedOrigins = () => {
+  // Si hay orígenes configurados en variables de entorno, usarlos
+  if (process.env.CORS_ORIGINS) {
+    return process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
+  }
+  
+  // Sino, usar configuración por defecto según entorno
+  if (process.env.NODE_ENV === 'production') {
+    return ['https://dental-bosch.vercel.app'];
+  } else {
+    return ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+  }
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+// Configuración CORS dinámica
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Permitir solicitudes sin origin (como mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Verificar si el origen está en la lista permitida
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('Origen bloqueado por CORS:', origin);
+      callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
