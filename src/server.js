@@ -67,13 +67,29 @@ const getAllowedOrigins = () => {
   
   // Sino, usar configuración por defecto según entorno
   if (process.env.NODE_ENV === 'production') {
-    return ['https://dental-bosch.vercel.app'];
+    // En producción permitir tanto Vercel como localhost para desarrollo
+    return [
+      'https://dental-bosch.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173'
+    ];
   } else {
-    return ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'];
+    // En desarrollo permitir todos los puertos comunes
+    return [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'http://localhost:8000'
+    ];
   }
 };
 
 const allowedOrigins = getAllowedOrigins();
+
+// Log de orígenes permitidos para debugging
+console.log(' Orígenes CORS permitidos:', allowedOrigins);
+console.log(' Entorno:', process.env.NODE_ENV);
 
 // Configuración CORS dinámica
 const corsOptions = {
