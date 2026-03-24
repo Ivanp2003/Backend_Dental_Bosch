@@ -198,20 +198,31 @@ exports.cambiarEstadoDoctor = async (req, res, next) => {
 // @access  Private (Admin)
 exports.obtenerDoctoresPendientes = async (req, res, next) => {
   try {
+    console.log('🔍 Iniciando obtenerDoctoresPendientes...');
+    console.log('👤 Usuario autenticado:', req.usuario);
+    
     // Verificar que el usuario sea admin
     const usuarioAutenticado = await Usuario.findById(req.usuario.id);
+    console.log('🔍 Usuario de BD:', usuarioAutenticado);
+    
     if (!usuarioAutenticado || usuarioAutenticado.rol !== 'admin') {
+      console.log('❌ Usuario no es admin o no encontrado');
       return res.status(403).json({
         success: false,
         mensaje: 'Acceso denegado. Se requiere rol de administrador.'
       });
     }
 
+    console.log('✅ Usuario admin verificado, buscando usuarios pendientes...');
+
     // Buscar usuarios con rol 'doctor' y estado 'pendiente'
     const usuariosPendientes = await Usuario.find({
       rol: 'doctor',
       estado: 'pendiente'
     }).select('_id nombre apellido email telefono cedula');
+
+    console.log('📋 Usuarios pendientes encontrados:', usuariosPendientes.length);
+    console.log('📋 IDs de usuarios pendientes:', usuariosPendientes.map(u => u._id));
 
     // Extraer los IDs de los usuarios pendientes
     const usuarioIds = usuariosPendientes.map(usuario => usuario._id);
@@ -224,6 +235,8 @@ exports.obtenerDoctoresPendientes = async (req, res, next) => {
       select: 'nombre apellido email telefono cedula'
     });
 
+    console.log('👨‍⚕️ Doctores pendientes encontrados:', doctoresPendientes.length);
+
     res.status(200).json({
       success: true,
       count: doctoresPendientes.length,
@@ -231,6 +244,7 @@ exports.obtenerDoctoresPendientes = async (req, res, next) => {
     });
 
   } catch (error) {
+    console.log('❌ Error en obtenerDoctoresPendientes:', error);
     next(error);
   }
 };
