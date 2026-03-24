@@ -39,7 +39,9 @@ exports.protegerRuta = async (req, res, next) => {
     console.log('✅ Usuario autenticado exitosamente:', {
       id: req.usuario._id,
       email: req.usuario.email,
-      rol: req.usuario.rol
+      rol: req.usuario.rol,
+      estado: req.usuario.estado,
+      activo: req.usuario.activo
     });
 
     next();

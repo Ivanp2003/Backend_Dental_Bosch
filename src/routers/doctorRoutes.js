@@ -29,6 +29,19 @@ router.get('/', obtenerDoctores);
 // Obtener doctores aprobados (público) - ESPECÍFICA
 router.get('/aprobados/lista', obtenerDoctoresAprobados);
 
+// Obtener doctores pendientes de aprobación (Admin) - ESPECÍFICA
+router.get(
+  '/pendientes',
+  protegerRuta,
+  autorizarRoles('admin'),
+  (req, res, next) => {
+    console.log('✅ Entrando a /pendientes');
+    console.log('Usuario autenticado:', req.usuario);
+    console.log('Rol:', req.usuario?.rol);
+    obtenerDoctoresPendientes(req, res, next);
+  }
+);
+
 // Obtener doctor por ID - GENÉRICA (debe ir al final de las públicas)
 router.get('/:id', obtenerDoctorPorId);
 
@@ -44,18 +57,6 @@ router.get('/perfil/doctor', obtenerPerfil);
 router.put('/perfil/doctor', uploadPhotoToCloudinary, actualizarPerfil);
 
 // ========== RUTAS DE ADMINISTRADOR ==========
-
-// Obtener doctores pendientes de aprobación (Admin) - ESPECÍFICA
-router.get(
-  '/pendientes',
-  autorizarRoles('admin'),
-  (req, res, next) => {
-    console.log('✅ Entrando a /pendientes');
-    console.log('Usuario autenticado:', req.usuario);
-    console.log('Rol:', req.usuario?.rol);
-    obtenerDoctoresPendientes(req, res, next);
-  }
-);
 
 // Cambiar estado de doctor (aprobar/rechazar) (Admin)
 router.put('/:id/estado', autorizarRoles('admin'), cambiarEstadoDoctor);
