@@ -38,7 +38,12 @@ router.put('/perfil/doctor', uploadPhotoToCloudinary, actualizarPerfil);
 // ========== RUTAS DE ADMINISTRADOR ==========
 
 // Obtener doctores pendientes de aprobación (Admin)
-router.get('/pendientes', autorizarRoles('admin'), obtenerDoctoresPendientes);
+router.get('/pendientes', autorizarRoles('admin'), (req, res, next) => {
+  console.log('🔍 Accediendo a /pendientes');
+  console.log('👤 Usuario autenticado:', req.usuario);
+  console.log('🔐 Rol del usuario:', req.usuario?.rol || req.usuario?.usuario?.rol);
+  obtenerDoctoresPendientes(req, res, next);
+});
 
 // Cambiar estado de doctor (aprobar/rechazar) (Admin)
 router.put('/:id/estado', autorizarRoles('admin'), cambiarEstadoDoctor);

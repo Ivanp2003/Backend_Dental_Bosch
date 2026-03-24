@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
 
-// Proteger rutas - verificar JWT
+// Proteger rutas - verificar JWT (Mantenido para compatibilidad)
 exports.protegerRuta = async (req, res, next) => {
   let token;
 
@@ -11,6 +11,7 @@ exports.protegerRuta = async (req, res, next) => {
   }
 
   if (!token) {
+    console.log('❌ No se proporcionó token en:', req.path);
     return res.status(401).json({
       success: false,
       mensaje: 'No está autorizado para acceder a esta ruta'
@@ -25,14 +26,22 @@ exports.protegerRuta = async (req, res, next) => {
     req.usuario = await Usuario.findById(decoded.id).select('-password');
 
     if (!req.usuario || !req.usuario.activo) {
+      console.log('❌ Usuario no encontrado o inactivo:', decoded.id);
       return res.status(401).json({
         success: false,
         mensaje: 'Usuario no autorizado'
       });
     }
 
+    console.log('✅ Usuario autenticado exitosamente:', {
+      id: req.usuario._id,
+      email: req.usuario.email,
+      rol: req.usuario.rol
+    });
+
     next();
   } catch (error) {
+    console.log('❌ Error al verificar token:', error.message);
     return res.status(401).json({
       success: false,
       mensaje: 'Token inválido o expirado'
@@ -43,12 +52,25 @@ exports.protegerRuta = async (req, res, next) => {
 // Verificar roles específicos
 exports.autorizarRoles = (...roles) => {
   return (req, res, next) => {
+    console.log('🔍 Verificando roles:', {
+      path: req.path,
+      requiredRoles: roles,
+      userRole: req.usuario?.rol,
+      hasRole: roles.includes(req.usuario?.rol)
+    });
+    
     if (!roles.includes(req.usuario.rol)) {
+      console.log('❌ Acceso denegado - Rol no autorizado:', {
+        required: roles,
+        current: req.usuario?.rol
+      });
       return res.status(403).json({
         success: false,
         mensaje: `El rol ${req.usuario.rol} no tiene permisos para esta acción`
       });
     }
+    
+    console.log('✅ Rol autorizado correctamente');
     next();
   };
 };
