@@ -72,7 +72,7 @@ exports.autorizarRoles = (...roles) => {
     
     console.log('✅ Rol autorizado correctamente');
     next();
-  };
+  }
 };
 
 // Verificar que el usuario esté confirmado
@@ -95,4 +95,12 @@ exports.verificarDoctorAprobado = (req, res, next) => {
     });
   }
   next();
+};
+
+// Exportar todas las funciones
+module.exports = {
+  protegerRuta: exports.protegerRuta,
+  autorizarRoles: exports.autorizarRoles,
+  verificarConfirmado: exports.verificarConfirmado,
+  verificarDoctorAprobado: exports.verificarDoctorAprobado
 };

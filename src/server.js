@@ -253,6 +253,13 @@ app.get('/health', (req, res) => {
 
 // ========== RUTAS DE LA API ==========
 
+// Middleware de logging para debuggear rutas
+app.use((req, res, next) => {
+  console.log(`🔍 ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
 app.use('/api/auth', authRoutes);
 
 app.use('/api/doctores', doctorRoutes);
