@@ -186,11 +186,11 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
     await sgMail.send(msg);
 
-    console.log('✅ Email de confirmación enviado a:', email);
+    console.log('Email de confirmación enviado a:', email);
 
   } catch (error) {
 
-    console.error('❌ Error al enviar email de confirmación:', error.message);
+    console.error('Error al enviar email de confirmación:', error.message);
 
     throw error;
 
@@ -204,7 +204,9 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
 exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
-  const urlRecuperacion = `${process.env.URL_FRONTEND}recuperar-password/${token}`;
+  const urlRecuperacion = `${process.env.URL_FRONTEND}/recuperar-password/${token}`;
+
+  console.log('🔗 URL de recuperación generada:', urlRecuperacion);
 
   
 
@@ -238,11 +240,11 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
     await sgMail.send(msg);
 
-    console.log('✅ Email de recuperación enviado a:', email);
+    console.log('Email de recuperación enviado a:', email);
 
   } catch (error) {
 
-    console.error('❌ Error al enviar email de recuperación:', error.message);
+    console.error('Error al enviar email de recuperación:', error.message);
 
     throw error;
 
@@ -292,11 +294,11 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
     await sgMail.send(msg);
 
-    console.log('✅ Email de bienvenida enviado a:', email);
+    console.log('Email de bienvenida enviado a:', email);
 
   } catch (error) {
 
-    console.error('❌ Error al enviar email de bienvenida:', error.message);
+    console.error('Error al enviar email de bienvenida:', error.message);
 
     throw error;
 
@@ -340,11 +342,11 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
 
     await sgMail.send(msg);
 
-    console.log('✅ Email de aprobación enviado a:', email);
+    console.log('Email de aprobación enviado a:', email);
 
   } catch (error) {
 
-    console.error('❌ Error al enviar email de aprobación:', error.message);
+    console.error('Error al enviar email de aprobación:', error.message);
 
     throw error;
 
@@ -390,11 +392,11 @@ exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
 
     await sgMail.send(msg);
 
-    console.log('✅ Email de rechazo enviado a:', email);
+    console.log('Email de rechazo enviado a:', email);
 
   } catch (error) {
 
-    console.error('❌ Error al enviar email de rechazo:', error.message);
+    console.error('Error al enviar email de rechazo:', error.message);
 
     throw error;
 

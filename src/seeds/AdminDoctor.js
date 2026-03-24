@@ -25,7 +25,7 @@ const createAdminDoctor = async () => {
       apellido: 'Dental Bosch',
       email: 'admin@dentalbosch.com',
       password: 'Admin123', // Se hasheará automáticamente
-      rol: 'doctor',
+      rol: 'admin',
       cedula: '0000000000',
       telefono: '0999999999',
       confirmado: true, // Ya confirmado
@@ -80,7 +80,7 @@ const createAdminDoctor = async () => {
     console.log('Doctor Administrador creado exitosamente');
     console.log('Email: admin@dentalbosch.com');
     console.log('Password: Admin123');
-    console.log('Rol: doctor (aprobado)');
+    console.log('Rol: admin (aprobado)');
 
   } catch (error) {
     console.error('Error al crear Doctor Administrador:', error.message);
