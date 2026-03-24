@@ -207,12 +207,22 @@ exports.obtenerDoctoresPendientes = async (req, res, next) => {
       });
     }
 
-    const doctoresPendientes = await Doctor.find()
-      .populate({
-        path: 'usuario',
-        match: { estado: 'pendiente' },
-        select: 'nombre apellido email telefono cedula'
-      });
+    // Buscar usuarios con rol 'doctor' y estado 'pendiente'
+    const usuariosPendientes = await Usuario.find({
+      rol: 'doctor',
+      estado: 'pendiente'
+    }).select('_id nombre apellido email telefono cedula');
+
+    // Extraer los IDs de los usuarios pendientes
+    const usuarioIds = usuariosPendientes.map(usuario => usuario._id);
+
+    // Buscar doctores cuyo usuario esté en la lista de pendientes
+    const doctoresPendientes = await Doctor.find({
+      usuario: { $in: usuarioIds }
+    }).populate({
+      path: 'usuario',
+      select: 'nombre apellido email telefono cedula'
+    });
 
     res.status(200).json({
       success: true,
@@ -230,12 +240,23 @@ exports.obtenerDoctoresPendientes = async (req, res, next) => {
 // @access  Public
 exports.obtenerDoctoresAprobados = async (req, res, next) => {
   try {
-    const doctoresAprobados = await Doctor.find()
-      .populate({
-        path: 'usuario',
-        match: { estado: 'aprobado', confirmado: true },
-        select: 'nombre apellido email telefono foto especialidad'
-      });
+    // Buscar usuarios con rol 'doctor', estado 'aprobado' y confirmado
+    const usuariosAprobados = await Usuario.find({
+      rol: 'doctor',
+      estado: 'aprobado',
+      confirmado: true
+    }).select('_id nombre apellido email telefono foto especialidad');
+
+    // Extraer los IDs de los usuarios aprobados
+    const usuarioIds = usuariosAprobados.map(usuario => usuario._id);
+
+    // Buscar doctores cuyo usuario esté en la lista de aprobados
+    const doctoresAprobados = await Doctor.find({
+      usuario: { $in: usuarioIds }
+    }).populate({
+      path: 'usuario',
+      select: 'nombre apellido email telefono foto especialidad'
+    });
 
     res.status(200).json({
       success: true,
