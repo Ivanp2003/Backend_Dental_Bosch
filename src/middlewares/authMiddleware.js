@@ -3,14 +3,14 @@ const Usuario = require('../models/Usuario');
 
 // Proteger rutas - verificar JWT (Mantenido para compatibilidad)
 exports.protegerRuta = async (req, res, next) => {
+  console.log('🔒 Iniciando protegerRuta para:', req.path);
   let token;
 
   // Verificar si existe token en headers
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  }
-
-  if (!token) {
+    console.log('✅ Token encontrado');
+  } else {
     console.log('❌ No se proporcionó token en:', req.path);
     return res.status(401).json({
       success: false,
@@ -20,9 +20,12 @@ exports.protegerRuta = async (req, res, next) => {
 
   try {
     // Verificar token
+    console.log('🔍 Verificando token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('✅ Token válido, decoded:', decoded.id);
 
     // Obtener usuario del token
+    console.log('🔍 Buscando usuario en BD...');
     req.usuario = await Usuario.findById(decoded.id).select('-password');
 
     if (!req.usuario || !req.usuario.activo) {
