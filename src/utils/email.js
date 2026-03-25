@@ -1,4 +1,5 @@
 const sgMail = require('../config/sendgrid');
+const { generarURLsPrueba } = require('./emailUtils');
 
 
 
@@ -154,9 +155,19 @@ const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
 
 exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
-  const urlConfirmacion = `${process.env.URL_FRONTEND}confirmar-cuenta/${token}`;
-
+  // URL de respaldo si URL_FRONTEND no está configurada correctamente
+  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+  const urlConfirmacion = `${frontendUrl}confirmar-cuenta/${token}`;
   
+  // Generar URLs alternativas para debugging
+  const urlsAlternativas = generarURLsPrueba(frontendUrl, token);
+
+  console.log(' URL de confirmación generada:', urlConfirmacion);
+  console.log(' Enviando a:', email);
+  console.log(' Frontend URL configurada:', process.env.URL_FRONTEND);
+  console.log(' Token generado:', token);
+  console.log(' Ruta completa:', urlConfirmacion);
+  console.log(' URLs alternativas:', urlsAlternativas);
 
   const contenido = `
 
@@ -164,9 +175,12 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
     <p>Gracias por registrarte en nuestro sistema. Para activar tu cuenta, haz clic en el siguiente botón:</p>
 
+    <p><small>Si el botón no funciona, prueba estas opciones:</small></p>
+    <p><small><code>${urlConfirmacion}</code></small></p>
+    <p><small><code>${urlsAlternativas.alternativa1}</code></small></p>
+    <p><small><code>${urlsAlternativas.alternativa2}</code></small></p>
+
   `;
-
-
 
   const msg = {
 
@@ -204,11 +218,11 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
 exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
-  const urlRecuperacion = `${process.env.URL_FRONTEND}/recuperar-password/${token}`;
+  // URL de respaldo si URL_FRONTEND no está configurada correctamente
+  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+  const urlRecuperacion = `${frontendUrl}recuperar-password/${token}`;
 
-  console.log('🔗 URL de recuperación generada:', urlRecuperacion);
-
-  
+  console.log(' URL de recuperación generada:', urlRecuperacion);
 
   const contenido = `
 
@@ -258,6 +272,9 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
 exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
+  // URL de respaldo si URL_FRONTEND no está configurada correctamente
+  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+
   const contenido = `
 
     <p>¡Hola <strong>${nombre}</strong>!</p>
@@ -274,8 +291,6 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
   `;
 
-
-
   const msg = {
 
     to: email,
@@ -284,7 +299,7 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
     subject: '¡Bienvenido a Dental Bosch!',
 
-    html: plantillaHTML('Cuenta Confirmada', contenido, process.env.URL_FRONTEND, 'Ir al Sistema')
+    html: plantillaHTML('Cuenta Confirmada', contenido, frontendUrl, 'Ir al Sistema')
 
   };
 
@@ -312,6 +327,9 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
 exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
 
+  // URL de respaldo si URL_FRONTEND no está configurada correctamente
+  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+
   const contenido = `
 
     <p>¡Hola <strong>Dr. ${nombre}</strong>!</p>
@@ -322,8 +340,6 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
 
   `;
 
-
-
   const msg = {
 
     to: email,
@@ -332,7 +348,7 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
 
     subject: 'Cuenta aprobada - Dental Bosch',
 
-    html: plantillaHTML('Cuenta Aprobada', contenido, process.env.URL_FRONTEND, 'Iniciar Sesión')
+    html: plantillaHTML('Cuenta Aprobada', contenido, frontendUrl, 'Iniciar Sesión')
 
   };
 
