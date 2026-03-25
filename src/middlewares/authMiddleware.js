@@ -3,15 +3,15 @@ const Usuario = require('../models/Usuario');
 
 // Proteger rutas - verificar JWT (Mantenido para compatibilidad)
 exports.protegerRuta = async (req, res, next) => {
-  console.log('🔒 Iniciando protegerRuta para:', req.path);
+  console.log('Iniciando protegerRuta para:', req.path);
   let token;
 
   // Verificar si existe token en headers
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-    console.log('✅ Token encontrado');
+    console.log('Token encontrado');
   } else {
-    console.log('❌ No se proporcionó token en:', req.path);
+    console.log('No se proporcionó token en:', req.path);
     return res.status(401).json({
       success: false,
       mensaje: 'No está autorizado para acceder a esta ruta'
@@ -20,23 +20,23 @@ exports.protegerRuta = async (req, res, next) => {
 
   try {
     // Verificar token
-    console.log('🔍 Verificando token...');
+    console.log('Verificando token...');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('✅ Token válido, decoded:', decoded.id);
+    console.log('Token válido, decoded:', decoded.id);
 
     // Obtener usuario del token
-    console.log('🔍 Buscando usuario en BD...');
+    console.log('Buscando usuario en BD...');
     req.usuario = await Usuario.findById(decoded.id).select('-password');
 
     if (!req.usuario || !req.usuario.activo) {
-      console.log('❌ Usuario no encontrado o inactivo:', decoded.id);
+      console.log('Usuario no encontrado o inactivo:', decoded.id);
       return res.status(401).json({
         success: false,
         mensaje: 'Usuario no autorizado'
       });
     }
 
-    console.log('✅ Usuario autenticado exitosamente:', {
+    console.log('Usuario autenticado exitosamente:', {
       id: req.usuario._id,
       email: req.usuario.email,
       rol: req.usuario.rol,
@@ -46,7 +46,7 @@ exports.protegerRuta = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log('❌ Error al verificar token:', error.message);
+    console.log('Error al verificar token:', error.message);
     return res.status(401).json({
       success: false,
       mensaje: 'Token inválido o expirado'
@@ -57,7 +57,7 @@ exports.protegerRuta = async (req, res, next) => {
 // Verificar roles específicos
 exports.autorizarRoles = (...roles) => {
   return (req, res, next) => {
-    console.log('🔍 Verificando roles:', {
+    console.log('Verificando roles:', {
       path: req.path,
       requiredRoles: roles,
       userRole: req.usuario?.rol,
@@ -65,7 +65,7 @@ exports.autorizarRoles = (...roles) => {
     });
     
     if (!roles.includes(req.usuario.rol)) {
-      console.log('❌ Acceso denegado - Rol no autorizado:', {
+      console.log('Acceso denegado - Rol no autorizado:', {
         required: roles,
         current: req.usuario?.rol
       });
@@ -75,7 +75,7 @@ exports.autorizarRoles = (...roles) => {
       });
     }
     
-    console.log('✅ Rol autorizado correctamente');
+    console.log('Rol autorizado correctamente');
     next();
   }
 };

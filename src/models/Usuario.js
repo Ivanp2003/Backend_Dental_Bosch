@@ -55,7 +55,7 @@ const usuarioSchema = new mongoose.Schema({
   },
   foto: {
     type: String,
-    default: 'https://res.cloudinary.com/dpk1tw1us/image/upload/v1/avatars/default-avatar.jpg'
+    default: 'https://ui-avatars.com/api/?name=User&background=8b5cf6&color=fff&size=128'
   },
   estado: {
     type: String,

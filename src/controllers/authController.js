@@ -8,6 +8,7 @@ const {
   enviarEmailBienvenida 
 } = require('../utils/email');
 const { validarEmail, validarCedula } = require('../utils/validators');
+const { generarAvatarPorRol } = require('../utils/avatarUtils');
 
 // @desc    Registro de usuario (Doctor o Paciente)
 // @route   POST /api/auth/registro
@@ -61,6 +62,9 @@ exports.registro = async (req, res, next) => {
     const tokenConfirmacion = generarToken();
     console.log('Token generado:', tokenConfirmacion);
 
+    // Generar avatar automático si no se proporciona
+    const avatar = generarAvatarPorRol(rol || 'paciente', nombre, apellido);
+
     // Crear usuario
     const usuario = await Usuario.create({
       nombre,
@@ -70,6 +74,7 @@ exports.registro = async (req, res, next) => {
       rol: rol || 'paciente',
       cedula,
       telefono,
+      foto: avatar, // Avatar generado automáticamente
       tokenConfirmacion: tokenConfirmacion // Guardar token original, no hasheado
     });
     

@@ -30,7 +30,7 @@ const createAdminDoctor = async () => {
       telefono: '0999999999',
       confirmado: true, // Ya confirmado
       estado: 'aprobado', // Ya aprobado
-      foto: 'https://res.cloudinary.com/dpk1tw1us/image/upload/v1/avatars/admin-avatar.jpg'
+      foto: 'https://ui-avatars.com/api/?name=Admin&background=dc2626&color=fff&size=128'
     });
     console.log('Usuario creado exitosamente');
 
