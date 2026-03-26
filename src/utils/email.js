@@ -1,7 +1,6 @@
 const sgMail = require('../config/sendgrid');
 const { generarURLsPrueba } = require('./emailUtils');
-
-
+const { asegurarUrlConDiagonal } = require('./urlUtils');
 
 // Plantilla HTML base
 
@@ -156,7 +155,7 @@ const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
 exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
   // URL de respaldo si URL_FRONTEND no está configurada correctamente
-  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+  const frontendUrl = asegurarUrlConDiagonal(process.env.URL_FRONTEND || 'http://localhost:3000/');
   const urlConfirmacion = `${frontendUrl}confirmar-cuenta/${token}`;
   
   // Generar URLs alternativas para debugging
@@ -219,7 +218,7 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
   // URL de respaldo si URL_FRONTEND no está configurada correctamente
-  const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
+  const frontendUrl = asegurarUrlConDiagonal(process.env.URL_FRONTEND || 'http://localhost:3000/');
   const urlRecuperacion = `${frontendUrl}recuperar-password/${token}`;
 
   console.log(' URL de recuperación generada:', urlRecuperacion);
