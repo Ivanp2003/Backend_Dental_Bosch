@@ -94,7 +94,7 @@ const subirAvatarPorDefecto = async (nombre, rol = 'paciente') => {
     const { secure_url, public_id } = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { 
-          folder: `dental-bosch/avatars/${rol}`,
+          folder: `Dental/avatars/${rol}`,
           public_id: `${rol}_${Date.now()}`,
           resource_type: 'auto'
         }, 
@@ -110,9 +110,9 @@ const subirAvatarPorDefecto = async (nombre, rol = 'paciente') => {
     return { secure_url, public_id };
   } catch (error) {
     console.error('Error al generar avatar por defecto:', error);
-    // Retornar avatar por defecto genérico
+    // Retornar avatar por defecto genérico usando UI Avatars
     return {
-      secure_url: `https://res.cloudinary.com/demo/image/upload/w_200,h_200,c_fill,g_face,r_max,d_avatar.png.png`,
+      secure_url: 'https://ui-avatars.com/api/?name=User&background=8b5cf6&color=ffffff&size=200&bold=true',
       public_id: 'default_avatar'
     };
   }

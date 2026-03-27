@@ -1,5 +1,6 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { subirImagenCloudinary, subirBase64Cloudinary, validarImagen } = require('../config/cloudinary');
 
 // Configuración de almacenamiento temporal
@@ -55,13 +56,25 @@ const uploadToCloudinary = async (req, res, next) => {
 
     // Caso 1: Archivo subido via multer
     if (tieneArchivo) {
-      const result = await subirImagenCloudinary(req.file.path, 'dental-bosch/perfiles');
-      fotoUrl = result.secure_url;
-      publicId = result.public_id;
+      try {
+        // Verificar que el archivo exista antes de procesar
+        if (!fs.existsSync(req.file.path)) {
+          console.error(' Archivo temporal no encontrado:', req.file.path);
+          return next();
+        }
+        
+        const result = await subirImagenCloudinary(req.file.path, 'Dental');
+        fotoUrl = result.secure_url;
+        publicId = result.public_id;
+      } catch (error) {
+        console.error('Error procesando archivo:', error.message);
+        // Continuar sin foto si hay error
+        return next();
+      }
     }
     // Caso 2: Base64 enviado en el body
     else if (tieneBase64) {
-      const result = await subirBase64Cloudinary(req.body.foto, 'dental-bosch/perfiles');
+      const result = await subirBase64Cloudinary(req.body.foto, 'Dental');
       fotoUrl = result.secure_url;
       publicId = result.public_id;
     }

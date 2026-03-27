@@ -26,7 +26,7 @@ const crearDoctorAdmin = async () => {
       telefono: '0999999999',
       confirmado: true, // Ya confirmado
       estado: 'aprobado', // Ya aprobado
-      foto: 'https://res.cloudinary.com/dpk1tw1us/image/upload/v1/avatars/admin-avatar.jpg'
+      foto: 'https://ui-avatars.com/api/?name=AD&background=8b5cf6&color=ffffff&size=200&bold=true'
     });
 
     // Crear registro de doctor
