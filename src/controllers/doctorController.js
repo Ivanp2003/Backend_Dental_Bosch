@@ -53,11 +53,14 @@ exports.actualizarPerfil = async (req, res, next) => {
 
     await doctor.save();
 
-    // Si se subió una foto, actualizarla en el usuario
-    if (req.fotoUrl) {
+    // Si se subió una foto válida, actualizarla en el usuario
+    if (req.fotoUrl && req.fotoUrl.trim() !== '') {
+      console.log('📸 Actualizando foto del doctor:', req.fotoUrl);
       await Usuario.findByIdAndUpdate(req.usuario.id, {
         foto: req.fotoUrl
       });
+    } else {
+      console.log('📷 No se proporcionó foto válida, manteniendo la actual');
     }
 
     // Obtener doctor actualizado con datos del usuario

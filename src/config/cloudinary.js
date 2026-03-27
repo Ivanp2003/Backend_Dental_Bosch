@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 // Subir archivos a Cloudinary
-const subirImagenCloudinary = async (filePath, folder = "dental-bosch") => {
+const subirImagenCloudinary = async (filePath, folder = "Dental") => {
   try {
     const { secure_url, public_id } = await cloudinary.uploader.upload(filePath, { 
       folder,
@@ -35,7 +35,7 @@ const subirImagenCloudinary = async (filePath, folder = "dental-bosch") => {
 };
 
 // Subir Base64 a Cloudinary
-const subirBase64Cloudinary = async (base64, folder = "dental-bosch") => {
+const subirBase64Cloudinary = async (base64, folder = "Dental") => {
   try {
     // Extraer el base64 puro (sin el prefijo data:image/...;base64,)
     const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');

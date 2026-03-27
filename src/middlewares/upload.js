@@ -36,7 +36,17 @@ const upload = multer({
 // Middleware personalizado para subir a Cloudinary
 const uploadToCloudinary = async (req, res, next) => {
   try {
-    if (!req.file && !req.body.foto) {
+    // Validaciones iniciales para evitar bucle infinito
+    const tieneArchivo = req.file;
+    const tieneBase64 = req.body.foto && req.body.foto.startsWith('data:image/');
+    const tieneUrlValida = req.body.foto && 
+      typeof req.body.foto === 'string' && 
+      req.body.foto.trim() !== '' &&
+      !req.body.foto.includes('undefined') &&
+      !req.body.foto.includes('null');
+
+    if (!tieneArchivo && !tieneBase64 && !tieneUrlValida) {
+      // No hay foto válida, continuar sin procesar
       return next();
     }
 
@@ -44,25 +54,27 @@ const uploadToCloudinary = async (req, res, next) => {
     let publicId = null;
 
     // Caso 1: Archivo subido via multer
-    if (req.file) {
+    if (tieneArchivo) {
       const result = await subirImagenCloudinary(req.file.path, 'dental-bosch/perfiles');
       fotoUrl = result.secure_url;
       publicId = result.public_id;
     }
     // Caso 2: Base64 enviado en el body
-    else if (req.body.foto && req.body.foto.startsWith('data:image/')) {
+    else if (tieneBase64) {
       const result = await subirBase64Cloudinary(req.body.foto, 'dental-bosch/perfiles');
       fotoUrl = result.secure_url;
       publicId = result.public_id;
     }
-    // Caso 3: URL de imagen existente (no se sube nada)
-    else if (req.body.foto && typeof req.body.foto === 'string') {
-      fotoUrl = req.body.foto;
+    // Caso 3: URL de imagen existente válida
+    else if (tieneUrlValida) {
+      fotoUrl = req.body.foto.trim();
     }
 
-    // Agregar la información de la foto al request
-    req.fotoUrl = fotoUrl;
-    req.fotoPublicId = publicId;
+    // Solo agregar foto si es válida
+    if (fotoUrl) {
+      req.fotoUrl = fotoUrl;
+      req.fotoPublicId = publicId;
+    }
 
     next();
   } catch (error) {

@@ -63,9 +63,12 @@ exports.actualizarPerfil = async (req, res, next) => {
     if (telefono) usuario.telefono = telefono;
     if (cedula) usuario.cedula = cedula;
 
-    // Subir foto si se proporcionó en el middleware
-    if (req.fotoUrl) {
+    // Subir foto si se proporcionó en el middleware Y es válida
+    if (req.fotoUrl && req.fotoUrl.trim() !== '') {
+      console.log('📸 Actualizando foto del paciente:', req.fotoUrl);
       usuario.foto = req.fotoUrl;
+    } else {
+      console.log('📷 No se proporcionó foto válida, manteniendo la actual');
     }
 
     await usuario.save();
