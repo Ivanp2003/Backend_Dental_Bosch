@@ -1,97 +1,73 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { subirImagenCloudinary, subirBase64Cloudinary, validarImagen } = require('../config/cloudinary');
+const { subirImagenCloudinary, subirBase64Cloudinary, validarImagen, eliminarImagenCloudinary, actualizarImagenCloudinary } = require('../config/cloudinary');
 
-// Configuración de almacenamiento temporal
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads/tmp'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-// Filtro de archivos mejorado
-const fileFilter = (req, file, cb) => {
+// Middleware para subir foto a Cloudinary (basado en tu proyecto de referencia)
+const uploadPhotoToCloudinary = async (req, res, next) => {
   try {
-    // Validar imagen
-    validarImagen(file);
-    cb(null, true);
-  } catch (error) {
-    cb(error, false);
-  }
-};
-
-// Configuración de multer
-const upload = multer({
-  storage: storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB máximo
-  },
-  fileFilter: fileFilter
-});
-
-// Middleware personalizado para subir a Cloudinary
-const uploadToCloudinary = async (req, res, next) => {
-  try {
-    // Validaciones iniciales para evitar bucle infinito
-    const tieneArchivo = req.file;
-    const tieneBase64 = req.body.foto && req.body.foto.startsWith('data:image/');
-    const tieneUrlValida = req.body.foto && 
-      typeof req.body.foto === 'string' && 
-      req.body.foto.trim() !== '' &&
-      !req.body.foto.includes('undefined') &&
-      !req.body.foto.includes('null');
-
-    if (!tieneArchivo && !tieneBase64 && !tieneUrlValida) {
-      // No hay foto válida, continuar sin procesar
+    console.log(' Iniciando uploadPhotoToCloudinary');
+    
+    // Validar si hay archivo o base64
+    if (!req.files?.foto && !req.body?.foto) {
+      console.log(' No hay foto para procesar, continuando...');
       return next();
     }
 
     let fotoUrl = null;
     let publicId = null;
 
-    // Caso 1: Archivo subido via multer
-    if (tieneArchivo) {
+    // Caso 1: Archivo tradicional (express-fileupload)
+    if (req.files?.foto) {
+      console.log(' Procesando archivo tradicional:', req.files.foto.name);
+      
       try {
-        // Verificar que el archivo exista antes de procesar
-        if (!fs.existsSync(req.file.path)) {
-          console.error(' Archivo temporal no encontrado:', req.file.path);
+        // Validar imagen
+        validarImagen(req.files.foto);
+        
+        // Verificar que el archivo temporal exista
+        if (!require('fs').existsSync(req.files.foto.tempFilePath)) {
+          console.error(' Archivo temporal no encontrado:', req.files.foto.tempFilePath);
           return next();
         }
         
-        const result = await subirImagenCloudinary(req.file.path, 'Dental');
+        // Subir a Cloudinary
+        const result = await subirImagenCloudinary(req.files.foto.tempFilePath, 'Dental');
         fotoUrl = result.secure_url;
         publicId = result.public_id;
+        
+        console.log(' Archivo subido exitosamente:', fotoUrl);
       } catch (error) {
-        console.error('Error procesando archivo:', error.message);
+        console.error(' Error procesando archivo:', error.message);
         // Continuar sin foto si hay error
         return next();
       }
     }
-    // Caso 2: Base64 enviado en el body
-    else if (tieneBase64) {
-      const result = await subirBase64Cloudinary(req.body.foto, 'Dental');
-      fotoUrl = result.secure_url;
-      publicId = result.public_id;
+    // Caso 2: Base64
+    else if (req.body?.foto && req.body.foto.startsWith('data:image/')) {
+      console.log(' Procesando imagen base64');
+      
+      try {
+        fotoUrl = await subirBase64Cloudinary(req.body.foto, 'Dental');
+        console.log(' Base64 subido exitosamente:', fotoUrl);
+      } catch (error) {
+        console.error(' Error procesando base64:', error.message);
+        return next();
+      }
     }
-    // Caso 3: URL de imagen existente válida
-    else if (tieneUrlValida) {
+    // Caso 3: URL existente (no se sube nada)
+    else if (req.body?.foto && typeof req.body.foto === 'string' && req.body.foto.trim() !== '') {
+      console.log(' Usando URL existente:', req.body.foto);
       fotoUrl = req.body.foto.trim();
     }
 
-    // Solo agregar foto si es válida
+    // Agregar información de la foto al request
     if (fotoUrl) {
       req.fotoUrl = fotoUrl;
       req.fotoPublicId = publicId;
+      console.log(' Foto procesada y agregada al request');
     }
 
     next();
   } catch (error) {
-    console.error('Error en uploadToCloudinary:', error);
+    console.error(' Error en uploadPhotoToCloudinary:', error);
     return res.status(500).json({
       success: false,
       mensaje: 'Error al subir la imagen',
@@ -100,15 +76,101 @@ const uploadToCloudinary = async (req, res, next) => {
   }
 };
 
-// Middleware para actualizar foto de usuario
-const uploadUserPhoto = upload.single('foto');
+// Middleware para actualizar foto con eliminación de la anterior (basado en tu proyecto)
+const updatePhotoToCloudinary = async (req, res, next) => {
+  try {
+    console.log(' Iniciando updatePhotoToCloudinary');
+    
+    if (!req.files?.foto && !req.body?.foto) {
+      console.log(' No hay foto para actualizar, continuando...');
+      return next();
+    }
 
-// Middleware combinado: upload + cloudinary
-const uploadPhotoToCloudinary = [uploadUserPhoto, uploadToCloudinary];
+    // Obtener usuario actual para saber su foto anterior
+    const Usuario = require('../models/Usuario');
+    const usuario = await Usuario.findById(req.usuario.id);
+    
+    let fotoUrl = null;
+    let publicId = null;
+
+    // Caso 1: Archivo tradicional
+    if (req.files?.foto) {
+      console.log(' Actualizando con archivo tradicional');
+      
+      try {
+        validarImagen(req.files.foto);
+        
+        if (!require('fs').existsSync(req.files.foto.tempFilePath)) {
+          console.error(' Archivo temporal no encontrado');
+          return next();
+        }
+        
+        // Usar función de actualización que elimina la anterior
+        const result = await actualizarImagenCloudinary(
+          req.files.foto.tempFilePath, 
+          usuario.fotoPublicId, 
+          'Dental'
+        );
+        fotoUrl = result.secure_url;
+        publicId = result.public_id;
+        
+        console.log(' Foto actualizada exitosamente:', fotoUrl);
+      } catch (error) {
+        console.error(' Error actualizando archivo:', error.message);
+        return next();
+      }
+    }
+    // Caso 2: Base64
+    else if (req.body?.foto && req.body.foto.startsWith('data:image/')) {
+      console.log(' Actualizando con base64');
+      
+      try {
+        // Eliminar foto anterior si existe
+        if (usuario.fotoPublicId) {
+          await eliminarImagenCloudinary(usuario.fotoPublicId);
+          console.log(' Foto anterior eliminada');
+        }
+        
+        fotoUrl = await subirBase64Cloudinary(req.body.foto, 'Dental');
+        console.log(' Base64 actualizado exitosamente:', fotoUrl);
+      } catch (error) {
+        console.error(' Error actualizando base64:', error.message);
+        return next();
+      }
+    }
+    // Caso 3: URL existente
+    else if (req.body?.foto && typeof req.body.foto === 'string' && req.body.foto.trim() !== '') {
+      console.log(' Actualizando con URL existente');
+      fotoUrl = req.body.foto.trim();
+    }
+
+    // Agregar información al request
+    if (fotoUrl) {
+      req.fotoUrl = fotoUrl;
+      req.fotoPublicId = publicId;
+      console.log(' Foto actualizada y agregada al request');
+    }
+
+    next();
+  } catch (error) {
+    console.error(' Error en updatePhotoToCloudinary:', error);
+    return res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar la imagen',
+      error: error.message
+    });
+  }
+};
+
+// Middleware para manejar solo archivos (sin procesamiento)
+const handleFileUpload = (req, res, next) => {
+  // Este middleware solo asegura que los archivos estén disponibles
+  // El procesamiento se hace en uploadPhotoToCloudinary
+  next();
+};
 
 module.exports = {
-  upload,
-  uploadUserPhoto,
-  uploadToCloudinary,
-  uploadPhotoToCloudinary
+  uploadPhotoToCloudinary,
+  updatePhotoToCloudinary,
+  handleFileUpload
 };

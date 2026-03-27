@@ -6,6 +6,8 @@ const express = require('express');
 
 const cors = require('cors');
 
+const fileUpload = require('express-fileupload'); // Nuevo: basado en tu proyecto
+
 const passport = require('passport');
 
 const connectDB = require('./database');
@@ -116,6 +118,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware para manejo de archivos (basado en tu proyecto de referencia)
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: './uploads' // Usa archivos temporales
+}));
 
 
 

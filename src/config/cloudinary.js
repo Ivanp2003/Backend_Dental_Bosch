@@ -1,6 +1,5 @@
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs-extra');
-const path = require('path');
 
 // Configuración de Cloudinary
 cloudinary.config({
@@ -9,16 +8,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Subir archivos a Cloudinary
+// Subir archivos a Cloudinary (basado en tu proyecto de referencia)
 const subirImagenCloudinary = async (filePath, folder = "Dental") => {
   try {
-    const { secure_url, public_id } = await cloudinary.uploader.upload(filePath, { 
-      folder,
-      resource_type: 'auto',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-      quality: 'auto',
-      fetch_format: 'auto'
-    });
+    const { secure_url, public_id } = await cloudinary.uploader.upload(filePath, { folder });
     
     // Eliminar archivo temporal después de subir
     await fs.unlink(filePath);
@@ -34,42 +27,35 @@ const subirImagenCloudinary = async (filePath, folder = "Dental") => {
   }
 };
 
-// Subir Base64 a Cloudinary
+// Subir Base64 a Cloudinary (basado en tu proyecto de referencia)
 const subirBase64Cloudinary = async (base64, folder = "Dental") => {
   try {
-    // Extraer el base64 puro (sin el prefijo data:image/...;base64,)
-    const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
+    // Se usa base64 para evitar que se dañen las imágenes cuando se transportan
+    // data:image/png;base64,iVBORw0KGgjbjgfyvh
+    // iVBORw0KGgjbjgfyvh
+    const buffer = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
     
-    // Convertir a buffer
-    const buffer = Buffer.from(base64Data, 'base64');
-    
-    // Subir usando stream
-    const { secure_url, public_id } = await new Promise((resolve, reject) => {
+    // iVBORw0KGgjbjgfyvh - 010101010101010101
+    const { secure_url } = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { 
-          folder, 
-          resource_type: 'auto',
-          allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-          quality: 'auto',
-          fetch_format: 'auto'
-        }, 
-        (err, result) => {
+        { folder, resource_type: 'auto' }, 
+        (err, res) => {
           if (err) reject(err);
-          else resolve(result);
+          else resolve(res);
         }
       );
       
       stream.end(buffer);
     });
     
-    return { secure_url, public_id };
+    return secure_url;
   } catch (error) {
     console.error('Error al subir base64 a Cloudinary:', error);
     throw new Error('Error al subir imagen a Cloudinary');
   }
 };
 
-// Eliminar imagen de Cloudinary
+// Eliminar imagen de Cloudinary (para actualizar)
 const eliminarImagenCloudinary = async (public_id) => {
   try {
     const result = await cloudinary.uploader.destroy(public_id);
@@ -80,10 +66,10 @@ const eliminarImagenCloudinary = async (public_id) => {
   }
 };
 
-// Subir avatar por defecto si no tiene foto
+// Subir avatar por defecto usando UI Avatars (mejorado)
 const subirAvatarPorDefecto = async (nombre, rol = 'paciente') => {
   try {
-    // Generar avatar inicial con las primeras letras del nombre
+    // Generar avatar con iniciales del nombre
     const iniciales = nombre.split(' ').map(word => word[0]).join('').toUpperCase();
     const avatarUrl = `https://ui-avatars.com/api/?name=${iniciales}&background=${rol === 'doctor' ? '4F46E5' : '10B981'}&color=ffffff&size=200&bold=true`;
     
@@ -134,13 +120,28 @@ const validarImagen = (file) => {
   return true;
 };
 
-// Optimizar imagen antes de subir
-const optimizarImagen = async (filePath) => {
+// Actualizar imagen con eliminación de la anterior (basado en tu proyecto)
+const actualizarImagenCloudinary = async (filePath, public_id_anterior, folder = "Dental") => {
   try {
-    return filePath;
+    // Eliminar imagen anterior si existe
+    if (public_id_anterior) {
+      await eliminarImagenCloudinary(public_id_anterior);
+    }
+    
+    // Subir nueva imagen
+    const { secure_url, public_id } = await cloudinary.uploader.upload(filePath, { folder });
+    
+    // Eliminar archivo temporal
+    await fs.unlink(filePath);
+    
+    return { secure_url, public_id };
   } catch (error) {
-    console.error('Error al optimizar imagen:', error);
-    return filePath;
+    console.error('Error al actualizar imagen en Cloudinary:', error);
+    // Eliminar archivo temporal incluso si hay error
+    if (fs.existsSync(filePath)) {
+      await fs.unlink(filePath);
+    }
+    throw new Error('Error al actualizar imagen en Cloudinary');
   }
 };
 
@@ -151,5 +152,5 @@ module.exports = {
   eliminarImagenCloudinary,
   subirAvatarPorDefecto,
   validarImagen,
-  optimizarImagen
+  actualizarImagenCloudinary
 };
