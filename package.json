@@ -34,6 +34,7 @@
     "fs-extra": "^11.3.4",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.4",
+    "mongoose-paginate-v2": "^1.8.0",
     "multer": "^2.1.1",
     "node-fetch": "^2.7.0",
     "nodemailer": "^8.0.1",

@@ -6,7 +6,7 @@ const express = require('express');
 
 const cors = require('cors');
 
-const fileUpload = require('express-fileupload'); // Nuevo: basado en tu proyecto
+const fileUpload = require('express-fileupload'); 
 
 const passport = require('passport');
 
@@ -161,7 +161,7 @@ app.get('/', (req, res) => {
 
     version: '1.0.0',
 
-    sprint: 'Sprint 2 - Gestión de Doctores',
+    sprint: 'Sprint 3 - Módulo Pacientes',
 
     entorno: process.env.NODE_ENV,
 
@@ -225,7 +225,15 @@ app.get('/', (req, res) => {
 
         perfil: 'GET /api/pacientes/perfil/paciente',
 
-        actualizarPerfil: 'PUT /api/pacientes/perfil/paciente'
+        actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',
+
+        buscar: 'GET /api/pacientes/buscar',
+
+        actualizar: 'PUT /api/pacientes/:id',
+
+        eliminar: 'DELETE /api/pacientes/:id',
+
+        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
 
       }
 
