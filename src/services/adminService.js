@@ -330,16 +330,44 @@ class AdminService {
       const { estado, especialidad, page = 1, limit = 10 } = filtros;
 
       const query = {};
-      if (estado !== undefined) query.activo = estado === 'true';
       if (especialidad) query.especialidad = new RegExp(especialidad, 'i');
 
-      const doctores = await Doctor.find(query)
-        .populate('usuario', 'nombre apellido email telefono estado')
-        .sort({ createdAt: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit);
+      let doctores;
+      let total;
 
-      const total = await Doctor.countDocuments(query);
+      // Si se filtra por estado del usuario, necesitamos hacer un lookup o populate con filtro
+      if (estado) {
+        doctores = await Doctor.find(query)
+          .populate({
+            path: 'usuario',
+            select: 'nombre apellido email telefono estado',
+            match: { estado: estado } // Filtrar por estado del usuario
+          })
+          .sort({ createdAt: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+
+        // Filtrar los doctores donde el usuario no sea null (por el match)
+        doctores = doctores.filter(doctor => doctor.usuario !== null);
+
+        // Contar el total con el mismo filtro
+        const allDoctores = await Doctor.find(query)
+          .populate({
+            path: 'usuario',
+            select: 'estado',
+            match: { estado: estado }
+          });
+        total = allDoctores.filter(doctor => doctor.usuario !== null).length;
+      } else {
+        // Sin filtro de estado, comportamiento normal
+        doctores = await Doctor.find(query)
+          .populate('usuario', 'nombre apellido email telefono estado')
+          .sort({ createdAt: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+
+        total = await Doctor.countDocuments(query);
+      }
 
       return {
         doctores,
