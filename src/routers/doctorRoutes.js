@@ -28,6 +28,9 @@ router.get('/', obtenerDoctores);
 // Obtener doctores aprobados (público) 
 router.get('/aprobados/lista', obtenerDoctoresAprobados);
 
+// Obtener doctor por ID - GENÉRICA (PÚBLICA)
+router.get('/:id', obtenerDoctorPorId);
+
 // Obtener doctores pendientes de aprobación (Admin) 
 router.get(
   '/pendientes',
@@ -40,9 +43,6 @@ router.get(
     obtenerDoctoresPendientes(req, res, next);
   }
 );
-
-// Obtener doctor por ID - GENÉRICA 
-router.get('/:id', obtenerDoctorPorId);
 
 // ========== RUTAS PROTEGIDAS ==========
 
