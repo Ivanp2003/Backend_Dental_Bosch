@@ -1,5 +1,8 @@
 const AdminService = require('../services/adminService');
 const mongoose = require('mongoose');
+const Usuario = require('../models/Usuario');
+const Doctor = require('../models/Doctor');
+const { enviarEmailAprobacionDoctor, enviarEmailRechazoDoctor } = require('../utils/email');
 
 // 📝 NOTA: Los doctores ahora crean sus propias cuentas a través del endpoint de registro
 // El administrador solo aprueba/rechaza las solicitudes pendientes
@@ -577,6 +580,153 @@ const eliminarPaciente = async (req, res) => {
   }
 };
 
+// ✅ APROBAR DOCTOR
+const aprobarDoctor = async (req, res) => {
+  try {
+    console.log('✅ Admin aprobando doctor:', req.params.id);
+    
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de doctor inválido'
+      });
+    }
+
+    // Buscar usuario y doctor
+    const usuario = await Usuario.findById(id);
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    if (usuario.rol !== 'doctor') {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El usuario no es un doctor'
+      });
+    }
+
+    if (usuario.estado !== 'pendiente') {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El doctor no está pendiente de aprobación'
+      });
+    }
+
+    // Buscar información del doctor
+    const doctor = await Doctor.findOne({ usuario: id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Información del doctor no encontrada'
+      });
+    }
+
+    // Actualizar estado del usuario
+    usuario.estado = 'aprobado';
+    await usuario.save();
+
+    // Enviar email de aprobación
+    await enviarEmailAprobacionDoctor(usuario.email, usuario.nombreCompleto, doctor.especialidad);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Doctor aprobado exitosamente',
+      data: {
+        usuario: {
+          id: usuario._id,
+          nombre: usuario.nombreCompleto,
+          email: usuario.email,
+          estado: usuario.estado
+        },
+        doctor: {
+          especialidad: doctor.especialidad
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en aprobarDoctor:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// ❌ RECHAZAR DOCTOR
+const rechazarDoctor = async (req, res) => {
+  try {
+    console.log('❌ Admin rechazando doctor:', req.params.id);
+    
+    const { id } = req.params;
+    const { motivo } = req.body; // Motivo opcional del rechazo
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de doctor inválido'
+      });
+    }
+
+    // Buscar usuario
+    const usuario = await Usuario.findById(id);
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    if (usuario.rol !== 'doctor') {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El usuario no es un doctor'
+      });
+    }
+
+    if (usuario.estado !== 'pendiente') {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El doctor no está pendiente de aprobación'
+      });
+    }
+
+    // Actualizar estado del usuario
+    usuario.estado = 'rechazado';
+    await usuario.save();
+
+    // Enviar email de rechazo
+    await enviarEmailRechazoDoctor(usuario.email, usuario.nombreCompleto, motivo);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Doctor rechazado exitosamente',
+      data: {
+        usuario: {
+          id: usuario._id,
+          nombre: usuario.nombreCompleto,
+          email: usuario.email,
+          estado: usuario.estado
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en rechazarDoctor:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   // Gestión de Doctores
   actualizarDoctor,
@@ -586,6 +736,8 @@ module.exports = {
   obtenerDetalleDoctor,
   eliminarDoctor,
   reasignarCitasDoctor,
+  aprobarDoctor,
+  rechazarDoctor,
   
   // Gestión de Citas
   obtenerTodasLasCitas,

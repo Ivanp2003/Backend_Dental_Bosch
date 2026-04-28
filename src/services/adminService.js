@@ -66,8 +66,21 @@ class AdminService {
     session.startTransaction();
 
     try {
+      console.log('🔍 Buscando doctor con ID:', doctorId);
+      console.log('🔍 Tipo de doctorId:', typeof doctorId);
+      console.log('🔍 Validación de ID:', mongoose.Types.ObjectId.isValid(doctorId));
+      
       const doctor = await Doctor.findById(doctorId).populate('usuario').session(session);
+      console.log('🔍 Doctor encontrado:', !!doctor);
+      
       if (!doctor) {
+        // Listar todos los doctores para depuración
+        const todosLosDoctores = await Doctor.find({}).select('_id usuario especialidad');
+        console.log('📋 Todos los doctores en BD:', todosLosDoctores.map(d => ({
+          id: d._id,
+          email: d.usuario?.email,
+          especialidad: d.especialidad
+        })));
         throw new Error('Doctor no encontrado');
       }
 

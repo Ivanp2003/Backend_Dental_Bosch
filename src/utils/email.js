@@ -272,11 +272,11 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
     <p>¡Hola <strong>${nombre}</strong>!</p>
 
-    <p>Tu cuenta ha sido confirmada exitosamente.</p>
+    <p>¡Bienvenido a Dental Bosch! Tu cuenta ha sido creada exitosamente.</p>
 
     ${rol === 'doctor' ? 
 
-      '<p><strong>Nota:</strong> Tu cuenta de doctor está pendiente de aprobación por un administrador. Te notificaremos cuando sea aprobada.</p>' : 
+      '<p><strong>Nota:</strong> Tu cuenta de doctor está pendiente de aprobación por un administrador. Te notificaremos cuando sea aprobada para que puedas comenzar a usar el sistema.</p>' : 
 
       '<p>Ya puedes iniciar sesión y comenzar a usar el sistema.</p>'
 
@@ -371,6 +371,54 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre, especialidad) => {
     console.log('¡Bienvenido! Email de aprobación enviado a:', email);
   } catch (error) {
     console.error('Error al enviar email de aprobación:', error.message);
+    throw error;
+  }
+};
+
+exports.enviarEmailRechazoDoctor = async (email, nombre, motivo = '') => {
+  const contenido = `
+    <p>Estimado <strong>${nombre}</strong>,</p>
+    
+    <p>Lamentamos informarte que tu solicitud de registro como doctor en nuestro sistema ha sido <strong style="color: #dc3545;">rechazada</strong>.</p>
+    
+    ${motivo ? `
+    <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+      <p style="margin: 0;"><strong>Motivo del rechazo:</strong></p>
+      <p style="margin: 10px 0 0 0;">${motivo}</p>
+    </div>
+    ` : ''}
+    
+    <p>Si crees que esto es un error o deseas obtener más información sobre el motivo del rechazo, por favor contacta a nuestro equipo de soporte.</p>
+    
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>📌 Información importante:</strong></p>
+      <ul style="margin: 10px 0; padding-left: 20px;">
+        <li>Puedes enviar una nueva solicitud si corrigen los problemas identificados</li>
+        <li>Te recomendamos revisar cuidadosamente los requisitos de registro</li>
+        <li>Para consultas, contacta a soporte@dentalbosch.com</li>
+      </ul>
+    </div>
+    
+    <p>Te agradecemos tu interés en formar parte de nuestro equipo.</p>
+    
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background-color: #6c757d; color: white; border-radius: 8px;">
+      <p style="margin: 0; font-size: 18px;"><strong>Atentamente,</strong></p>
+      <p style="margin: 5px 0 0 0;">El equipo de Dental Bosch</p>
+    </div>
+  `;
+
+  const msg = {
+    to: email,
+    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
+    subject: 'Información sobre tu solicitud de registro - Dental Bosch',
+    html: plantillaHTML('Solicitud Revisada', contenido)
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('Email de rechazo enviado a:', email);
+  } catch (error) {
+    console.error('Error al enviar email de rechazo:', error.message);
     throw error;
   }
 };

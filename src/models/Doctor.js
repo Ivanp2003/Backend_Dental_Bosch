@@ -44,18 +44,6 @@ const doctorSchema = new mongoose.Schema({
   activo: {
     type: Boolean,
     default: true
-  },
-  
-  // Calificaciones (opcional para futuras implementaciones)
-  calificacionPromedio: {
-    type: Number,
-    min: 0,
-    max: 5,
-    default: 0
-  },
-  totalCalificaciones: {
-    type: Number,
-    default: 0
   }
 }, {
   timestamps: true,

@@ -50,6 +50,15 @@ router.put('/doctores/:id/reasignar-citas', adminController.reasignarCitasDoctor
 // DELETE /api/admin/doctores/:id
 router.delete('/doctores/:id', adminController.eliminarDoctor);
 
+// ✅ Aprobar doctor
+// PUT /api/admin/doctores/:id/aprobar
+router.put('/doctores/:id/aprobar', adminController.aprobarDoctor);
+
+// ❌ Rechazar doctor
+// PUT /api/admin/doctores/:id/rechazar
+// Body: { motivo: "Motivo del rechazo (opcional)" }
+router.put('/doctores/:id/rechazar', adminController.rechazarDoctor);
+
 // ==============================
 // 📅 GESTIÓN DE CITAS (ADMIN)
 // ==============================
