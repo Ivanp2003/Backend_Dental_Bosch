@@ -116,6 +116,22 @@ class AdminService {
       const doctorActualizado = await Doctor.findById(doctorId)
         .populate('usuario', 'nombre apellido email telefono estado');
 
+      // Si se está aprobando al doctor, enviar correo de bienvenida
+      if (nuevoEstado && doctorActualizado.usuario) {
+        try {
+          const { enviarEmailAprobacionDoctor } = require('../utils/email');
+          await enviarEmailAprobacionDoctor(
+            doctorActualizado.usuario.email,
+            `${doctorActualizado.usuario.nombre} ${doctorActualizado.usuario.apellido}`,
+            doctorActualizado.especialidad
+          );
+          console.log('📧 Correo de aprobación enviado al doctor:', doctorActualizado.usuario.email);
+        } catch (emailError) {
+          console.error('⚠️ Error enviando correo de aprobación:', emailError.message);
+          // No fallar la operación principal si el correo falla
+        }
+      }
+
       return {
         doctor: doctorActualizado,
         citasReasignadas

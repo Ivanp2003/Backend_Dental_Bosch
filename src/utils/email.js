@@ -314,101 +314,63 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
 
 };
 
+exports.enviarEmailAprobacionDoctor = async (email, nombre, especialidad) => {
 
-
-// Enviar email de aprobación de doctor
-
-exports.enviarEmailAprobacionDoctor = async (email, nombre) => {
-
-  // URL de respaldo si URL_FRONTEND no está configurada correctamente
   const frontendUrl = process.env.URL_FRONTEND || 'http://localhost:3000/';
 
   const contenido = `
 
     <p>¡Hola <strong>Dr. ${nombre}</strong>!</p>
 
-    <p>Tu cuenta de doctor ha sido <strong>aprobada</strong> exitosamente.</p>
+    <p>¡Excelentes noticias! Tu cuenta de doctor ha sido <strong style="color: #28a745;">aprobada</strong> exitosamente.</p>
 
-    <p>Ya puedes iniciar sesión y comenzar a atender pacientes.</p>
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+      <p style="margin: 0;"><strong>Datos de tu cuenta:</strong></p>
+      <ul style="margin: 10px 0; padding-left: 20px;">
+        <li><strong>Nombre:</strong> Dr. ${nombre}</li>
+        <li><strong>Especialidad:</strong> ${especialidad || 'Especialidad registrada'}</li>
+        <li><strong>Estado:</strong> <span style="color: #28a745;">✅ Activo y Aprobado</span></li>
+      </ul>
+    </div>
 
+    <p>A partir de este momento, puedes:</p>
+    <ul>
+      <li>🔐 Iniciar sesión en el sistema</li>
+      <li>📅 Ver y gestionar tus citas</li>
+      <li>👥 Atender a tus pacientes</li>
+      <li>📋 Actualizar tu horario de atención</li>
+    </ul>
+
+    <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0;"><strong>📌 Próximos pasos recomendados:</strong></p>
+      <ol style="margin: 10px 0; padding-left: 20px;">
+        <li>Inicia sesión con tu email y contraseña</li>
+        <li>Configura tu horario de atención</li>
+        <li>Revisa tu perfil y completa tu información</li>
+        <li>Explora el sistema y familiarízate con las herramientas</li>
+      </ol>
+    </div>
+
+    <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en contactar a nuestro equipo de soporte.</p>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background-color: #28a745; color: white; border-radius: 8px;">
+      <p style="margin: 0; font-size: 18px;"><strong>¡Estamos emocionados de tenerte en nuestro equipo!</strong></p>
+      <p style="margin: 5px 0 0 0;">Juntos brindaremos el mejor cuidado dental a nuestros pacientes.</p>
+    </div>
   `;
 
   const msg = {
-
     to: email,
-
     from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
-
-    subject: 'Cuenta aprobada - Dental Bosch',
-
-    html: plantillaHTML('Cuenta Aprobada', contenido, frontendUrl, 'Iniciar Sesión')
-
+    subject: '¡Bienvenido! Tu cuenta de doctor ha sido aprobada - Dental Bosch',
+    html: plantillaHTML('¡Bienvenido al Equipo!', contenido, frontendUrl, 'Iniciar Sesión Ahora')
   };
 
-
-
   try {
-
     await sgMail.send(msg);
-
-    console.log('Email de aprobación enviado a:', email);
-
+    console.log('¡Bienvenido! Email de aprobación enviado a:', email);
   } catch (error) {
-
     console.error('Error al enviar email de aprobación:', error.message);
-
     throw error;
-
   }
-
-};
-
-
-
-// Enviar email de rechazo de doctor
-
-exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
-
-  const contenido = `
-
-    <p>Hola <strong>${nombre}</strong>,</p>
-
-    <p>Lamentamos informarte que tu solicitud de registro como doctor ha sido <strong>rechazada</strong>.</p>
-
-    ${motivo ? `<p><strong>Motivo:</strong> ${motivo}</p>` : ''}
-
-    <p>Si consideras que esto es un error, por favor contacta con nuestro equipo de soporte.</p>
-
-  `;
-
-
-
-  const msg = {
-
-    to: email,
-
-    from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
-
-    subject: 'Solicitud rechazada - Dental Bosch',
-
-    html: plantillaHTML('Solicitud Rechazada', contenido, null, null)
-
-  };
-
-
-
-  try {
-
-    await sgMail.send(msg);
-
-    console.log('Email de rechazo enviado a:', email);
-
-  } catch (error) {
-
-    console.error('Error al enviar email de rechazo:', error.message);
-
-    throw error;
-
-  }
-
 };
