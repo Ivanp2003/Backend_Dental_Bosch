@@ -540,6 +540,134 @@ const obtenerEstadisticas = async (req, res) => {
   }
 };
 
+// 🗑️ ELIMINAR DOCTOR (SOFT DELETE)
+const eliminarDoctor = async (req, res) => {
+  try {
+    console.log('🗑️ Admin eliminando doctor:', req.params.id);
+    
+    const resultado = await AdminService.eliminarDoctor(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Doctor eliminado exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en eliminarDoctor:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// 🔄 REASIGNAR CITAS DE DOCTOR
+const reasignarCitasDoctor = async (req, res) => {
+  try {
+    console.log('🔄 Admin reasignando citas del doctor:', req.params.id);
+    console.log('📋 Datos de reasignación:', req.body);
+    
+    const { doctorDestino, reasignarTodas } = req.body;
+    
+    const resultado = await AdminService.reasignarCitasDoctor(req.params.id, {
+      doctorDestino,
+      reasignarTodas
+    });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Citas reasignadas exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en reasignarCitasDoctor:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// 🔍 VER DETALLE DE CITA
+const obtenerDetalleCita = async (req, res) => {
+  try {
+    console.log('🔍 Admin obteniendo detalle de cita:', req.params.id);
+    
+    const cita = await AdminService.obtenerDetalleCita(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Detalle de cita obtenido exitosamente',
+      data: cita
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerDetalleCita:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// 🔄 REASIGNAR CITA MANUALMENTE
+const reasignarCita = async (req, res) => {
+  try {
+    console.log('🔄 Admin reasignando cita:', req.params.id);
+    console.log('📋 Datos de reasignación:', req.body);
+    
+    const { doctorId, fecha, horaInicio } = req.body;
+    
+    const resultado = await AdminService.reasignarCita(req.params.id, {
+      doctorId,
+      fecha,
+      horaInicio
+    });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Cita reasignada exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en reasignarCita:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// 🗑️ ELIMINAR PACIENTE (SOFT DELETE)
+const eliminarPaciente = async (req, res) => {
+  try {
+    console.log('🗑️ Admin eliminando paciente:', req.params.id);
+    
+    const resultado = await AdminService.eliminarPaciente(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Paciente eliminado exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en eliminarPaciente:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   // Gestión de Doctores
   crearDoctor,
@@ -548,14 +676,19 @@ module.exports = {
   actualizarHorarioDoctor,
   listarDoctores,
   obtenerDetalleDoctor,
+  eliminarDoctor,
+  reasignarCitasDoctor,
   
   // Gestión de Citas
   obtenerTodasLasCitas,
+  obtenerDetalleCita,
+  reasignarCita,
   
   // Gestión de Pacientes
   listarPacientes,
   obtenerDetallePaciente,
   cambiarDoctorAsignado,
+  eliminarPaciente,
   
   // Estadísticas
   obtenerEstadisticas

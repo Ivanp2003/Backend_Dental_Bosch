@@ -642,6 +642,150 @@ class AdminService {
       throw error;
     }
   }
+
+  // 🗑️ ELIMINAR DOCTOR (SOFT DELETE)
+  static async eliminarDoctor(doctorId) {
+    try {
+      console.log('🗑️ Eliminando doctor:', doctorId);
+
+      // Buscar doctor
+      const doctor = await Doctor.findById(doctorId);
+      if (!doctor) {
+        throw new Error('Doctor no encontrado');
+      }
+
+      // Soft delete: marcar como inactivo
+      await Doctor.findByIdAndUpdate(doctorId, { activo: false });
+
+      // Opcional: también marcar usuario como inactivo
+      await Usuario.findByIdAndUpdate(doctor.usuario, { activo: false });
+
+      console.log('✅ Doctor eliminado (soft delete)');
+      return { doctorId, eliminado: true };
+
+    } catch (error) {
+      console.error('❌ Error eliminando doctor:', error);
+      throw error;
+    }
+  }
+
+  // 🔄 REASIGNAR CITAS DE DOCTOR
+  static async reasignarCitasDoctor(doctorId, opciones) {
+    try {
+      console.log('🔄 Reasignando citas del doctor:', doctorId);
+
+      const { doctorDestino, reasignarTodas = false } = opciones;
+
+      // Buscar citas del doctor
+      const filtro = { doctor: doctorId };
+      if (!reasignarTodas) {
+        filtro.estado = { $in: ['pendiente', 'confirmada'] };
+      }
+
+      const citas = await Cita.find(filtro);
+      console.log(`📋 Encontradas ${citas.length} citas para reasignar`);
+
+      // Reasignar citas
+      const resultado = await Cita.updateMany(
+        filtro,
+        { doctor: doctorDestino }
+      );
+
+      console.log('✅ Citas reasignadas exitosamente');
+      return {
+        citasReasignadas: resultado.modifiedCount,
+        doctorOrigen: doctorId,
+        doctorDestino
+      };
+
+    } catch (error) {
+      console.error('❌ Error reasignando citas:', error);
+      throw error;
+    }
+  }
+
+  // 🔍 VER DETALLE DE CITA
+  static async obtenerDetalleCita(citaId) {
+    try {
+      console.log('🔍 Obteniendo detalle de cita:', citaId);
+
+      const cita = await Cita.findById(citaId)
+        .populate('doctor', 'especialidad')
+        .populate('paciente', 'nombre apellido email telefono')
+        .populate('doctor.usuario', 'nombre apellido');
+
+      if (!cita) {
+        throw new Error('Cita no encontrada');
+      }
+
+      return cita;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo detalle de cita:', error);
+      throw error;
+    }
+  }
+
+  // 🔄 REASIGNAR CITA MANUALMENTE
+  static async reasignarCita(citaId, datos) {
+    try {
+      console.log('🔄 Reasignando cita:', citaId);
+
+      const { doctorId, fecha, horaInicio } = datos;
+
+      // Buscar cita
+      const cita = await Cita.findById(citaId);
+      if (!cita) {
+        throw new Error('Cita no encontrada');
+      }
+
+      // Actualizar datos de la cita
+      const actualizacion = {};
+      if (doctorId) actualizacion.doctor = doctorId;
+      if (fecha) actualizacion.fecha = new Date(fecha);
+      if (horaInicio) actualizacion.horaInicio = horaInicio;
+
+      const citaActualizada = await Cita.findByIdAndUpdate(
+        citaId,
+        actualizacion,
+        { new: true }
+      ).populate('doctor', 'especialidad')
+       .populate('paciente', 'nombre apellido email');
+
+      console.log('✅ Cita reasignada exitosamente');
+      return citaActualizada;
+
+    } catch (error) {
+      console.error('❌ Error reasignando cita:', error);
+      throw error;
+    }
+  }
+
+  // 🗑️ ELIMINAR PACIENTE (SOFT DELETE)
+  static async eliminarPaciente(pacienteId) {
+    try {
+      console.log('🗑️ Eliminando paciente:', pacienteId);
+
+      // Buscar paciente
+      const paciente = await Paciente.findById(pacienteId);
+      if (!paciente) {
+        throw new Error('Paciente no encontrado');
+      }
+
+      // Soft delete: marcar como inactivo
+      await Paciente.findByIdAndUpdate(pacienteId, { activo: false });
+
+      // Opcional: también marcar usuario como inactivo
+      await Usuario.findByIdAndUpdate(paciente.usuario, { activo: false });
+
+      console.log('✅ Paciente eliminado (soft delete)');
+      return { pacienteId, eliminado: true };
+
+    } catch (error) {
+      console.error('❌ Error eliminando paciente:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = AdminService;

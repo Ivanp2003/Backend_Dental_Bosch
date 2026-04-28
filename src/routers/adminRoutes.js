@@ -38,6 +38,15 @@ router.put('/doctores/:id/estado', adminController.cambiarEstadoDoctor);
 // Body: { horarioAtencion: [{ dia: "lunes", horaInicio: "08:00", horaFin: "17:00" }] }
 router.put('/doctores/:id/horario', adminController.actualizarHorarioDoctor);
 
+// 🗑️ Eliminar doctor (soft delete)
+// DELETE /api/admin/doctores/:id
+router.delete('/doctores/:id', adminController.eliminarDoctor);
+
+// 🔄 Reasignar citas de doctor
+// PUT /api/admin/doctores/:id/reasignar-citas
+// Body: { doctorDestino: "doctorId", reasignarTodas: true }
+router.put('/doctores/:id/reasignar-citas', adminController.reasignarCitasDoctor);
+
 // ==============================
 // 📅 GESTIÓN DE CITAS (ADMIN)
 // ==============================
@@ -45,6 +54,15 @@ router.put('/doctores/:id/horario', adminController.actualizarHorarioDoctor);
 // 👁️ Ver todas las citas del sistema
 // GET /api/admin/citas?doctor=doctorId&fecha=2024-01-01&estado=pendiente&page=1&limit=10
 router.get('/citas', adminController.obtenerTodasLasCitas);
+
+// 🔍 Ver detalle de cita
+// GET /api/admin/citas/:id
+router.get('/citas/:id', adminController.obtenerDetalleCita);
+
+// 🔄 Reasignar cita manualmente
+// PATCH /api/admin/citas/:id/reasignar
+// Body: { doctorId: "doctorId", fecha: "2024-01-01", horaInicio: "10:00" }
+router.patch('/citas/:id/reasignar', adminController.reasignarCita);
 
 // ==============================
 // 🧑‍⚕️ GESTIÓN DE PACIENTES
@@ -62,6 +80,10 @@ router.get('/pacientes/:id', adminController.obtenerDetallePaciente);
 // PUT /api/admin/pacientes/:id/doctor
 // Body: { doctorId: "doctorId" }
 router.put('/pacientes/:id/doctor', adminController.cambiarDoctorAsignado);
+
+// 🗑️ Eliminar paciente (soft delete)
+// DELETE /api/admin/pacientes/:id
+router.delete('/pacientes/:id', adminController.eliminarPaciente);
 
 // ==============================
 // 📊 ESTADÍSTICAS DEL SISTEMA
