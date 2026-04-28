@@ -6,25 +6,14 @@ const crearDoctor = async (req, res) => {
   try {
     console.log('🦷 Admin creando doctor');
     
-    const { datosUsuario, datosDoctor } = req.body;
-
-    // Validar que existan los objetos de datos
-    if (!datosUsuario || !datosDoctor) {
-      return res.status(400).json({
-        success: false,
-        mensaje: 'Se requieren datosUsuario y datosDoctor'
-      });
-    }
-
-    const { nombre, apellido, email, password, telefono, cedula } = datosUsuario;
-    const { especialidad, horarioAtencion } = datosDoctor;
+    const { nombre, apellido, email, password, especialidad, telefono, horarioAtencion } = req.body;
 
     // Validaciones básicas
-    if (!nombre || !apellido || !email || !password || !especialidad || !cedula) {
+    if (!nombre || !apellido || !email || !password || !especialidad) {
       return res.status(400).json({
         success: false,
         mensaje: 'Faltan campos obligatorios',
-        camposRequeridos: ['nombre', 'apellido', 'email', 'password', 'cedula', 'especialidad']
+        camposRequeridos: ['nombre', 'apellido', 'email', 'password', 'especialidad']
       });
     }
 
@@ -45,14 +34,6 @@ const crearDoctor = async (req, res) => {
       });
     }
 
-    // Validación de cédula
-    if (!/^[0-9]{11}$/.test(cedula)) {
-      return res.status(400).json({
-        success: false,
-        mensaje: 'La cédula debe tener 11 dígitos numéricos'
-      });
-    }
-
     const resultado = await AdminService.crearDoctor({
       nombre,
       apellido,
@@ -60,7 +41,6 @@ const crearDoctor = async (req, res) => {
       password,
       especialidad,
       telefono: telefono || '',
-      cedula,
       horarioAtencion: horarioAtencion || []
     });
 
