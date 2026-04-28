@@ -83,17 +83,35 @@ exports.actualizarPerfil = async (req, res, next) => {
 // @access  Public
 exports.obtenerDoctores = async (req, res, next) => {
   try {
+    console.log('🔍 Buscando todos los doctores...');
+    
+    // Primero ver todos los doctores sin filtro
+    const todosDoctores = await Doctor.find({})
+      .populate({
+        path: 'usuario',
+        select: 'nombre apellido email foto especialidad estado'
+      });
+    
+    console.log(`📋 Total doctores en BD: ${todosDoctores.length}`);
+    todosDoctores.forEach((doc, index) => {
+      console.log(`${index + 1}. Doctor ID: ${doc._id}, Activo: ${doc.activo}, Usuario: ${doc.usuario?.nombreCompleto || 'NULL'}, Estado Usuario: ${doc.usuario?.estado || 'NULL'}`);
+    });
+
+    // Ahora aplicar filtros
     const doctores = await Doctor.find({ activo: true })
       .populate({
         path: 'usuario',
-        select: 'nombre apellido email foto especialidad',
-        match: { estado: 'aprobado' } // Solo mostrar doctores aprobados
+        select: 'nombre apellido email foto especialidad estado'
       });
 
-    // Filtrar doctores que tienen usuario y están aprobados
+    console.log(`📋 Doctores activos: ${doctores.length}`);
+
+    // Filtrar doctores que tienen usuario (sin importar el estado)
     const doctoresValidos = doctores.filter(doctor => 
-      doctor.usuario !== null && doctor.usuario.estado === 'aprobado'
+      doctor.usuario !== null
     );
+
+    console.log(`📋 Doctores con usuario: ${doctoresValidos.length}`);
 
     // Limpiar campos obsoletos
     const doctoresLimpios = doctoresValidos.map(doctor => {
