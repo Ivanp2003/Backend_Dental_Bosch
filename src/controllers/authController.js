@@ -286,6 +286,19 @@ exports.login = async (req, res, next) => {
       });
     }
 
+    // Verificar que los doctores estén aprobados
+    if (usuario.rol === 'doctor' && usuario.estado !== 'aprobado') {
+      let mensaje = 'Tu cuenta de doctor está pendiente de aprobación por el administrador.';
+      if (usuario.estado === 'rechazado') {
+        mensaje = 'Tu cuenta de doctor ha sido rechazada. Por favor contacta al administrador.';
+      }
+      return res.status(403).json({
+        success: false,
+        token: null,
+        mensaje
+      });
+    }
+
     // Generar token
     const token = generarJWT(usuario._id);
 
