@@ -37,6 +37,19 @@ const usuarioSchema = new mongoose.Schema({
     trim: true,
     match: [/^[0-9]{10}$/, 'El teléfono debe tener 10 dígitos numéricos']
   },
+  cedula: {
+    type: String,
+    required: [true, 'La cédula es obligatoria'],
+    unique: true,
+    trim: true,
+    validate: {
+      validator: function(value) {
+        // Validación básica para cédula dominicana (11 dígitos)
+        return /^[0-9]{11}$/.test(value);
+      },
+      message: 'La cédula debe tener 11 dígitos numéricos'
+    }
+  },
   foto: {
     type: String,
     default: function() {

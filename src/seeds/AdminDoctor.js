@@ -26,11 +26,10 @@ const createAdminDoctor = async () => {
       email: 'admin@dentalbosch.com',
       password: 'Admin123', // Se hasheará automáticamente
       rol: 'admin',
-      cedula: '0000000000',
-      telefono: '0999999999',
+      telefono: '8099999999', // 10 dígitos numéricos
+      cedula: '00000000000', // 11 dígitos para admin
       confirmado: true, // Ya confirmado
       estado: 'aprobado', // Ya aprobado
-      foto: 'https://ui-avatars.com/api/?name=Admin&background=dc2626&color=fff&size=128'
     });
     console.log('Usuario creado exitosamente');
 
@@ -40,6 +39,7 @@ const createAdminDoctor = async () => {
     await Doctor.create({
       usuario: usuarioAdmin._id,
       especialidad: 'Administración',
+      activo: true, // Doctor activo por defecto
       horarioAtencion: [
         {
           dia: 'lunes',

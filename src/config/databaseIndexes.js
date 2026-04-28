@@ -15,7 +15,8 @@ const configurarIndices = async () => {
       { key: { rol: 1 } },
       { key: { estado: 1 } },
       { key: { activo: 1 } },
-      { key: { nombre: 'text', apellido: 'text' } } // Búsqueda de texto
+      { key: { nombre: 'text', apellido: 'text' } }, // Búsqueda de texto
+      { key: { cedula: 1 }, unique: true } // Índice único para cédula
     ]);
 
     // Índices para colección Paciente
