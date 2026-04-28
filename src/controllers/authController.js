@@ -65,7 +65,7 @@ exports.registro = async (req, res, next) => {
     // Generar avatar automático si no se proporciona
     const avatar = generarAvatarPorRol(rol || 'paciente', nombre, apellido);
 
-    // Crear usuario
+    // Crear usuario - los doctores quedan pendientes de aprobación
     const usuario = await Usuario.create({
       nombre,
       apellido,
@@ -75,7 +75,10 @@ exports.registro = async (req, res, next) => {
       cedula,
       telefono,
       foto: avatar, // Avatar generado automáticamente
-      tokenConfirmacion: tokenConfirmacion // Guardar token original, no hasheado
+      tokenConfirmacion: tokenConfirmacion, // Guardar token original, no hasheado
+      // Los doctores quedan pendientes de aprobación por admin
+      estado: rol === 'doctor' ? 'pendiente' : 'aprobado',
+      confirmado: rol === 'doctor' ? false : true // Doctores necesitan confirmación y aprobación
     });
     
     console.log(' Usuario creado con tokenConfirmacion:', !!usuario.tokenConfirmacion);
@@ -95,9 +98,15 @@ exports.registro = async (req, res, next) => {
     // Enviar email de confirmación
     await enviarEmailConfirmacion(email, nombre, tokenConfirmacion);
 
+    // Mensaje diferente según el rol
+    let mensaje = 'Usuario registrado. Revisa tu email para confirmar tu cuenta.';
+    if (rol === 'doctor') {
+      mensaje = 'Solicitud de registro de doctor enviada. Tu cuenta quedará pendiente de aprobación por el administrador después de confirmar tu email.';
+    }
+
     res.status(201).json({
       success: true,
-      mensaje: 'Usuario registrado. Revisa tu email para confirmar tu cuenta.'
+      mensaje
     });
 
   } catch (error) {
@@ -127,14 +136,28 @@ exports.confirmarCuenta = async (req, res, next) => {
     // Confirmar cuenta
     usuario.confirmado = true;
     usuario.tokenConfirmacion = undefined;
+    
+    // Los doctores siguen pendientes de aprobación del admin
+    if (usuario.rol !== 'doctor') {
+      usuario.estado = 'aprobado';
+    }
+    
     await usuario.save();
 
-    // Enviar email de bienvenida
-    await enviarEmailBienvenida(usuario.email, usuario.nombre, usuario.rol);
+    // Enviar email de bienvenida solo a pacientes
+    if (usuario.rol !== 'doctor') {
+      await enviarEmailBienvenida(usuario.email, usuario.nombre, usuario.rol);
+    }
+
+    // Mensaje diferente según el rol
+    let mensaje = 'Cuenta confirmada exitosamente';
+    if (usuario.rol === 'doctor') {
+      mensaje = 'Cuenta confirmada. Tu solicitud está siendo revisada por el administrador. Recibirás un email cuando sea aprobada.';
+    }
 
     res.status(200).json({
       success: true,
-      mensaje: 'Cuenta confirmada exitosamente'
+      mensaje
     });
 
   } catch (error) {

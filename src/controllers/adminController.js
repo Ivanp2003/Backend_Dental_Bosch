@@ -1,110 +1,8 @@
 const AdminService = require('../services/adminService');
 const mongoose = require('mongoose');
 
-// 🦷 CREAR DOCTOR
-const crearDoctor = async (req, res) => {
-  try {
-    console.log('🦷 Admin creando doctor');
-    console.log('📋 Datos recibidos:', {
-      nombre: req.body.nombre,
-      apellido: req.body.apellido,
-      email: req.body.email,
-      especialidad: req.body.especialidad,
-      telefono: req.body.telefono,
-      tieneHorario: !!req.body.horarioAtencion,
-      cantidadHorarios: req.body.horarioAtencion?.length || 0
-    });
-    
-    const { nombre, apellido, email, password, cedula, especialidad, telefono, horarioAtencion } = req.body;
-
-    console.log('🔍 Validando campos obligatorios...');
-    // Validaciones básicas
-    if (!nombre || !apellido || !email || !password || !cedula || !especialidad) {
-      console.log('❌ Faltan campos obligatorios:', {
-        nombre: !!nombre,
-        apellido: !!apellido,
-        email: !!email,
-        password: !!password,
-        cedula: !!cedula,
-        especialidad: !!especialidad
-      });
-      return res.status(400).json({
-        success: false,
-        mensaje: 'Faltan campos obligatorios',
-        camposRequeridos: ['nombre', 'apellido', 'email', 'password', 'cedula', 'especialidad']
-      });
-    }
-    console.log('✅ Campos obligatorios validados');
-
-    console.log('🔍 Validando formato de email...');
-    // Validación de email
-    const emailRegex = /^\S+@\S+\.\S+$/;
-    if (!emailRegex.test(email)) {
-      console.log('❌ Email inválido:', email);
-      return res.status(400).json({
-        success: false,
-        mensaje: 'Email inválido'
-      });
-    }
-    console.log('✅ Email válido');
-
-    console.log('🔍 Validando longitud de password...');
-    // Validación de password
-    if (password.length < 6) {
-      console.log('❌ Password demasiado corto:', password.length, 'caracteres');
-      return res.status(400).json({
-        success: false,
-        mensaje: 'La contraseña debe tener al menos 6 caracteres'
-      });
-    }
-    console.log('✅ Password válido');
-
-    console.log('🚀 Llamando a AdminService.crearDoctor...');
-    const resultado = await AdminService.crearDoctor({
-      nombre,
-      apellido,
-      email,
-      password,
-      cedula,
-      especialidad,
-      telefono: telefono || '',
-      horarioAtencion: horarioAtencion || []
-    });
-
-    console.log('🎉 Doctor creado exitosamente en el controller');
-    console.log('👨‍⚕️ Datos del doctor creado:', {
-      doctorId: resultado.doctor._id,
-      usuarioId: resultado.usuario._id,
-      nombreCompleto: `${nombre} ${apellido}`,
-      email: email
-    });
-
-    res.status(201).json({
-      success: true,
-      mensaje: 'Doctor creado exitosamente',
-      datos: resultado
-    });
-
-  } catch (error) {
-    console.error('❌ Error en crearDoctor (controller):', error.message);
-    console.error('📋 Stack trace completo:', error.stack);
-    
-    if (error.message.includes('ya está registrado')) {
-      console.log('⚠️ Error de email duplicado');
-      return res.status(409).json({
-        success: false,
-        mensaje: error.message
-      });
-    }
-
-    console.log('💥 Error interno del servidor');
-    res.status(500).json({
-      success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
+// 📝 NOTA: Los doctores ahora crean sus propias cuentas a través del endpoint de registro
+// El administrador solo aprueba/rechaza las solicitudes pendientes
 
 // ✏️ ACTUALIZAR DOCTOR
 const actualizarDoctor = async (req, res) => {
@@ -313,16 +211,27 @@ const listarDoctores = async (req, res) => {
     
     const { estado, especialidad, page, limit } = req.query;
     
+    // Si la ruta es /doctores-pendientes, filtrar automáticamente por estado pendiente
+    let filtroEstado = estado;
+    if (req.originalUrl.includes('/doctores-pendientes')) {
+      filtroEstado = 'pendiente';
+      console.log('🔍 Filtrando doctores pendientes de aprobación');
+    }
+    
     const resultado = await AdminService.listarDoctores({
-      estado,
+      estado: filtroEstado,
       especialidad,
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10
     });
 
+    const mensaje = req.originalUrl.includes('/doctores-pendientes') 
+      ? 'Doctores pendientes listados exitosamente'
+      : 'Doctores listados exitosamente';
+
     res.status(200).json({
       success: true,
-      mensaje: 'Doctores listados exitosamente',
+      mensaje,
       datos: resultado
     });
 
@@ -670,7 +579,6 @@ const eliminarPaciente = async (req, res) => {
 
 module.exports = {
   // Gestión de Doctores
-  crearDoctor,
   actualizarDoctor,
   cambiarEstadoDoctor,
   actualizarHorarioDoctor,

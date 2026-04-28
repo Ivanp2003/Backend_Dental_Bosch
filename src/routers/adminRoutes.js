@@ -11,13 +11,16 @@ router.use(autorizarRoles('admin'));
 // 🦷 GESTIÓN DE DOCTORES
 // ==============================
 
-// ✅ Crear doctor
-// POST /api/admin/doctores
-router.post('/doctores', adminController.crearDoctor);
+// 📝 NOTA: Los doctores ahora crean sus propias cuentas a través del endpoint de registro
+// El administrador solo aprueba/rechaza las solicitudes pendientes
 
 // 📋 Listar doctores con filtros
 // GET /api/admin/doctores?estado=true&especialidad=odontologia&page=1&limit=10
 router.get('/doctores', adminController.listarDoctores);
+
+// ⏳ Listar doctores pendientes de aprobación
+// GET /api/admin/doctores-pendientes
+router.get('/doctores-pendientes', adminController.listarDoctores);
 
 // 🔍 Ver detalle de doctor
 // GET /api/admin/doctores/:id
