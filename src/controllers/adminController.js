@@ -5,43 +5,78 @@ const mongoose = require('mongoose');
 const crearDoctor = async (req, res) => {
   try {
     console.log('🦷 Admin creando doctor');
+    console.log('📋 Datos recibidos:', {
+      nombre: req.body.nombre,
+      apellido: req.body.apellido,
+      email: req.body.email,
+      especialidad: req.body.especialidad,
+      telefono: req.body.telefono,
+      tieneHorario: !!req.body.horarioAtencion,
+      cantidadHorarios: req.body.horarioAtencion?.length || 0
+    });
     
-    const { nombre, apellido, email, password, especialidad, telefono, horarioAtencion } = req.body;
+    const { nombre, apellido, email, password, cedula, especialidad, telefono, horarioAtencion } = req.body;
 
+    console.log('🔍 Validando campos obligatorios...');
     // Validaciones básicas
-    if (!nombre || !apellido || !email || !password || !especialidad) {
+    if (!nombre || !apellido || !email || !password || !cedula || !especialidad) {
+      console.log('❌ Faltan campos obligatorios:', {
+        nombre: !!nombre,
+        apellido: !!apellido,
+        email: !!email,
+        password: !!password,
+        cedula: !!cedula,
+        especialidad: !!especialidad
+      });
       return res.status(400).json({
         success: false,
         mensaje: 'Faltan campos obligatorios',
-        camposRequeridos: ['nombre', 'apellido', 'email', 'password', 'especialidad']
+        camposRequeridos: ['nombre', 'apellido', 'email', 'password', 'cedula', 'especialidad']
       });
     }
+    console.log('✅ Campos obligatorios validados');
 
+    console.log('🔍 Validando formato de email...');
     // Validación de email
     const emailRegex = /^\S+@\S+\.\S+$/;
     if (!emailRegex.test(email)) {
+      console.log('❌ Email inválido:', email);
       return res.status(400).json({
         success: false,
         mensaje: 'Email inválido'
       });
     }
+    console.log('✅ Email válido');
 
+    console.log('🔍 Validando longitud de password...');
     // Validación de password
     if (password.length < 6) {
+      console.log('❌ Password demasiado corto:', password.length, 'caracteres');
       return res.status(400).json({
         success: false,
         mensaje: 'La contraseña debe tener al menos 6 caracteres'
       });
     }
+    console.log('✅ Password válido');
 
+    console.log('🚀 Llamando a AdminService.crearDoctor...');
     const resultado = await AdminService.crearDoctor({
       nombre,
       apellido,
       email,
       password,
+      cedula,
       especialidad,
       telefono: telefono || '',
       horarioAtencion: horarioAtencion || []
+    });
+
+    console.log('🎉 Doctor creado exitosamente en el controller');
+    console.log('👨‍⚕️ Datos del doctor creado:', {
+      doctorId: resultado.doctor._id,
+      usuarioId: resultado.usuario._id,
+      nombreCompleto: `${nombre} ${apellido}`,
+      email: email
     });
 
     res.status(201).json({
@@ -51,15 +86,18 @@ const crearDoctor = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error en crearDoctor:', error);
+    console.error('❌ Error en crearDoctor (controller):', error.message);
+    console.error('📋 Stack trace completo:', error.stack);
     
     if (error.message.includes('ya está registrado')) {
+      console.log('⚠️ Error de email duplicado');
       return res.status(409).json({
         success: false,
         mensaje: error.message
       });
     }
 
+    console.log('💥 Error interno del servidor');
     res.status(500).json({
       success: false,
       mensaje: 'Error interno del servidor',

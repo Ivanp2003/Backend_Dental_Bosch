@@ -75,4 +75,7 @@ doctorSchema.virtual('nombreCompleto').get(function() {
   return this.usuario?.nombreCompleto || 'Doctor';
 });
 
+// Nota: El pre-save middleware fue removido para evitar problemas con next()
+// La validación se maneja en el servicio y el logging se agrega allí
+
 module.exports = mongoose.model('Doctor', doctorSchema);

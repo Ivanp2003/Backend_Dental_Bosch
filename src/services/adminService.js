@@ -6,30 +6,41 @@ const Cita = require('../models/Cita');
 const bcrypt = require('bcryptjs');
 
 class AdminService {
-  // 🦷 CREAR DOCTOR CON TRANSACCIÓN
+  // 🦷 CREAR DOCTOR
   static async crearDoctor(datosDoctor) {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    console.log('🦷 Iniciando creación de doctor con datos:', {
+      nombre: datosDoctor.nombre,
+      apellido: datosDoctor.apellido,
+      email: datosDoctor.email,
+      especialidad: datosDoctor.especialidad
+    });
 
     try {
-      const { nombre, apellido, email, password, especialidad, telefono, horarioAtencion } = datosDoctor;
+      const { nombre, apellido, email, password, cedula, especialidad, telefono, horarioAtencion } = datosDoctor;
 
+      console.log('🔍 Validando que el email no exista...');
       // Validar que el email no exista
-      const usuarioExistente = await Usuario.findOne({ email }).session(session);
+      const usuarioExistente = await Usuario.findOne({ email });
       if (usuarioExistente) {
+        console.log('❌ Email ya registrado:', email);
         throw new Error('El email ya está registrado');
       }
+      console.log('✅ Email disponible');
 
+      console.log('🔐 Hasheando password...');
       // Hashear password
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
+      console.log('✅ Password hasheado');
 
+      console.log('👤 Creando usuario...');
       // Crear usuario
       const nuevoUsuario = new Usuario({
         nombre,
         apellido,
         email,
         password: passwordHash,
+        cedula,
         rol: 'doctor',
         telefono: telefono || '',
         estado: 'aprobado', // Admin crea doctores ya aprobados
@@ -37,8 +48,11 @@ class AdminService {
         activo: true
       });
 
-      await nuevoUsuario.save({ session });
+      console.log('💾 Guardando usuario en BD...');
+      await nuevoUsuario.save();
+      console.log('✅ Usuario guardado con ID:', nuevoUsuario._id);
 
+      console.log('👨‍⚕️ Creando doctor...');
       // Crear doctor
       const nuevoDoctor = new Doctor({
         usuario: nuevoUsuario._id,
@@ -47,12 +61,20 @@ class AdminService {
         activo: true
       });
 
-      await nuevoDoctor.save({ session });
+      console.log('💾 Guardando doctor en BD...');
+      await nuevoDoctor.save();
+      console.log('✅ Doctor guardado con ID:', nuevoDoctor._id);
 
-      await session.commitTransaction();
-
+      console.log(' Poblando datos para respuesta...');
       // Poblar datos para respuesta
       await nuevoDoctor.populate('usuario', 'nombre apellido email telefono estado');
+
+      console.log('🎉 Doctor creado exitosamente:', {
+        doctorId: nuevoDoctor._id,
+        usuarioId: nuevoUsuario._id,
+        nombre: `${nombre} ${apellido}`,
+        email: email
+      });
 
       return {
         usuario: nuevoUsuario,
@@ -60,10 +82,20 @@ class AdminService {
       };
 
     } catch (error) {
-      await session.abortTransaction();
+      console.error('❌ Error en crearDoctor:', error.message);
+      console.error('📋 Stack trace:', error.stack);
+      
+      // Si falló la creación del usuario, limpiar el doctor si se creó
+      if (error.message.includes('usuario') && datosDoctor.tempDoctorId) {
+        try {
+          await Doctor.findByIdAndDelete(datosDoctor.tempDoctorId);
+          console.log('🧹 Doctor temporal eliminado');
+        } catch (cleanupError) {
+          console.error('⚠️ Error limpiando doctor temporal:', cleanupError.message);
+        }
+      }
+      
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 
