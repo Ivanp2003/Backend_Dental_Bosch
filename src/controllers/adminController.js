@@ -6,7 +6,18 @@ const crearDoctor = async (req, res) => {
   try {
     console.log('🦷 Admin creando doctor');
     
-    const { nombre, apellido, email, password, especialidad, telefono, horarioAtencion } = req.body;
+    const { datosUsuario, datosDoctor } = req.body;
+
+    // Validar que existan los objetos de datos
+    if (!datosUsuario || !datosDoctor) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Se requieren datosUsuario y datosDoctor'
+      });
+    }
+
+    const { nombre, apellido, email, password, telefono } = datosUsuario;
+    const { especialidad, horarioAtencion } = datosDoctor;
 
     // Validaciones básicas
     if (!nombre || !apellido || !email || !password || !especialidad) {
