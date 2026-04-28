@@ -27,7 +27,7 @@ const createAdminDoctor = async () => {
       password: 'Admin123', // Se hasheará automáticamente
       rol: 'admin',
       telefono: '8099999999', // 10 dígitos numéricos
-      cedula: '00000000000', // 11 dígitos para admin
+      cedula: '0000000000', // 10 dígitos para admin
       confirmado: true, // Ya confirmado
       estado: 'aprobado', // Ya aprobado
     });

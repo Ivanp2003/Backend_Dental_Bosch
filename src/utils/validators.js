@@ -4,15 +4,15 @@ exports.validarEmail = (email) => {
   return regex.test(email);
 };
 
-// Validar cédula (simplificado - solo longitud y caracteres)
+// Validar cédula (exactamente 10 dígitos)
 exports.validarCedula = (cedula) => {
   if (!cedula) return false;
   
   // Limpiar caracteres no numéricos
   const cleaned = cedula.replace(/[^0-9]/g, '');
   
-  // Aceptar entre 5 y 13 dígitos (muy permisivo)
-  return cleaned.length >= 5 && cleaned.length <= 13;
+  // Requerir exactamente 10 dígitos
+  return cleaned.length === 10;
 };
 
 // Validar contraseña mínimo 6 caracteres, una mayúscula, un número

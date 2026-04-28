@@ -44,10 +44,10 @@ const usuarioSchema = new mongoose.Schema({
     trim: true,
     validate: {
       validator: function(value) {
-        // Validación básica para cédula dominicana (11 dígitos)
-        return /^[0-9]{11}$/.test(value);
+        // Validación básica para cédula dominicana (10 dígitos)
+        return /^[0-9]{10}$/.test(value);
       },
-      message: 'La cédula debe tener 11 dígitos numéricos'
+      message: 'La cédula debe tener 10 dígitos numéricos'
     }
   },
   foto: {
