@@ -113,12 +113,26 @@ exports.obtenerDoctores = async (req, res, next) => {
 
     console.log(`📋 Doctores con usuario: ${doctoresValidos.length}`);
 
-    // Limpiar campos obsoletos
+    // Limpiar campos obsoletos y formatear para frontend
     const doctoresLimpios = doctoresValidos.map(doctor => {
       const doctorObj = doctor.toObject();
       delete doctorObj.calificacionPromedio;
       delete doctorObj.totalCalificaciones;
-      return doctorObj;
+      
+      // Formatear para que coincida con lo que espera el frontend
+      return {
+        ...doctorObj,
+        nombreCompleto: doctor.usuario?.nombreCompleto || `${doctor.usuario?.nombre || ''} ${doctor.usuario?.apellido || ''}`.trim(),
+        nombre: doctor.usuario?.nombre || '',
+        apellido: doctor.usuario?.apellido || '',
+        email: doctor.usuario?.email,
+        telefono: doctor.usuario?.telefono,
+        cedula: doctor.usuario?.cedula,
+        estado: doctor.usuario?.estado,
+        createdAt: doctor.usuario?.createdAt,
+        // Eliminar campos anidados que el frontend no necesita
+        usuario: undefined
+      };
     });
 
     res.status(200).json({
@@ -140,7 +154,7 @@ exports.obtenerDoctorPorId = async (req, res, next) => {
     const doctor = await Doctor.findById(req.params.id)
       .populate({
         path: 'usuario',
-        select: 'nombre apellido email foto especialidad telefono'
+        select: 'nombre apellido email telefono cedula estado confirmado createdAt'
       });
 
     if (!doctor) {
@@ -150,9 +164,36 @@ exports.obtenerDoctorPorId = async (req, res, next) => {
       });
     }
 
+    // Limpiar campos obsoletos si existen
+    const doctorObj = doctor.toObject();
+    delete doctorObj.calificacionPromedio;
+    delete doctorObj.totalCalificaciones;
+
+    // Formatear respuesta para el ModalDetalle y frontend
+    const respuesta = {
+      ...doctorObj,
+      // Información del usuario para el modal (formato que espera el frontend)
+      nombreCompleto: doctor.usuario?.nombreCompleto || `${doctor.usuario?.nombre || ''} ${doctor.usuario?.apellido || ''}`.trim(),
+      nombre: doctor.usuario?.nombre || '',
+      apellido: doctor.usuario?.apellido || '',
+      email: doctor.usuario?.email,
+      telefono: doctor.usuario?.telefono,
+      cedula: doctor.usuario?.cedula,
+      estado: doctor.usuario?.estado,
+      confirmado: doctor.usuario?.confirmado,
+      createdAt: doctor.usuario?.createdAt, // Para compatibilidad con frontend
+      fechaRegistro: doctor.usuario?.createdAt, // Para el modal
+      // Información del doctor
+      especialidad: doctor.especialidad,
+      horarioAtencion: doctor.horarioAtencion || [],
+      activo: doctor.activo,
+      // Eliminar campos que el frontend no necesita
+      usuario: undefined // No enviar el objeto usuario anidado
+    };
+
     res.status(200).json({
       success: true,
-      data: doctor
+      data: respuesta
     });
 
   } catch (error) {
@@ -272,10 +313,32 @@ exports.obtenerDoctoresPendientes = async (req, res, next) => {
 
     console.log(' Doctores pendientes encontrados:', doctoresPendientes.length);
 
+    // Formatear doctores pendientes para el frontend
+    const doctoresFormateados = doctoresPendientes.map(doctor => {
+      const doctorObj = doctor.toObject();
+      delete doctorObj.calificacionPromedio;
+      delete doctorObj.totalCalificaciones;
+      
+      return {
+        ...doctorObj,
+        nombreCompleto: doctor.usuario?.nombreCompleto || `${doctor.usuario?.nombre || ''} ${doctor.usuario?.apellido || ''}`.trim(),
+        nombre: doctor.usuario?.nombre || '',
+        apellido: doctor.usuario?.apellido || '',
+        email: doctor.usuario?.email,
+        telefono: doctor.usuario?.telefono,
+        cedula: doctor.usuario?.cedula,
+        estado: doctor.usuario?.estado,
+        createdAt: doctor.usuario?.createdAt,
+        // Eliminar campos anidados
+        usuario: undefined
+      };
+    });
+
     res.status(200).json({
       success: true,
       count: doctoresPendientes.length,
-      data: doctoresPendientes
+      datos: { doctores: doctoresFormateados }, // Formato que espera el frontend
+      data: doctoresFormateados // Para compatibilidad
     });
 
   } catch (error) {
