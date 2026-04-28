@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta, autorizarRoles } = require('../middlewares/authMiddleware');
-const { uploadPhotoToCloudinary } = require('../middlewares/upload');
 const {
   registrarPaciente,
   listarPacientes,
@@ -33,16 +32,16 @@ router.use(protegerRuta);
 router.get('/', autorizarRoles(['doctor', 'admin']), listarPacientes);
 
 // Registrar nuevo paciente (solo doctores y admin)
-router.post('/', autorizarRoles(['doctor', 'admin']), uploadPhotoToCloudinary, registrarPaciente);
+router.post('/', autorizarRoles(['doctor', 'admin']), registrarPaciente);
 
 // Obtener perfil del paciente autenticado
 router.get('/perfil/paciente', obtenerPerfilPaciente);
 
 // Actualizar perfil del paciente autenticado
-router.put('/perfil/paciente', uploadPhotoToCloudinary, actualizarPerfil);
+router.put('/perfil/paciente', actualizarPerfil);
 
 // Actualizar información del paciente (solo doctores y admin)
-router.put('/:id', autorizarRoles(['doctor', 'admin']), uploadPhotoToCloudinary, actualizarPaciente);
+router.put('/:id', autorizarRoles(['doctor', 'admin']), actualizarPaciente);
 
 // Eliminar paciente (solo admin)
 router.delete('/:id', autorizarRoles(['admin']), eliminarPaciente);
