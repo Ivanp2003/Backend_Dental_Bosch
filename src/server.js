@@ -58,11 +58,11 @@ const pacienteRoutes = require('./routers/pacienteRoutes');
 
 
 
-const adminRoutes = require('./routes/adminRoutes');
+const adminRoutes = require('./routers/adminRoutes');
 
 
 
-const citasRoutes = require('./routes/citasRoutes');
+const citasRoutes = require('./routers/citasRoutes');
 
 
 
