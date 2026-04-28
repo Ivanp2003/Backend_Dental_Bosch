@@ -12,12 +12,18 @@ class AdminService {
     session.startTransaction();
 
     try {
-      const { nombre, apellido, email, password, especialidad, telefono, horarioAtencion } = datosDoctor;
+      const { nombre, apellido, email, password, especialidad, telefono, cedula, horarioAtencion } = datosDoctor;
 
       // Validar que el email no exista
       const usuarioExistente = await Usuario.findOne({ email }).session(session);
       if (usuarioExistente) {
         throw new Error('El email ya está registrado');
+      }
+
+      // Validar que la cédula no exista
+      const cedulaExistente = await Usuario.findOne({ cedula }).session(session);
+      if (cedulaExistente) {
+        throw new Error('La cédula ya está registrada');
       }
 
       // Hashear password
@@ -32,6 +38,7 @@ class AdminService {
         password: passwordHash,
         rol: 'doctor',
         telefono: telefono || '',
+        cedula, // Campo obligatorio agregado
         estado: 'aprobado', // Admin crea doctores ya aprobados
         confirmado: true,
         activo: true
