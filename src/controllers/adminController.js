@@ -73,9 +73,10 @@ const actualizarDoctor = async (req, res) => {
 const cambiarEstadoDoctor = async (req, res) => {
   try {
     console.log('🔄 Admin cambiando estado de doctor:', req.params.id);
+    console.log('📋 Body recibido:', req.body);
     
     const { id } = req.params;
-    const { activo, reasignarA, reasignacionAutomatica } = req.body;
+    const { estado, activo, reasignarA, reasignacionAutomatica } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -84,19 +85,27 @@ const cambiarEstadoDoctor = async (req, res) => {
       });
     }
 
-    if (typeof activo !== 'boolean') {
+    // Manejar el formato que envía el frontend: { estado: 'aprobado'/'rechazado' }
+    let esActivo;
+    if (estado === 'aprobado') {
+      esActivo = true;
+    } else if (estado === 'rechazado') {
+      esActivo = false;
+    } else if (typeof activo === 'boolean') {
+      esActivo = activo;
+    } else {
       return res.status(400).json({
         success: false,
-        mensaje: 'El campo activo debe ser booleano'
+        mensaje: 'Debe proporcionar estado (aprobado/rechazado) o activo (booleano)'
       });
     }
 
-    // Si se está desactivando, validar reasignación
-    if (!activo && !reasignarA && !reasignacionAutomatica) {
-      return res.status(400).json({
-        success: false,
-        mensaje: 'Para desactivar un doctor debe especificar reasignación (reasignarA o reasignacionAutomatica)'
-      });
+    console.log('🔄 Estado procesado:', esActivo);
+
+    // Si se está desactivando, validar reasignación (solo para rechazados)
+    if (!esActivo && !reasignarA && !reasignacionAutomatica) {
+      // Para rechazo, no requerimos reasignación automática
+      console.log('🔄 Rechazando doctor sin reasignación de citas');
     }
 
     if (reasignarA && !mongoose.Types.ObjectId.isValid(reasignarA)) {
@@ -106,14 +115,14 @@ const cambiarEstadoDoctor = async (req, res) => {
       });
     }
 
-    const resultado = await AdminService.cambiarEstadoDoctor(id, activo, {
+    const resultado = await AdminService.cambiarEstadoDoctor(id, esActivo, {
       reasignarA,
       reasignacionAutomatica
     });
 
     res.status(200).json({
       success: true,
-      mensaje: `Doctor ${activo ? 'activado' : 'desactivado'} exitosamente`,
+      mensaje: `Doctor ${esActivo ? 'aprobado' : 'rechazado'} exitosamente`,
       datos: resultado
     });
 

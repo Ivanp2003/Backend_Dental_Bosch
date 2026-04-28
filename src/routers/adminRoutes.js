@@ -63,6 +63,11 @@ router.put('/doctores/:id/rechazar', adminController.rechazarDoctor);
 // POST /api/admin/doctores/limpiar-huerfanos
 router.post('/doctores/limpiar-huerfanos', adminController.limpiarDoctoresHuerfanos);
 
+// 🔄 Cambiar estado de doctor (endpoint que el frontend usa)
+// PUT /api/admin/doctores/:id/estado
+// Body: { estado: 'aprobado'/'rechazado' }
+router.put('/doctores/:id/estado', adminController.cambiarEstadoDoctor);
+
 // ==============================
 // 📅 GESTIÓN DE CITAS (ADMIN)
 // ==============================
