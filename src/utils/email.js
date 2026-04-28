@@ -158,15 +158,11 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
   const frontendUrl = asegurarUrlConDiagonal(process.env.URL_FRONTEND || 'http://localhost:3000/');
   const urlConfirmacion = `${frontendUrl}confirmar-cuenta/${token}`;
   
-  // Generar URLs alternativas para debugging
-  const urlsAlternativas = generarURLsPrueba(frontendUrl, token);
-
   console.log(' URL de confirmación generada:', urlConfirmacion);
   console.log(' Enviando a:', email);
   console.log(' Frontend URL configurada:', process.env.URL_FRONTEND);
   console.log(' Token generado:', token);
   console.log(' Ruta completa:', urlConfirmacion);
-  console.log(' URLs alternativas:', urlsAlternativas);
 
   const contenido = `
 
@@ -174,10 +170,8 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
     <p>Gracias por registrarte en nuestro sistema. Para activar tu cuenta, haz clic en el siguiente botón:</p>
 
-    <p><small>Si el botón no funciona, prueba estas opciones:</small></p>
+    <p><small>Si el botón no funciona, copia y pega este enlace en tu navegador:</small></p>
     <p><small><code>${urlConfirmacion}</code></small></p>
-    <p><small><code>${urlsAlternativas.alternativa1}</code></small></p>
-    <p><small><code>${urlsAlternativas.alternativa2}</code></small></p>
 
   `;
 
