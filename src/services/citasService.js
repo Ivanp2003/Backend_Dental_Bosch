@@ -140,12 +140,28 @@ class CitasService {
         creadoPor: creadoPor || rolUsuario
       });
 
-      console.log('🔍 Antes de guardar la cita...');
-      console.log('🔍 Tipo de nuevaCita:', typeof nuevaCita);
-      console.log('🔍 nuevaCita.save:', typeof nuevaCita.save);
+      // Validaciones antes de guardar (movidas desde el middleware)
+      console.log('🔍 Validando horas...');
+      const inicio = horaInicio.split(':');
+      const fin = horaFin.split(':');
+      const inicioMinutos = parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
+      const finMinutos = parseInt(fin[0]) * 60 + parseInt(fin[1]);
+      
+      if (finMinutos <= inicioMinutos) {
+        throw new Error('La hora de fin debe ser posterior a la hora de inicio');
+      }
+      
+      // Validar duración máxima (ej: 4 horas)
+      if (finMinutos - inicioMinutos > 240) {
+        throw new Error('La cita no puede exceder 4 horas de duración');
+      }
+      
+      console.log('✅ Validaciones pasadas');
+      console.log('🔍 Guardando cita...');
 
       await nuevaCita.save();
       console.log('✅ Cita guardada exitosamente');
+      console.log(`📅 Nueva cita creada para el ${fechaCita.toISOString().split('T')[0]}`);
 
       // Poblar datos para respuesta
       await nuevaCita.populate([

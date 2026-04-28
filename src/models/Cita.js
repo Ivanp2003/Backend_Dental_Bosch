@@ -123,32 +123,8 @@ citaSchema.virtual('fechaHoraFin').get(function() {
   return fecha;
 });
 
-// Middleware para logging (sin validaciones para evitar el error)
-citaSchema.pre('save', function(next, options) {
-  try {
-    console.log('🔍 Middleware pre-save ejecutándose');
-    console.log('🔍 this.isNew:', this.isNew);
-    console.log('🔍 next function type:', typeof next);
-    console.log('🔍 options:', options);
-    
-    if (this.isNew) {
-      console.log(`📅 Nueva cita creada para el ${this.fecha.toISOString().split('T')[0]}`);
-    }
-    
-    // Llamar a next sin validaciones por ahora
-    console.log('🔍 Llamando a next()...');
-    next();
-  } catch (error) {
-    console.error('❌ Error en middleware de cita:', error);
-    console.error('❌ Stack trace:', error.stack);
-    if (typeof next === 'function') {
-      next(error);
-    } else {
-      console.error('❌ next no es una función!');
-      throw error;
-    }
-  }
-});
+// Middleware eliminado temporalmente debido a problema con next()
+// Las validaciones se moverán al servicio
 
 // Métodos estáticos para consultas comunes
 citaSchema.statics.buscarCitasPaciente = function(pacienteId, opciones = {}) {
