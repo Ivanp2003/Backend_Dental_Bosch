@@ -125,22 +125,27 @@ citaSchema.virtual('fechaHoraFin').get(function() {
 
 // Validaciones personalizadas
 citaSchema.pre('save', function(next) {
-  // Validar que horaFin sea posterior a horaInicio
-  const inicio = this.horaInicio.split(':');
-  const fin = this.horaFin.split(':');
-  const inicioMinutos = parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
-  const finMinutos = parseInt(fin[0]) * 60 + parseInt(fin[1]);
-  
-  if (finMinutos <= inicioMinutos) {
-    return next(new Error('La hora de fin debe ser posterior a la hora de inicio'));
+  try {
+    // Validar que horaFin sea posterior a horaInicio
+    const inicio = this.horaInicio.split(':');
+    const fin = this.horaFin.split(':');
+    const inicioMinutos = parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
+    const finMinutos = parseInt(fin[0]) * 60 + parseInt(fin[1]);
+    
+    if (finMinutos <= inicioMinutos) {
+      return next(new Error('La hora de fin debe ser posterior a la hora de inicio'));
+    }
+    
+    // Validar duración máxima (ej: 4 horas)
+    if (finMinutos - inicioMinutos > 240) {
+      return next(new Error('La cita no puede exceder 4 horas de duración'));
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error en validación de cita:', error);
+    next(error);
   }
-  
-  // Validar duración máxima (ej: 4 horas)
-  if (finMinutos - inicioMinutos > 240) {
-    return next(new Error('La cita no puede exceder 4 horas de duración'));
-  }
-  
-  next();
 });
 
 // Middleware para logging

@@ -130,7 +130,18 @@ class CitasService {
         creadoPor: creadoPor || rolUsuario
       });
 
+      console.log('📅 Datos de cita a guardar:', {
+        paciente,
+        doctor,
+        fecha: fechaCita,
+        horaInicio,
+        horaFin,
+        motivo,
+        creadoPor: creadoPor || rolUsuario
+      });
+
       await nuevaCita.save();
+      console.log('✅ Cita guardada exitosamente');
 
       // Poblar datos para respuesta
       await nuevaCita.populate([
