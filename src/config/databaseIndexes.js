@@ -22,7 +22,7 @@ const configurarIndices = async () => {
     // Índices para colección Paciente
     const Paciente = mongoose.model('Paciente');
     await Paciente.collection.createIndexes([
-      { key: { usuario: 1 }, unique: true },
+      // usuario ya tiene unique: true en el schema
       { key: { doctorAsignado: 1 } },
       { key: { fechaNacimiento: 1 } },
       { key: { genero: 1 } },
@@ -33,7 +33,7 @@ const configurarIndices = async () => {
     // Índices para colección Doctor
     const Doctor = mongoose.model('Doctor');
     await Doctor.collection.createIndexes([
-      { key: { usuario: 1 }, unique: true },
+      // usuario ya tiene unique: true en el schema
       { key: { especialidad: 1 } },
       { key: { activo: 1 } },
       { key: { 'horarioAtencion.dia': 1 } },

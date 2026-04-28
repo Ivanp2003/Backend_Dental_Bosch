@@ -98,7 +98,7 @@ const pacienteSchema = new mongoose.Schema({
 });
 
 // Índices para búsquedas eficientes
-pacienteSchema.index({ usuario: 1 });
+// usuario ya tiene unique: true en el schema
 pacienteSchema.index({ doctorAsignado: 1 });
 
 // Virtuals

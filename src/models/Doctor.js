@@ -65,9 +65,9 @@ const doctorSchema = new mongoose.Schema({
 });
 
 // Índices para búsquedas eficientes
-doctorSchema.index({ usuario: 1 });
 doctorSchema.index({ especialidad: 1 });
 doctorSchema.index({ activo: 1 });
+// usuario ya tiene unique: true en el schema
 
 // Virtuals
 doctorSchema.virtual('nombreCompleto').get(function() {
