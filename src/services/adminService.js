@@ -61,23 +61,25 @@ class AdminService {
   }
 
   // 🔄 CAMBIAR ESTADO DE DOCTOR CON REASIGNACIÓN DE CITAS
-  static async cambiarEstadoDoctor(doctorId, nuevoEstado, opciones = {}) {
+  static async cambiarEstadoDoctor(usuarioId, nuevoEstado, opciones = {}) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      console.log('🔍 Buscando doctor con ID:', doctorId);
-      console.log('🔍 Tipo de doctorId:', typeof doctorId);
-      console.log('🔍 Validación de ID:', mongoose.Types.ObjectId.isValid(doctorId));
+      console.log('🔍 Buscando doctor con usuario ID:', usuarioId);
+      console.log('🔍 Tipo de usuarioId:', typeof usuarioId);
+      console.log('🔍 Validación de ID:', mongoose.Types.ObjectId.isValid(usuarioId));
       
-      const doctor = await Doctor.findById(doctorId).populate('usuario').session(session);
+      // Buscar doctor por el ID del usuario
+      const doctor = await Doctor.findOne({ usuario: usuarioId }).populate('usuario').session(session);
       console.log('🔍 Doctor encontrado:', !!doctor);
       
       if (!doctor) {
         // Listar todos los doctores para depuración
-        const todosLosDoctores = await Doctor.find({}).select('_id usuario especialidad');
+        const todosLosDoctores = await Doctor.find({}).populate('usuario').select('_id usuario especialidad');
         console.log('📋 Todos los doctores en BD:', todosLosDoctores.map(d => ({
           id: d._id,
+          usuarioId: d.usuario?._id,
           email: d.usuario?.email,
           especialidad: d.especialidad
         })));
@@ -104,7 +106,7 @@ class AdminService {
         const { reasignarA, reasignacionAutomatica } = opciones;
         
         const citasPendientes = await Cita.find({
-          doctor: doctorId,
+          doctor: doctor._id,
           estado: { $in: ['pendiente', 'confirmada'] },
           fecha: { $gte: new Date() }
         }).session(session);
@@ -126,7 +128,7 @@ class AdminService {
       await session.commitTransaction();
 
       // Obtener datos actualizados fuera de la transacción
-      const doctorActualizado = await Doctor.findById(doctorId)
+      const doctorActualizado = await Doctor.findById(doctor._id)
         .populate('usuario', 'nombre apellido email telefono estado');
 
       // Si se está aprobando al doctor, enviar correo de bienvenida

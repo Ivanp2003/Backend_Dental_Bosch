@@ -630,6 +630,9 @@ const aprobarDoctor = async (req, res) => {
     usuario.estado = 'aprobado';
     await usuario.save();
 
+    // También actualizar el estado del doctor (activo)
+    await Doctor.findByIdAndUpdate(doctor._id, { activo: true });
+
     // Enviar email de aprobación
     await enviarEmailAprobacionDoctor(usuario.email, usuario.nombreCompleto, doctor.especialidad);
 
@@ -700,6 +703,12 @@ const rechazarDoctor = async (req, res) => {
     // Actualizar estado del usuario
     usuario.estado = 'rechazado';
     await usuario.save();
+
+    // También actualizar el estado del doctor (inactivo)
+    const doctor = await Doctor.findOne({ usuario: id });
+    if (doctor) {
+      await Doctor.findByIdAndUpdate(doctor._id, { activo: false });
+    }
 
     // Enviar email de rechazo
     await enviarEmailRechazoDoctor(usuario.email, usuario.nombreCompleto, motivo);
