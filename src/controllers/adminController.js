@@ -736,6 +736,70 @@ const rechazarDoctor = async (req, res) => {
   }
 };
 
+// 🧹 LIMPIAR DOCTORES HUÉRFANOS
+const limpiarDoctoresHuerfanos = async (req, res) => {
+  try {
+    console.log('🧹 Admin limpiando doctores huérfanos');
+
+    // Encontrar doctores sin usuario asociado
+    const doctoresHuerfanos = await Doctor.find({ usuario: null });
+    console.log(`📋 Encontrados ${doctoresHuerfanos.length} doctores huérfanos`);
+
+    let eliminados = 0;
+    let limpiados = 0;
+
+    // Eliminar doctores huérfanos
+    if (doctoresHuerfanos.length > 0) {
+      const resultado = await Doctor.deleteMany({ usuario: null });
+      eliminados = resultado.deletedCount;
+      console.log(`🗑️ Eliminados ${eliminados} doctores huérfanos`);
+    }
+
+    // Limpiar campos obsoletos de los doctores restantes
+    const doctoresRestantes = await Doctor.find({});
+    console.log(`📋 Doctores restantes: ${doctoresRestantes.length}`);
+
+    for (const doctor of doctoresRestantes) {
+      let necesitaActualizar = false;
+      let actualizacion = { $unset: {} };
+
+      // Eliminar campos obsoletos si existen
+      if (doctor.calificacionPromedio !== undefined) {
+        actualizacion.$unset.calificacionPromedio = 1;
+        necesitaActualizar = true;
+      }
+      if (doctor.totalCalificaciones !== undefined) {
+        actualizacion.$unset.totalCalificaciones = 1;
+        necesitaActualizar = true;
+      }
+
+      if (necesitaActualizar) {
+        await Doctor.findByIdAndUpdate(doctor._id, actualizacion);
+        limpiados++;
+        console.log(`🧹 Limpiado doctor ${doctor._id}`);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Limpieza completada exitosamente',
+      data: {
+        doctoresHuerfanosEliminados: eliminados,
+        doctoresLimpiados: limpiados,
+        totalDoctoresRestantes: doctoresRestantes.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en limpiarDoctoresHuerfanos:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   // Gestión de Doctores
   actualizarDoctor,
@@ -747,6 +811,7 @@ module.exports = {
   reasignarCitasDoctor,
   aprobarDoctor,
   rechazarDoctor,
+  limpiarDoctoresHuerfanos,
   
   // Gestión de Citas
   obtenerTodasLasCitas,

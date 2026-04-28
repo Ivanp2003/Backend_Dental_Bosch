@@ -59,6 +59,10 @@ router.put('/doctores/:id/aprobar', adminController.aprobarDoctor);
 // Body: { motivo: "Motivo del rechazo (opcional)" }
 router.put('/doctores/:id/rechazar', adminController.rechazarDoctor);
 
+// 🧹 Limpiar doctores huérfanos
+// POST /api/admin/doctores/limpiar-huerfanos
+router.post('/doctores/limpiar-huerfanos', adminController.limpiarDoctoresHuerfanos);
+
 // ==============================
 // 📅 GESTIÓN DE CITAS (ADMIN)
 // ==============================

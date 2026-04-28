@@ -355,7 +355,7 @@ class AdminService {
         doctores = await Doctor.find(query)
           .populate({
             path: 'usuario',
-            select: 'nombre apellido email telefono estado',
+            select: 'nombre apellido email telefono cedula estado confirmado createdAt',
             match: { estado: estado } // Filtrar por estado del usuario
           })
           .sort({ createdAt: -1 })
@@ -374,15 +374,38 @@ class AdminService {
           });
         total = allDoctores.filter(doctor => doctor.usuario !== null).length;
       } else {
-        // Sin filtro de estado, comportamiento normal
+        // Sin filtro de estado, comportamiento normal pero excluir doctores huérfanos
         doctores = await Doctor.find(query)
-          .populate('usuario', 'nombre apellido email telefono estado')
+          .populate({
+            path: 'usuario',
+            select: 'nombre apellido email telefono cedula estado confirmado createdAt',
+            match: { usuario: { $exists: true } } // Asegurar que tenga usuario
+          })
           .sort({ createdAt: -1 })
           .limit(limit * 1)
           .skip((page - 1) * limit);
 
-        total = await Doctor.countDocuments(query);
+        // Filtrar los doctores donde el usuario no sea null
+        doctores = doctores.filter(doctor => doctor.usuario !== null);
+
+        // Contar el total excluyendo huérfanos
+        const allDoctores = await Doctor.find(query)
+          .populate({
+            path: 'usuario',
+            select: '_id',
+            match: { usuario: { $exists: true } }
+          });
+        total = allDoctores.filter(doctor => doctor.usuario !== null).length;
       }
+
+      // Limpiar campos obsoletos de los resultados
+      doctores = doctores.map(doctor => {
+        const doctorObj = doctor.toObject();
+        // Eliminar campos obsoletos si existen
+        delete doctorObj.calificacionPromedio;
+        delete doctorObj.totalCalificaciones;
+        return doctorObj;
+      });
 
       return {
         doctores,
