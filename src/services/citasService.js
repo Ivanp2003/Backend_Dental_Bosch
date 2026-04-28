@@ -140,6 +140,10 @@ class CitasService {
         creadoPor: creadoPor || rolUsuario
       });
 
+      console.log('🔍 Antes de guardar la cita...');
+      console.log('🔍 Tipo de nuevaCita:', typeof nuevaCita);
+      console.log('🔍 nuevaCita.save:', typeof nuevaCita.save);
+
       await nuevaCita.save();
       console.log('✅ Cita guardada exitosamente');
 
