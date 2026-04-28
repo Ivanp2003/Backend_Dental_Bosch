@@ -103,8 +103,20 @@ usuarioSchema.virtual('nombreCompleto').get(function() {
   return `${this.nombre} ${this.apellido}`;
 });
 
-// Nota: El pre-save middleware fue removido porque el hash del password
-// se maneja en el servicio para evitar doble hash y problemas con next()
+// Middleware para encriptar contraseña antes de guardar
+usuarioSchema.pre('save', async function(next) {
+  // Solo encriptar si el password fue modificado o es nuevo
+  if (!this.isModified('password')) return next();
+  
+  try {
+    // Generar salt y encriptar password
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Método para comparar passwords
 usuarioSchema.methods.compararPassword = async function(passwordIngresado) {
