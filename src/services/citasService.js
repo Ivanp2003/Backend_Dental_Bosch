@@ -87,11 +87,23 @@ class CitasService {
         throw new Error('No se pueden programar citas en fechas pasadas');
       }
 
-      // Validar que el paciente exista
+      // Validar que el paciente exista y tenga cuenta activa
       const pacienteExistente = await Paciente.findById(paciente).populate('usuario');
       if (!pacienteExistente) {
         throw new Error('Paciente no encontrado');
       }
+
+      // Validar que el paciente tenga cuenta de usuario activa
+      if (!pacienteExistente.usuario) {
+        throw new Error('El paciente debe tener una cuenta de usuario para agendar citas');
+      }
+
+      if (!pacienteExistente.usuario.activo) {
+        throw new Error('La cuenta del paciente está inactiva');
+      }
+
+      // Los pacientes se aprueban automáticamente, no necesitan aprobación de admin
+      // Solo doctores necesitan aprobación explícita
 
       // Validar que el doctor exista y esté aprobado
       const doctorExistente = await Doctor.findOne({ 
@@ -292,6 +304,68 @@ class CitasService {
 
       await cita.save();
 
+      return cita;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Actualizar estado de cita
+  static async actualizarEstadoCita(citaId, nuevoEstado, observaciones = '', rolUsuario) {
+    try {
+      const cita = await Cita.findById(citaId)
+        .populate('paciente', 'usuario')
+        .populate('doctor', 'usuario');
+
+      if (!cita) {
+        throw new Error('Cita no encontrada');
+      }
+
+      // Validaciones según el estado actual y nuevo
+      if (cita.estado === 'finalizada' && nuevoEstado !== 'cancelada') {
+        throw new Error('No se puede modificar una cita finalizada');
+      }
+
+      if (cita.estado === 'cancelada') {
+        throw new Error('No se puede modificar una cita cancelada');
+      }
+
+      // Validaciones específicas según el nuevo estado
+      if (nuevoEstado === 'finalizada') {
+        // Validar que la cita sea hoy o anterior
+        const hoy = new Date();
+        hoy.setHours(23, 59, 59, 999);
+        
+        if (cita.fecha > hoy) {
+          throw new Error('No se pueden finalizar citas futuras');
+        }
+
+        if (cita.estado !== 'confirmada') {
+          throw new Error('Solo se pueden finalizar citas confirmadas');
+        }
+      }
+
+      if (nuevoEstado === 'confirmada' && cita.estado !== 'pendiente') {
+        throw new Error('Solo se pueden confirmar citas pendientes');
+      }
+
+      // Actualizar estado
+      cita.estado = nuevoEstado;
+      
+      if (observaciones) {
+        cita.notas = observaciones;
+      }
+
+      // Si se confirma, marcar como confirmada
+      if (nuevoEstado === 'confirmada') {
+        cita.confirmada = true;
+        cita.fechaConfirmacion = new Date();
+      }
+
+      await cita.save();
+
+      console.log(`🔄 Cita ${citaId} actualizada a estado: ${nuevoEstado} por ${rolUsuario}`);
+      
       return cita;
     } catch (error) {
       throw error;

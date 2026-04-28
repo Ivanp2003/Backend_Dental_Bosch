@@ -363,6 +363,85 @@ const confirmarCita = async (req, res) => {
   }
 };
 
+// 🔄 ACTUALIZAR ESTADO DE CITA (DOCTOR/ADMIN)
+const actualizarEstadoCita = async (req, res) => {
+  try {
+    console.log('🔄 Actualizando estado de cita:', req.params.id);
+    
+    const { id } = req.params;
+    const { estado, observaciones } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de cita inválido'
+      });
+    }
+
+    // Validar estados permitidos
+    const estadosPermitidos = ['pendiente', 'confirmada', 'finalizada', 'cancelada'];
+    if (!estadosPermitidos.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Estado no válido. Estados permitidos: ' + estadosPermitidos.join(', ')
+      });
+    }
+
+    // Solo doctores y admins pueden actualizar estados
+    if (req.usuario.rol === 'paciente') {
+      return res.status(403).json({
+        success: false,
+        mensaje: 'Los pacientes no pueden actualizar el estado de las citas'
+      });
+    }
+
+    // Si es doctor, validar que sea su cita
+    if (req.usuario.rol === 'doctor') {
+      const Cita = require('../models/Cita');
+      const cita = await Cita.findById(id);
+      
+      if (!cita) {
+        return res.status(404).json({
+          success: false,
+          mensaje: 'Cita no encontrada'
+        });
+      }
+
+      const doctorData = await Doctor.findOne({ usuario: req.usuario.id });
+      if (!doctorData || cita.doctor.toString() !== doctorData._id.toString()) {
+        return res.status(403).json({
+          success: false,
+          mensaje: 'Solo puedes actualizar el estado de tus propias citas'
+        });
+      }
+    }
+
+    const citaActualizada = await CitasService.actualizarEstadoCita(id, estado, observaciones, req.usuario.rol);
+
+    res.status(200).json({
+      success: true,
+      mensaje: `Cita ${estado === 'finalizada' ? 'finalizada' : 'actualizada'} exitosamente`,
+      datos: citaActualizada
+    });
+
+  } catch (error) {
+    console.error('❌ Error en actualizarEstadoCita:', error);
+    
+    if (error.message.includes('no encontrada') || error.message.includes('confirmadas') || error.message.includes('futuras')) {
+      return res.status(404).json({
+        success: false,
+        mensaje: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // 🏁 FINALIZAR CITA (DOCTOR/ADMIN)
 const finalizarCita = async (req, res) => {
   try {
@@ -487,6 +566,7 @@ module.exports = {
   obtenerTodasLasCitas,
   cancelarCita,
   confirmarCita,
+  actualizarEstadoCita,
   finalizarCita,
   obtenerDisponibilidadDoctor
 };

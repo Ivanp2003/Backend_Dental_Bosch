@@ -35,6 +35,11 @@ router.delete('/:id', citasController.cancelarCita);
 // PUT /api/citas/:id/confirmar
 router.put('/:id/confirmar', autorizarRoles('doctor', 'admin'), citasController.confirmarCita);
 
+// 🔄 Actualizar estado de cita (doctor, admin)
+// PUT /api/citas/:id/estado
+// Body: { estado: "confirmada|finalizada|cancelada", observaciones: "Observaciones opcionales" }
+router.put('/:id/estado', autorizarRoles('doctor', 'admin'), citasController.actualizarEstadoCita);
+
 // 🏁 Finalizar cita (doctor, admin)
 // PUT /api/citas/:id/finalizar
 // Body: { notas: "Notas de la cita" }
