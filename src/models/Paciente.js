@@ -114,14 +114,6 @@ pacienteSchema.virtual('edad').get(function() {
   return edad;
 });
 
-// Middleware pre-save
-pacienteSchema.pre('save', function(next) {
-  if (this.isNew) {
-    console.log(`👤 Nuevo paciente registrado`);
-  }
-  next();
-});
-
 // Aplicar plugin de paginación
 pacienteSchema.plugin(mongoosePaginate);
 

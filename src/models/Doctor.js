@@ -75,12 +75,4 @@ doctorSchema.virtual('nombreCompleto').get(function() {
   return this.usuario?.nombreCompleto || 'Doctor';
 });
 
-// Middleware pre-save
-doctorSchema.pre('save', function(next) {
-  if (this.isNew) {
-    console.log(`👨‍⚕️ Nuevo doctor registrado`);
-  }
-  next();
-});
-
 module.exports = mongoose.model('Doctor', doctorSchema);
