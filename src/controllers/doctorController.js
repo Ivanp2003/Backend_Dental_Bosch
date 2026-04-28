@@ -83,16 +83,30 @@ exports.actualizarPerfil = async (req, res, next) => {
 // @access  Public
 exports.obtenerDoctores = async (req, res, next) => {
   try {
-    const doctores = await Doctor.find()
+    const doctores = await Doctor.find({ activo: true })
       .populate({
         path: 'usuario',
-        select: 'nombre apellido email foto especialidad'
+        select: 'nombre apellido email foto especialidad',
+        match: { estado: 'aprobado' } // Solo mostrar doctores aprobados
       });
+
+    // Filtrar doctores que tienen usuario y están aprobados
+    const doctoresValidos = doctores.filter(doctor => 
+      doctor.usuario !== null && doctor.usuario.estado === 'aprobado'
+    );
+
+    // Limpiar campos obsoletos
+    const doctoresLimpios = doctoresValidos.map(doctor => {
+      const doctorObj = doctor.toObject();
+      delete doctorObj.calificacionPromedio;
+      delete doctorObj.totalCalificaciones;
+      return doctorObj;
+    });
 
     res.status(200).json({
       success: true,
-      count: doctores.length,
-      data: doctores
+      count: doctoresLimpios.length,
+      data: doctoresLimpios
     });
 
   } catch (error) {

@@ -344,8 +344,14 @@ class AdminService {
     try {
       const { estado, especialidad, page = 1, limit = 10 } = filtros;
 
+      // Primero, obtener todos los IDs de doctores que tienen usuario
+      const doctoresConUsuario = await Doctor.find({ usuario: { $exists: true, $ne: null } }).select('_id');
+      const doctorIdsValidos = doctoresConUsuario.map(d => d._id);
+
       const query = {};
       if (especialidad) query.especialidad = new RegExp(especialidad, 'i');
+      // Filtrar solo por IDs válidos
+      query._id = { $in: doctorIdsValidos };
 
       let doctores;
       let total;
@@ -378,8 +384,7 @@ class AdminService {
         doctores = await Doctor.find(query)
           .populate({
             path: 'usuario',
-            select: 'nombre apellido email telefono cedula estado confirmado createdAt',
-            match: { usuario: { $exists: true } } // Asegurar que tenga usuario
+            select: 'nombre apellido email telefono cedula estado confirmado createdAt'
           })
           .sort({ createdAt: -1 })
           .limit(limit * 1)
@@ -392,8 +397,7 @@ class AdminService {
         const allDoctores = await Doctor.find(query)
           .populate({
             path: 'usuario',
-            select: '_id',
-            match: { usuario: { $exists: true } }
+            select: '_id'
           });
         total = allDoctores.filter(doctor => doctor.usuario !== null).length;
       }
