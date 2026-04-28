@@ -12,11 +12,9 @@ const configurarIndices = async () => {
     // Índices para colección Usuario
     const Usuario = mongoose.model('Usuario');
     await Usuario.collection.createIndexes([
-      { key: { email: 1 }, unique: true },
       { key: { rol: 1 } },
       { key: { estado: 1 } },
       { key: { activo: 1 } },
-      { key: { googleId: 1 }, sparse: true },
       { key: { nombre: 'text', apellido: 'text' } } // Búsqueda de texto
     ]);
 

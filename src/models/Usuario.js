@@ -80,12 +80,10 @@ const usuarioSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Índices para búsquedas eficientes
-usuarioSchema.index({ email: 1 });
+// Índices adicionales para búsquedas eficientes
 usuarioSchema.index({ rol: 1 });
 usuarioSchema.index({ estado: 1 });
 usuarioSchema.index({ activo: 1 });
-usuarioSchema.index({ googleId: 1 });
 
 // Virtuals
 usuarioSchema.virtual('nombreCompleto').get(function() {
