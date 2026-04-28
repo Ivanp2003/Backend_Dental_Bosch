@@ -15,7 +15,21 @@ const { generarAvatarPorRol } = require('../utils/avatarUtils');
 // @access  Public
 exports.registro = async (req, res, next) => {
   try {
-    const { nombre, apellido, email, password, rol, cedula, telefono, especialidad } = req.body;
+    const { 
+  nombre, 
+  apellido, 
+  email, 
+  password, 
+  rol, 
+  cedula, 
+  telefono, 
+  especialidad,
+  fechaNacimiento,
+  genero,
+  direccion,
+  contactoEmergencia,
+  infoMedica
+} = req.body;
 
     // Validaciones básicas
     if (!nombre || !apellido || !email || !password) {
@@ -90,8 +104,30 @@ exports.registro = async (req, res, next) => {
         especialidad
       });
     } else {
+      // Validar campos requeridos para paciente
+      if (!fechaNacimiento || !genero || !direccion || !contactoEmergencia) {
+        return res.status(400).json({
+          success: false,
+          mensaje: [
+            !fechaNacimiento ? "La fecha de nacimiento es obligatoria" : null,
+            !genero ? "El género es obligatorio" : null,
+            !direccion?.calle ? "La calle es obligatoria" : null,
+            !direccion?.ciudad ? "La ciudad es obligatoria" : null,
+            !direccion?.provincia ? "La provincia es obligatoria" : null,
+            !contactoEmergencia?.nombre ? "El nombre del contacto de emergencia es obligatorio" : null,
+            !contactoEmergencia?.telefono ? "El teléfono del contacto de emergencia es obligatorio" : null,
+            !contactoEmergencia?.parentesco ? "El parentesco es obligatorio" : null
+          ].filter(Boolean)
+        });
+      }
+
       await Paciente.create({
-        usuario: usuario._id
+        usuario: usuario._id,
+        fechaNacimiento,
+        genero,
+        direccion,
+        contactoEmergencia,
+        infoMedica: infoMedica || {}
       });
     }
 
