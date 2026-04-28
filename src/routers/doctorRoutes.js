@@ -9,7 +9,8 @@ const {
   cambiarEstadoDoctor,
   obtenerDoctoresPendientes,
   obtenerDoctoresAprobados,
-  eliminarDoctor
+  eliminarDoctor,
+  actualizarDoctor
 } = require('../controllers/doctorController');
 
 // Middleware de logging para todas las solicitudes a doctores
@@ -62,5 +63,8 @@ router.put('/:id/estado', autorizarRoles('admin'), cambiarEstadoDoctor);
 
 // Eliminar doctor 
 router.delete('/:id', autorizarRoles('admin'), eliminarDoctor);
+
+// Actualizar doctor (solo admin) 
+router.put('/:id', autorizarRoles('admin'), actualizarDoctor);
 
 module.exports = router;

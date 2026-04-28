@@ -324,3 +324,59 @@ exports.eliminarDoctor = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Actualizar doctor (solo admin)
+// @route   PUT /api/doctores/:id
+// @access  Private/Admin
+exports.actualizarDoctor = async (req, res, next) => {
+  try {
+    console.log('🔧 Actualizando doctor con ID:', req.params.id);
+    console.log('📋 Datos a actualizar:', req.body);
+
+    // Buscar el doctor
+    let doctor = await Doctor.findById(req.params.id);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Doctor no encontrado'
+      });
+    }
+
+    // Actualizar campos del doctor
+    const camposActualizar = {};
+    
+    // Actualizar especialidad si se proporciona
+    if (req.body.especialidad) {
+      camposActualizar.especialidad = req.body.especialidad;
+    }
+    
+    // Actualizar horario de atención si se proporciona
+    if (req.body.horarioAtencion) {
+      camposActualizar.horarioAtencion = req.body.horarioAtencion;
+    }
+    
+    // Actualizar estado activo si se proporciona
+    if (req.body.activo !== undefined) {
+      camposActualizar.activo = req.body.activo;
+    }
+
+    // Actualizar doctor
+    doctor = await Doctor.findByIdAndUpdate(
+      req.params.id,
+      camposActualizar,
+      { new: true, runValidators: true }
+    ).populate('usuario', 'nombre apellido email telefono');
+
+    console.log('✅ Doctor actualizado exitosamente');
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Doctor actualizado exitosamente',
+      data: doctor
+    });
+
+  } catch (error) {
+    console.error('❌ Error actualizando doctor:', error);
+    next(error);
+  }
+};
