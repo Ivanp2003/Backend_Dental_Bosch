@@ -79,12 +79,17 @@ exports.registro = async (req, res, next) => {
     // Generar avatar automático si no se proporciona
     const avatar = generarAvatarPorRol(rol || 'paciente', nombre, apellido);
 
+    // Encriptar contraseña antes de crear el usuario
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
     // Crear usuario - los doctores quedan pendientes de aprobación
     const usuario = await Usuario.create({
       nombre,
       apellido,
       email,
-      password,
+      password: passwordHash,
       rol: rol || 'paciente',
       cedula,
       telefono,
