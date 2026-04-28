@@ -75,6 +75,17 @@ class AdminService {
       doctor.activo = nuevoEstado;
       await doctor.save({ session });
 
+      // También actualizar el estado del usuario si es necesario
+      if (doctor.usuario) {
+        await Usuario.findByIdAndUpdate(
+          doctor.usuario._id,
+          { estado: nuevoEstado ? 'aprobado' : 'rechazado' },
+          { session }
+        );
+      }
+
+      let citasReasignadas = 0;
+
       // Si se desactiva el doctor, reasignar citas pendientes
       if (!nuevoEstado && estadoAnterior) {
         const { reasignarA, reasignacionAutomatica } = opciones;
@@ -88,25 +99,26 @@ class AdminService {
         if (citasPendientes.length > 0) {
           if (reasignarA) {
             // Reasignación manual
-            await this.reasignarCitas(citasPendientes, reasignarA, session);
+            await this._reasignarCitasInternas(citasPendientes, reasignarA, session);
           } else if (reasignacionAutomatica) {
             // Reasignación automática
-            await this.reasignacionAutomaticaCitas(citasPendientes, doctor.especialidad, session);
+            await this._reasignacionAutomaticaCitasInternas(citasPendientes, doctor.especialidad, session);
           } else {
             throw new Error('Hay citas pendientes. Debe especificar una reasignación');
           }
+          citasReasignadas = citasPendientes.length;
         }
       }
 
       await session.commitTransaction();
 
-      // Obtener datos actualizados
+      // Obtener datos actualizados fuera de la transacción
       const doctorActualizado = await Doctor.findById(doctorId)
         .populate('usuario', 'nombre apellido email telefono estado');
 
       return {
         doctor: doctorActualizado,
-        citasReasignadas: citasPendientes?.length || 0
+        citasReasignadas
       };
 
     } catch (error) {
@@ -117,7 +129,7 @@ class AdminService {
     }
   }
 
-  // 🔁 REASIGNAR CITAS A OTRO DOCTOR
+  // 🔁 REASIGNAR CITAS A OTRO DOCTOR (FUNCIÓN PÚBLICA CON TRANSACCIÓN)
   static async reasignarCitas(citas, nuevoDoctorId, session) {
     try {
       // Verificar que el nuevo doctor exista y esté activo
@@ -149,7 +161,33 @@ class AdminService {
     }
   }
 
-  // 🤖 REASIGNACIÓN AUTOMÁTICA DE CITAS
+  // 🔁 REASIGNAR CITAS INTERNAS (SIN TRANSACCIÓN PROPIA)
+  static async _reasignarCitasInternas(citas, nuevoDoctorId, session) {
+    // Verificar que el nuevo doctor exista y esté activo
+    const nuevoDoctor = await Doctor.findOne({ 
+      _id: nuevoDoctorId, 
+      activo: true 
+    }).session(session);
+
+    if (!nuevoDoctor) {
+      throw new Error('El doctor de destino no existe o está inactivo');
+    }
+
+    // Actualizar todas las citas
+    const citaIds = citas.map(cita => cita._id);
+    await Cita.updateMany(
+      { _id: { $in: citaIds } },
+      { 
+        doctor: nuevoDoctorId,
+        estado: 'pendiente', // Resetear a pendiente
+        confirmada: false,
+        notas: `Cita reasignada automáticamente. ${citas[0]?.notas || ''}`
+      },
+      { session }
+    );
+  }
+
+  // 🤖 REASIGNACIÓN AUTOMÁTICA DE CITAS (FUNCIÓN PÚBLICA CON TRANSACCIÓN)
   static async reasignacionAutomaticaCitas(citas, especialidad, session) {
     try {
       // Buscar doctores disponibles con la misma especialidad
@@ -185,6 +223,39 @@ class AdminService {
       return true;
     } catch (error) {
       throw error;
+    }
+  }
+
+  // 🤖 REASIGNACIÓN AUTOMÁTICA DE CITAS (FUNCIÓN INTERNA SIN TRANSACCIÓN PROPIA)
+  static async _reasignacionAutomaticaCitasInternas(citas, especialidad, session) {
+    // Buscar doctores disponibles con la misma especialidad
+    const doctoresDisponibles = await Doctor.find({
+      especialidad,
+      activo: true,
+      _id: { $ne: citas[0].doctor } // Excluir doctor original
+    }).session(session);
+
+    if (doctoresDisponibles.length === 0) {
+      throw new Error('No hay doctores disponibles para la reasignación automática');
+    }
+
+    // Distribuir citas equitativamente entre doctores disponibles
+    const citasPorDoctor = Math.ceil(citas.length / doctoresDisponibles.length);
+    
+    for (let i = 0; i < citas.length; i++) {
+      const doctorIndex = Math.floor(i / citasPorDoctor);
+      const doctorAsignado = doctoresDisponibles[doctorIndex] || doctoresDisponibles[0];
+      
+      await Cita.findByIdAndUpdate(
+        citas[i]._id,
+        {
+          doctor: doctorAsignado._id,
+          estado: 'pendiente',
+          confirmada: false,
+          notas: `Cita reasignada automáticamente. ${citas[i].notas || ''}`
+        },
+        { session }
+      );
     }
   }
 
