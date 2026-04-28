@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "fix-avatars": "node src/scripts/fixAvatares.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -26,16 +25,12 @@
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
-    "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "express-fileupload": "^1.5.2",
-    "fs-extra": "^11.3.4",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.4",
     "mongoose-paginate-v2": "^1.8.0",
-    "multer": "^2.1.1",
     "node-fetch": "^2.7.0",
     "nodemailer": "^8.0.1",
     "passport": "^0.7.0",

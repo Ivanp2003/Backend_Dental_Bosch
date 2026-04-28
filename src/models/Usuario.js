@@ -5,12 +5,14 @@ const usuarioSchema = new mongoose.Schema({
   nombre: {
     type: String,
     required: [true, 'El nombre es requerido'],
-    trim: true
+    trim: true,
+    maxlength: [50, 'El nombre no puede exceder 50 caracteres']
   },
   apellido: {
     type: String,
     required: [true, 'El apellido es requerido'],
-    trim: true
+    trim: true,
+    maxlength: [50, 'El apellido no puede exceder 50 caracteres']
   },
   email: {
     type: String,
@@ -27,36 +29,23 @@ const usuarioSchema = new mongoose.Schema({
   },
   rol: {
     type: String,
-    enum: ['doctor', 'paciente', 'admin'],
+    enum: ['admin', 'doctor', 'paciente'],
     default: 'paciente'
-  },
-  cedula: {
-    type: String,
-    unique: true,
-    sparse: true,
-    trim: true,
-    validate: {
-      validator: function(v) {
-        // Si está vacío, es válido (sparse: true)
-        if (!v) return true;
-        
-        // Limpiar caracteres no numéricos y verificar longitud
-        const cleaned = v.replace(/[^0-9]/g, '');
-        
-        // Aceptar entre 5 y 13 dígitos (formatos ecuatorianos y otros)
-        return cleaned.length >= 5 && cleaned.length <= 13;
-      },
-      message: 'La cédula debe contener entre 5 y 13 dígitos'
-    }
   },
   telefono: {
     type: String,
-    trim: true
+    trim: true,
+    match: [/^[0-9]{10}$/, 'El teléfono debe tener 10 dígitos numéricos']
   },
   foto: {
     type: String,
-    default: 'https://ui-avatars.com/api/?name=User&background=8b5cf6&color=fff&size=128'
+    default: function() {
+      const iniciales = `${this.nombre ? this.nombre[0] : 'U'}${this.apellido ? this.apellido[0] : 'U'}`;
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciales)}&background=8b5cf6&color=fff&size=128`;
+    }
   },
+  
+  // Estados unificados y normalizados
   estado: {
     type: String,
     enum: ['pendiente', 'aprobado', 'rechazado'],
@@ -64,28 +53,46 @@ const usuarioSchema = new mongoose.Schema({
       return this.rol === 'doctor' ? 'pendiente' : 'aprobado';
     }
   },
-  googleId: {
-    type: String,
-    unique: true,
-    sparse: true
+  activo: {
+    type: Boolean,
+    default: true
   },
   confirmado: {
     type: Boolean,
     default: false
   },
+  
+  // Autenticación Google
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+  
+  // Tokens de seguridad
   tokenConfirmacion: String,
   tokenRecuperacion: String,
-  tokenExpiracion: Date,
-  activo: {
-    type: Boolean,
-    default: true
-  }
+  tokenExpiracion: Date
 }, {
   timestamps: true,
-  versionKey: false
+  versionKey: false,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-// Encriptar password antes de guardar
+// Índices para búsquedas eficientes
+usuarioSchema.index({ email: 1 });
+usuarioSchema.index({ rol: 1 });
+usuarioSchema.index({ estado: 1 });
+usuarioSchema.index({ activo: 1 });
+usuarioSchema.index({ googleId: 1 });
+
+// Virtuals
+usuarioSchema.virtual('nombreCompleto').get(function() {
+  return `${this.nombre} ${this.apellido}`;
+});
+
+// Middleware pre-save
 usuarioSchema.pre('save', async function() {
   if (!this.isModified('password')) return;
   if (!this.password) return;
@@ -103,7 +110,6 @@ usuarioSchema.methods.compararPassword = async function(passwordIngresado) {
 usuarioSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
-  // delete obj.tokenConfirmacion; // Comentado para que aparezca en MongoDB
   delete obj.tokenRecuperacion;
   delete obj.tokenExpiracion;
   return obj;

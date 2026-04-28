@@ -14,6 +14,11 @@ const connectDB = async () => {
     console.log(`MongoDB conectado: ${mongoose.connection.host}`);
     console.log(`Base de datos: ${mongoose.connection.name}`);
     console.log(`Entorno: ${environment}`);
+    
+    // Configurar índices para optimizar rendimiento
+    const { configurarIndices } = require('./config/databaseIndexes');
+    await configurarIndices();
+    
   } catch (error) {
     console.error(`Error de conexión a MongoDB: ${error.message}`);
     process.exit(1);

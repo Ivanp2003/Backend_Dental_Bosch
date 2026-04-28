@@ -28,6 +28,10 @@ const doctorRoutes = require('./routers/doctorRoutes');
 
 const pacienteRoutes = require('./routers/pacienteRoutes');
 
+const adminRoutes = require('./routes/adminRoutes');
+
+const citasRoutes = require('./routes/citasRoutes');
+
 
 
 // Conectar a la base de datos
@@ -235,6 +239,62 @@ app.get('/', (req, res) => {
 
         asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
 
+      },
+
+      admin: {
+
+        doctores: {
+
+          crear: 'POST /api/admin/doctores',
+
+          listar: 'GET /api/admin/doctores',
+
+          detalle: 'GET /api/admin/doctores/:id',
+
+          actualizar: 'PUT /api/admin/doctores/:id',
+
+          estado: 'PUT /api/admin/doctores/:id/estado',
+
+          horario: 'PUT /api/admin/doctores/:id/horario'
+
+        },
+
+        citas: {
+
+          todas: 'GET /api/admin/citas'
+
+        },
+
+        pacientes: {
+
+          listar: 'GET /api/admin/pacientes',
+
+          detalle: 'GET /api/admin/pacientes/:id',
+
+          asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor'
+
+        },
+
+        estadisticas: 'GET /api/admin/estadisticas'
+
+      },
+
+      citas: {
+
+        crear: 'POST /api/citas',
+
+        misCitas: 'GET /api/citas/mis-citas',
+
+        citasDoctor: 'GET /api/citas/doctor',
+
+        cancelar: 'DELETE /api/citas/:id',
+
+        confirmar: 'PUT /api/citas/:id/confirmar',
+
+        finalizar: 'PUT /api/citas/:id/finalizar',
+
+        disponibilidad: 'GET /api/citas/disponibilidad'
+
       }
 
     }
@@ -282,11 +342,13 @@ app.use('/api/doctores', doctorRoutes);
 
 app.use('/api/pacientes', pacienteRoutes);
 
+app.use('/api/admin', adminRoutes);
+
+app.use('/api/citas', citasRoutes);
 
 
 // ========== SPRINT 2, 3, 4, 5, 6 (Próximamente) ==========
 
-// app.use('/api/citas', citaRoutes);
 
 // app.use('/api/horarios', horarioRoutes);
 
