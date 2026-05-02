@@ -391,7 +391,8 @@ app.get('/', (req, res) => {
           detalle: 'GET /api/admin/doctores/:id',
           actualizar: 'PUT /api/admin/doctores/:id',
           estado: 'PUT /api/admin/doctores/:id/estado',
-          horario: 'PUT /api/admin/doctores/:id/horario'
+          horario: 'PUT /api/admin/doctores/:id/horario',
+          horariosTodos: 'GET /api/admin/doctores/horarios'
         },
         citas: {
           todas: 'GET /api/admin/citas'

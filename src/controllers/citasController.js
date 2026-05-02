@@ -95,8 +95,7 @@ const crearCita = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -132,8 +131,7 @@ const obtenerMisCitas = async (req, res) => {
     console.error('❌ Error en obtenerMisCitas:', error);
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -169,8 +167,7 @@ const obtenerCitasDoctor = async (req, res) => {
     console.error('❌ Error en obtenerCitasDoctor:', error);
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -196,8 +193,7 @@ const obtenerTodasLasCitas = async (req, res) => {
     console.error('❌ Error en obtenerTodasLasCitas:', error);
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -288,8 +284,7 @@ const cancelarCita = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -357,8 +352,7 @@ const confirmarCita = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -436,8 +430,7 @@ const actualizarEstadoCita = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -506,8 +499,7 @@ const finalizarCita = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -553,8 +545,7 @@ const obtenerDisponibilidadDoctor = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };

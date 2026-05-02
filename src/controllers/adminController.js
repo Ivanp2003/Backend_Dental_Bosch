@@ -809,6 +809,66 @@ const limpiarDoctoresHuerfanos = async (req, res) => {
   }
 };
 
+// 🕐 OBTENER HORARIOS DE TODOS LOS DOCTORES
+const obtenerHorariosDoctores = async (req, res) => {
+  try {
+    console.log('🕐 Admin obteniendo horarios de todos los doctores');
+    
+    // Obtener todos los doctores con sus horarios
+    const doctores = await Doctor.find({ activo: true })
+      .populate('usuario', 'nombre apellido email')
+      .select('horarioAtencion especialidad usuario');
+
+    // Formatear la respuesta
+    const doctoresConHorarios = doctores.map(doctor => {
+      const doctorObj = doctor.toObject();
+      
+      // Organizar horarios por día de la semana
+      const horariosOrganizados = {};
+      const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+      
+      diasSemana.forEach(dia => {
+        const horarioDia = doctor.horarioAtencion.find(h => h.dia === dia);
+        horariosOrganizados[dia] = horarioDia ? {
+          disponible: horarioDia.disponible,
+          horaInicio: horarioDia.horaInicio,
+          horaFin: horarioDia.horaFin
+        } : {
+          disponible: false,
+          horaInicio: null,
+          horaFin: null
+        };
+      });
+
+      return {
+        id: doctorObj._id,
+        nombre: doctorObj.usuario?.nombreCompleto || 
+               `${doctorObj.usuario?.nombre || ''} ${doctorObj.usuario?.apellido || ''}`.trim(),
+        email: doctorObj.usuario?.email,
+        especialidad: doctorObj.especialidad,
+        horarios: horariosOrganizados,
+        totalDiasDisponibles: doctor.horarioAtencion.filter(h => h.disponible).length
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Horarios de doctores obtenidos exitosamente',
+      datos: {
+        doctores: doctoresConHorarios,
+        total: doctoresConHorarios.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerHorariosDoctores:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   // Gestión de Doctores
   actualizarDoctor,
@@ -821,6 +881,7 @@ module.exports = {
   aprobarDoctor,
   rechazarDoctor,
   limpiarDoctoresHuerfanos,
+  obtenerHorariosDoctores,
   
   // Gestión de Citas
   obtenerTodasLasCitas,
