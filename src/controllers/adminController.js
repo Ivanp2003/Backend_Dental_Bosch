@@ -85,14 +85,14 @@ const cambiarEstadoDoctor = async (req, res) => {
       });
     }
 
-    // Manejar el formato que envía el frontend: { estado: 'aprobado'/'rechazado' }
+    // Manejar ambos formatos: { estado: 'aprobado'/'rechazado' } o { activo: boolean }
     let esActivo;
-    if (estado === 'aprobado') {
+    if (typeof activo === 'boolean') {
+      esActivo = activo;
+    } else if (estado === 'aprobado') {
       esActivo = true;
     } else if (estado === 'rechazado') {
       esActivo = false;
-    } else if (typeof activo === 'boolean') {
-      esActivo = activo;
     } else {
       return res.status(400).json({
         success: false,

@@ -314,31 +314,17 @@ if (process.env.NODE_ENV === 'development') {
 
 app.get('/', (req, res) => {
 
-
-
   res.json({
-
-
 
     success: true,
 
-
-
     mensaje: 'API Sistema de Gestión Odontológica - Dental Bosch',
 
+    version: '2.0.0',
 
-
-    version: '1.0.0',
-
-
-
-    sprint: 'Sprint 3 - Módulo Pacientes',
-
-
+    sprint: 'Sprint 4 - Módulo de Citas y Gestión Completa',
 
     entorno: process.env.NODE_ENV,
-
-
 
     baseDatos: process.env.NODE_ENV === 'production' ? 'MongoDB Atlas' : 'MongoDB Local',
 
