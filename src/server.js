@@ -307,10 +307,7 @@ if (process.env.NODE_ENV === 'development') {
 
 
 
-
 // Ruta de bienvenida
-
-
 
 app.get('/', (req, res) => {
 
@@ -318,272 +315,119 @@ app.get('/', (req, res) => {
 
     success: true,
 
-    mensaje: 'API Sistema de Gestión Odontológica - Dental Bosch',
+    mensaje: '🦷 API Sistema de Gestión Odontológica - Dental Bosch',
 
     version: '2.0.0',
 
     sprint: 'Sprint 4 - Módulo de Citas y Gestión Completa',
 
+    proyecto: {
+      nombre: 'Dental Bosch Management System',
+      descripcion: 'Sistema integral de gestión odontológica con módulos de pacientes, doctores, citas y administración',
+      tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt'],
+      caracteristicas: [
+        'Autenticación y autorización por roles',
+        'Gestión de pacientes y doctores',
+        'Sistema de citas con disponibilidad',
+        'Panel de administración',
+        'Email notifications',
+        'File upload para avatares'
+      ]
+    },
+
     entorno: process.env.NODE_ENV,
 
     baseDatos: process.env.NODE_ENV === 'production' ? 'MongoDB Atlas' : 'MongoDB Local',
 
-
+    estado: {
+      servidor: '🟢 Activo',
+      database: '🟢 Conectada',
+      api: '🟢 Operativa'
+    },
 
     endpoints: {
 
-
-
       auth: {
-
-
-
         registro: 'POST /api/auth/registro',
-
-
-
         login: 'POST /api/auth/login',
-
-
-
-        confirmar: 'GET /api/auth/confirmar/:token',
-
-
-
         recuperarPassword: 'POST /api/auth/recuperar-password',
-
-
-
         restablecerPassword: 'POST /api/auth/restablecer-password/:token',
-
-
-
         actualizarPassword: 'PUT /api/auth/actualizar-password',
-
-
-
         perfil: 'GET /api/auth/perfil',
-
-
-
         verificarToken: 'GET /api/auth/verificar-token',
-
-
-
         google: {
-
-
-
           iniciar: 'GET /api/auth/google',
-
-
-
           callback: 'GET /api/auth/google/callback'
-
-
-
         }
-
-
-
       },
-
-
 
       doctores: {
-
-
-
         todos: 'GET /api/doctores',
-
-
-
         porId: 'GET /api/doctores/:id',
-
-
-
         perfil: 'GET /api/doctores/perfil/doctor',
-
-
-
         actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
-
-
-
         pendientes: 'GET /api/doctores/pendientes (Admin)',
-
-
-
         aprobados: 'GET /api/doctores/aprobados/lista (Público)',
-
-
-
         cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)',
-
-
-
         eliminar: 'DELETE /api/doctores/:id (Admin)'
-
-
-
       },
-
-
 
       pacientes: {
-
-
-
+        registro: 'POST /api/auth/registro (rol: paciente)',
         todos: 'GET /api/pacientes',
-
-
-
         porId: 'GET /api/pacientes/:id',
-
-
-
         perfil: 'GET /api/pacientes/perfil/paciente',
-
-
-
         actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',
-
-
-
         buscar: 'GET /api/pacientes/buscar',
-
-
-
         actualizar: 'PUT /api/pacientes/:id',
-
-
-
         eliminar: 'DELETE /api/pacientes/:id',
-
-
-
         asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
-
-
-
       },
-
-
 
       admin: {
-
-
-
         doctores: {
-
-
-
           crear: 'POST /api/admin/doctores',
-
-
-
           listar: 'GET /api/admin/doctores',
-
-
-
           detalle: 'GET /api/admin/doctores/:id',
-
-
-
           actualizar: 'PUT /api/admin/doctores/:id',
-
-
-
           estado: 'PUT /api/admin/doctores/:id/estado',
-
-
-
           horario: 'PUT /api/admin/doctores/:id/horario'
-
-
-
         },
-
-
-
         citas: {
-
-
-
           todas: 'GET /api/admin/citas'
-
-
-
         },
-
-
-
         pacientes: {
-
-
-
           listar: 'GET /api/admin/pacientes',
-
-
-
           detalle: 'GET /api/admin/pacientes/:id',
-
-
-
           asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor'
-
-
-
         },
-
-
-
         estadisticas: 'GET /api/admin/estadisticas'
-
-
-
       },
 
-
-
       citas: {
-
-
-
-        crear: 'POST /api/citas',
-
-
-
-        misCitas: 'GET /api/citas/mis-citas',
-
-
-
-        citasDoctor: 'GET /api/citas/doctor',
-
-
-
+        crear: 'POST /api/citas (Pacientes, Doctores, Admin)',
+        misCitas: 'GET /api/citas/mis-citas (Pacientes)',
+        citasDoctor: 'GET /api/citas/doctor (Doctores)',
+        todas: 'GET /api/citas (Admin)',
         cancelar: 'DELETE /api/citas/:id',
-
-
-
-        confirmar: 'PUT /api/citas/:id/confirmar',
-
-
-
-        finalizar: 'PUT /api/citas/:id/finalizar',
-
-
-
+        confirmar: 'PUT /api/citas/:id/confirmar (Doctores, Admin)',
+        actualizarEstado: 'PUT /api/citas/:id/estado (Doctores, Admin)',
+        finalizar: 'PUT /api/citas/:id/finalizar (Doctores, Admin)',
         disponibilidad: 'GET /api/citas/disponibilidad'
-
-
-
       }
+    },
 
+    documentacion: {
+      health: 'GET /health',
+      postman: 'Pronto disponible',
+      swagger: 'Pronto disponible'
+    },
 
-
+    contacto: {
+      desarrollador: 'Andrés P.',
+      proyecto: 'Dental Bosch',
+      version: '2.0.0'
     }
-
 
 
   });
