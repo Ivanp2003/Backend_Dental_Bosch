@@ -22,7 +22,11 @@ router.get('/doctores', adminController.listarDoctores);
 // GET /api/admin/doctores-pendientes
 router.get('/doctores-pendientes', adminController.listarDoctores);
 
-// 🔍 Ver detalle de doctor
+// � Ver horarios de todos los doctores
+// GET /api/admin/doctores/horarios
+router.get('/doctores/horarios', adminController.obtenerHorariosDoctores);
+
+// � Ver detalle de doctor
 // GET /api/admin/doctores/:id
 router.get('/doctores/:id', adminController.obtenerDetalleDoctor);
 
@@ -63,11 +67,7 @@ router.put('/doctores/:id/rechazar', adminController.rechazarDoctor);
 // POST /api/admin/doctores/limpiar-huerfanos
 router.post('/doctores/limpiar-huerfanos', adminController.limpiarDoctoresHuerfanos);
 
-// � Ver horarios de todos los doctores
-// GET /api/admin/doctores/horarios
-router.get('/doctores/horarios', adminController.obtenerHorariosDoctores);
-
-// �🔄 Cambiar estado de doctor (endpoint que el frontend usa)
+// 🔄 Cambiar estado de doctor (endpoint que el frontend usa)
 // PUT /api/admin/doctores/:id/estado
 // Body: { estado: 'aprobado'/'rechazado' }
 router.put('/doctores/:id/estado', adminController.cambiarEstadoDoctor);
