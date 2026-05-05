@@ -857,8 +857,39 @@ class AdminService {
         throw new Error('Cita no encontrada');
       }
 
+      console.log('🔍 Cita original (detalle):', JSON.stringify(cita, null, 2));
+      console.log('🔍 Paciente:', cita.paciente);
+      console.log('🔍 Doctor:', cita.doctor);
+
       // 🔄 Transformar cita con DTO para respuesta limpia
-      const citaTransformada = CitasDTO.transformarCitaAdmin(cita);
+      let citaTransformada;
+      try {
+        citaTransformada = CitasDTO.transformarCitaAdmin(cita);
+      } catch (dtoError) {
+        console.error('❌ Error en DTO, usando formato simple:', dtoError.message);
+        // Formato simple si el DTO falla
+        citaTransformada = {
+          id: cita._id,
+          fecha: cita.fecha,
+          horaInicio: cita.horaInicio,
+          horaFin: cita.horaFin,
+          duracion: cita.duracion,
+          estado: cita.estado,
+          motivo: cita.motivo,
+          creadoPor: cita.creadoPor,
+          confirmada: cita.confirmada,
+          paciente: {
+            id: cita.paciente?._id,
+            nombreCompleto: 'Cargando...',
+            email: 'No disponible'
+          },
+          doctor: {
+            id: cita.doctor?._id,
+            nombreCompleto: cita.doctor?.nombreCompleto || 'Cargando...',
+            especialidad: cita.doctor?.especialidad || 'No especificada'
+          }
+        };
+      }
       
       // 📊 Agregar información de estado
       const estadoInfo = CitasDTO.getEstadoInfo(cita.estado);

@@ -34,21 +34,18 @@ class CitasDTO {
       // 👤 Información del paciente (solo datos útiles)
       paciente: {
         id: cita.paciente._id,
-        nombreCompleto: cita.paciente.usuario?.nombreCompleto || 
-                      `${cita.paciente.usuario?.nombre || ''} ${cita.paciente.usuario?.apellido || ''}`.trim(),
-        email: cita.paciente.usuario?.email,
-        telefono: cita.paciente.usuario?.telefono,
-        edad: cita.paciente.edad
+        nombreCompleto: this.obtenerNombreCompleto(cita.paciente),
+        email: cita.paciente.usuario?.email || 'No disponible',
+        telefono: cita.paciente.usuario?.telefono || 'No disponible',
+        edad: cita.paciente.edad || null
       },
       
       // 👨‍⚕️ Información del doctor (solo datos útiles)
       doctor: {
         id: cita.doctor._id,
-        nombreCompleto: cita.doctor.nombreCompleto || 
-                      cita.doctor.usuario?.nombreCompleto || 
-                      `${cita.doctor.usuario?.nombre || ''} ${cita.doctor.usuario?.apellido || ''}`.trim(),
-        especialidad: cita.doctor.especialidad,
-        email: cita.doctor.usuario?.email
+        nombreCompleto: this.obtenerNombreCompleto(cita.doctor, true),
+        especialidad: cita.doctor.especialidad || 'No especificada',
+        email: cita.doctor.usuario?.email || 'No disponible'
       },
       
       // 📊 Metadatos útiles
@@ -81,10 +78,8 @@ class CitasDTO {
       
       // 👨‍⚕️ Solo información básica del doctor
       doctor: {
-        nombreCompleto: cita.doctor.nombreCompleto || 
-                      cita.doctor.usuario?.nombreCompleto || 
-                      `${cita.doctor.usuario?.nombre || ''} ${cita.doctor.usuario?.apellido || ''}`.trim(),
-        especialidad: cita.doctor.especialidad
+        nombreCompleto: this.obtenerNombreCompleto(cita.doctor, true),
+        especialidad: cita.doctor.especialidad || 'No especificada'
       },
       
       // 📊 Metadatos básicos
@@ -116,11 +111,10 @@ class CitasDTO {
       
       // 👤 Información del paciente
       paciente: {
-        nombreCompleto: cita.paciente.usuario?.nombreCompleto || 
-                      `${cita.paciente.usuario?.nombre || ''} ${cita.paciente.usuario?.apellido || ''}`.trim(),
-        email: cita.paciente.usuario?.email,
-        telefono: cita.paciente.usuario?.telefono,
-        edad: cita.paciente.edad
+        nombreCompleto: this.obtenerNombreCompleto(cita.paciente),
+        email: cita.paciente.usuario?.email || 'No disponible',
+        telefono: cita.paciente.usuario?.telefono || 'No disponible',
+        edad: cita.paciente.edad || null
       },
       
       // 📊 Metadatos
@@ -191,7 +185,39 @@ class CitasDTO {
   }
 
   /**
-   * 📊 Obtener estadísticas de citas
+   * � Obtener nombre completo de manera segura
+   */
+  static obtenerNombreCompleto(entidad, esDoctor = false) {
+    if (!entidad) return 'Desconocido';
+    
+    // Para doctores, puede tener nombreCompleto directamente
+    if (esDoctor && entidad.nombreCompleto) {
+      return entidad.nombreCompleto;
+    }
+    
+    // Para pacientes o si no tiene nombreCompleto
+    if (entidad.usuario) {
+      if (entidad.usuario.nombreCompleto) {
+        return entidad.usuario.nombreCompleto;
+      }
+      
+      const nombre = entidad.usuario.nombre || '';
+      const apellido = entidad.usuario.apellido || '';
+      return `${nombre} ${apellido}`.trim() || 'Sin nombre';
+    }
+    
+    // Si no hay usuario, intentar con campos directos
+    if (entidad.nombre || entidad.apellido) {
+      const nombre = entidad.nombre || '';
+      const apellido = entidad.apellido || '';
+      return `${nombre} ${apellido}`.trim() || 'Sin nombre';
+    }
+    
+    return 'Desconocido';
+  }
+
+  /**
+   * �� Obtener estadísticas de citas
    */
   static generarEstadisticas(citas) {
     const stats = {
