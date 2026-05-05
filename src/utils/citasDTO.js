@@ -15,7 +15,12 @@ class CitasDTO {
    * 🔄 Transformar cita individual para admin
    */
   static transformarCitaAdmin(cita) {
-    return {
+    console.log('🔍 DTO - Transformando cita:', cita._id);
+    console.log('🔍 DTO - Paciente:', cita.paciente);
+    console.log('🔍 DTO - Doctor:', cita.doctor);
+    
+    // 🔄 Crear objeto limpio sin spread operator
+    const resultado = {
       id: cita._id,
       fecha: cita.fecha,
       horaInicio: cita.horaInicio,
@@ -31,22 +36,11 @@ class CitasDTO {
       fechaFormateada: this.formatearFecha(cita.fecha),
       horaFormateada: this.formatearHora(cita.horaInicio, cita.horaFin),
       
-      // 👤 Información del paciente (solo datos útiles)
-      paciente: {
-        id: cita.paciente._id,
-        nombreCompleto: this.obtenerNombreCompleto(cita.paciente),
-        email: cita.paciente.usuario?.email || 'No disponible',
-        telefono: cita.paciente.usuario?.telefono || 'No disponible',
-        edad: cita.paciente.edad || null
-      },
+      // 👤 Información del paciente (manejo seguro)
+      paciente: this.extraerDatosPaciente(cita.paciente),
       
-      // 👨‍⚕️ Información del doctor (solo datos útiles)
-      doctor: {
-        id: cita.doctor._id,
-        nombreCompleto: this.obtenerNombreCompleto(cita.doctor, true),
-        especialidad: cita.doctor.especialidad || 'No especificada',
-        email: cita.doctor.usuario?.email || 'No disponible'
-      },
+      // 👨‍⚕️ Información del doctor (manejo seguro)
+      doctor: this.extraerDatosDoctor(cita.doctor),
       
       // 📊 Metadatos útiles
       metadatos: {
@@ -56,6 +50,71 @@ class CitasDTO {
         fechaHoraFin: cita.fechaHoraFin
       }
     };
+    
+    console.log('🔍 DTO - Resultado transformado:', resultado);
+    return resultado;
+  }
+
+  /**
+   * 👤 Extraer datos del paciente de manera segura
+   */
+  static extraerDatosPaciente(paciente) {
+    if (!paciente) {
+      return { id: null, nombreCompleto: 'Paciente no encontrado', email: 'No disponible' };
+    }
+    
+    const resultado = {
+      id: paciente._id || paciente.id,
+      nombreCompleto: 'Sin nombre',
+      email: 'No disponible',
+      telefono: 'No disponible',
+      edad: paciente.edad || null
+    };
+    
+    // Intentar obtener nombre completo de diferentes fuentes
+    if (paciente.usuario) {
+      resultado.nombreCompleto = paciente.usuario.nombreCompleto || 
+                               `${paciente.usuario.nombre || ''} ${paciente.usuario.apellido || ''}`.trim() || 
+                               'Sin nombre';
+      resultado.email = paciente.usuario.email || 'No disponible';
+      resultado.telefono = paciente.usuario.telefono || 'No disponible';
+    } else if (paciente.nombreCompleto) {
+      resultado.nombreCompleto = paciente.nombreCompleto;
+    } else if (paciente.nombre || paciente.apellido) {
+      resultado.nombreCompleto = `${paciente.nombre || ''} ${paciente.apellido || ''}`.trim() || 'Sin nombre';
+    }
+    
+    return resultado;
+  }
+
+  /**
+   * 👨‍⚕️ Extraer datos del doctor de manera segura
+   */
+  static extraerDatosDoctor(doctor) {
+    if (!doctor) {
+      return { id: null, nombreCompleto: 'Doctor no encontrado', especialidad: 'No especificada' };
+    }
+    
+    const resultado = {
+      id: doctor._id || doctor.id,
+      nombreCompleto: 'Sin nombre',
+      especialidad: doctor.especialidad || 'No especificada',
+      email: 'No disponible'
+    };
+    
+    // Intentar obtener nombre completo de diferentes fuentes
+    if (doctor.usuario) {
+      resultado.nombreCompleto = doctor.usuario.nombreCompleto || 
+                               `${doctor.usuario.nombre || ''} ${doctor.usuario.apellido || ''}`.trim() || 
+                               'Sin nombre';
+      resultado.email = doctor.usuario.email || 'No disponible';
+    } else if (doctor.nombreCompleto) {
+      resultado.nombreCompleto = doctor.nombreCompleto;
+    } else if (doctor.nombre || doctor.apellido) {
+      resultado.nombreCompleto = `${doctor.nombre || ''} ${doctor.apellido || ''}`.trim() || 'Sin nombre';
+    }
+    
+    return resultado;
   }
 
   /**

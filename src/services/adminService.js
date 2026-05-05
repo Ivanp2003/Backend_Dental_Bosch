@@ -862,11 +862,16 @@ class AdminService {
       console.log('🔍 Doctor:', cita.doctor);
 
       // 🔄 Transformar cita con DTO para respuesta limpia
+      console.log('🔍 Aplicando DTO a cita...');
+      
       let citaTransformada;
       try {
         citaTransformada = CitasDTO.transformarCitaAdmin(cita);
+        console.log('✅ DTO aplicado correctamente');
       } catch (dtoError) {
-        console.error('❌ Error en DTO, usando formato simple:', dtoError.message);
+        console.error('❌ Error en DTO:', dtoError.message);
+        console.error('❌ Stack:', dtoError.stack);
+        
         // Formato simple si el DTO falla
         citaTransformada = {
           id: cita._id,
@@ -880,12 +885,12 @@ class AdminService {
           confirmada: cita.confirmada,
           paciente: {
             id: cita.paciente?._id,
-            nombreCompleto: 'Cargando...',
+            nombreCompleto: 'Error cargando paciente',
             email: 'No disponible'
           },
           doctor: {
             id: cita.doctor?._id,
-            nombreCompleto: cita.doctor?.nombreCompleto || 'Cargando...',
+            nombreCompleto: cita.doctor?.nombreCompleto || 'Error cargando doctor',
             especialidad: cita.doctor?.especialidad || 'No especificada'
           }
         };
@@ -894,7 +899,8 @@ class AdminService {
       // 📊 Agregar información de estado
       const estadoInfo = CitasDTO.getEstadoInfo(cita.estado);
       
-      return {
+      // 🔄 NO usar spread operator para evitar mezclar datos originales
+      const resultadoFinal = {
         ...citaTransformada,
         estadoInfo,
         // 📋 Información adicional para el detalle
@@ -905,6 +911,10 @@ class AdminService {
           archivosAdjuntos: cita.archivosAdjuntos || []
         }
       };
+      
+      console.log('🔍 Resultado final:', JSON.stringify(resultadoFinal, null, 2));
+      
+      return resultadoFinal;
 
     } catch (error) {
       console.error('❌ Error obteniendo detalle de cita:', error);
