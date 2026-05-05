@@ -830,7 +830,115 @@ class AdminService {
     }
   }
 
-  // 🔍 VER DETALLE DE CITA
+  // � REASIGNAR CITA INDIVIDUAL
+  static async reasignarCitaIndividual(citaId, doctorDestino) {
+    try {
+      console.log('🔄 Reasignando cita individual:', citaId);
+      console.log('👨‍⚕️ Doctor destino:', doctorDestino);
+
+      // Validar que la cita exista
+      const cita = await Cita.findById(citaId);
+      if (!cita) {
+        throw new Error('Cita no encontrada');
+      }
+
+      console.log('📋 Cita encontrada:', {
+        id: cita._id,
+        doctorActual: cita.doctor,
+        paciente: cita.paciente,
+        fecha: cita.fecha,
+        estado: cita.estado
+      });
+
+      // Validar que el doctor destino exista y esté activo
+      const doctorDestinoInfo = await Doctor.findById(doctorDestino).populate('usuario');
+      if (!doctorDestinoInfo) {
+        throw new Error('Doctor destino no encontrado');
+      }
+
+      if (!doctorDestinoInfo.activo) {
+        throw new Error('Doctor destino no está activo');
+      }
+
+      console.log('✅ Doctor destino válido:', {
+        id: doctorDestinoInfo._id,
+        nombre: doctorDestinoInfo.usuario?.nombreCompleto,
+        especialidad: doctorDestinoInfo.especialidad
+      });
+
+      // Validar que la cita pueda ser reasignada (no completada ni cancelada)
+      if (cita.estado === 'completada') {
+        throw new Error('No se puede reasignar una cita completada');
+      }
+
+      if (cita.estado === 'cancelada') {
+        throw new Error('No se puede reasignar una cita cancelada');
+      }
+
+      // Validar disponibilidad del doctor destino
+      const { validarDisponibilidadDoctor } = require('./citasService');
+      try {
+        await validarDisponibilidadDoctor(
+          doctorDestino,
+          cita.fecha,
+          cita.horaInicio,
+          cita.horaFin
+        );
+        console.log('✅ Doctor destino disponible en el horario');
+      } catch (disponibilidadError) {
+        throw new Error(`El doctor destino no está disponible: ${disponibilidadError.message}`);
+      }
+
+      // Verificar que no haya conflicto con otra cita del doctor destino
+      const citaExistente = await Cita.findOne({
+        _id: { $ne: citaId },
+        doctor: doctorDestino,
+        fecha: cita.fecha,
+        $or: [
+          {
+            $and: [
+              { horaInicio: { $lt: cita.horaFin } },
+              { horaFin: { $gt: cita.horaInicio } }
+            ]
+          }
+        ],
+        estado: { $nin: ['cancelada'] }
+      });
+
+      if (citaExistente) {
+        throw new Error('El doctor destino ya tiene una cita en ese horario');
+      }
+
+      // Reasignar la cita
+      const doctorAnterior = cita.doctor;
+      cita.doctor = doctorDestino;
+      await cita.save();
+
+      console.log('✅ Cita reasignada exitosamente');
+
+      return {
+        cita: {
+          id: cita._id,
+          fecha: cita.fecha,
+          horaInicio: cita.horaInicio,
+          horaFin: cita.horaFin,
+          estado: cita.estado
+        },
+        reasignacion: {
+          doctorAnterior,
+          doctorNuevo: doctorDestino,
+          fechaReasignacion: new Date()
+        },
+        mensaje: 'Cita reasignada exitosamente'
+      };
+
+    } catch (error) {
+      console.error('❌ Error reasignando cita individual:', error);
+      throw error;
+    }
+  }
+
+  // �🔍 VER DETALLE DE CITA
   static async obtenerDetalleCita(citaId) {
     try {
       console.log('🔍 Obteniendo detalle de cita:', citaId);

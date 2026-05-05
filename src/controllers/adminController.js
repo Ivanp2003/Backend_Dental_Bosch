@@ -511,7 +511,47 @@ const reasignarCitasDoctor = async (req, res) => {
   }
 };
 
-// 🔍 VER DETALLE DE CITA
+// � REASIGNAR CITA INDIVIDUAL
+const reasignarCitaIndividual = async (req, res) => {
+  try {
+    console.log('🔄 Admin reasignando cita individual:', req.params.id);
+    console.log('📋 Datos de reasignación:', req.body);
+    
+    const { doctorDestino } = req.body;
+    
+    if (!doctorDestino) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El ID del doctor destino es requerido'
+      });
+    }
+    
+    if (!mongoose.Types.ObjectId.isValid(doctorDestino)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID del doctor destino inválido'
+      });
+    }
+    
+    const resultado = await AdminService.reasignarCitaIndividual(req.params.id, doctorDestino);
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Cita reasignada exitosamente',
+      data: resultado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en reasignarCitaIndividual:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// � VER DETALLE DE CITA
 const obtenerDetalleCita = async (req, res) => {
   try {
     console.log('🔍 Admin obteniendo detalle de cita:', req.params.id);
@@ -885,6 +925,7 @@ module.exports = {
   obtenerDetalleDoctor,
   eliminarDoctor,
   reasignarCitasDoctor,
+  reasignarCitaIndividual,
   aprobarDoctor,
   rechazarDoctor,
   limpiarDoctoresHuerfanos,

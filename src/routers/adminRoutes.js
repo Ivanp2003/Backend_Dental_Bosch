@@ -45,10 +45,15 @@ router.put('/doctores/:id/horario', adminController.actualizarHorarioDoctor);
 // Body: { datosUsuario: { nombre, apellido, email, telefono }, datosDoctor: { especialidad, activo } }
 router.put('/doctores/:id', adminController.actualizarDoctor);
 
-//  Reasignar citas de doctor
+// 🔄 Reasignar citas de doctor
 // PUT /api/admin/doctores/:id/reasignar-citas
 // Body: { doctorDestino: "doctorId", reasignarTodas: true }
 router.put('/doctores/:id/reasignar-citas', adminController.reasignarCitasDoctor);
+
+// 🔄 Reasignar cita individual
+// PUT /api/admin/citas/:id/reasignar
+// Body: { doctorDestino: "doctorId" }
+router.put('/citas/:id/reasignar', adminController.reasignarCitaIndividual);
 
 // 🗑️ Eliminar doctor (soft delete)
 // DELETE /api/admin/doctores/:id
