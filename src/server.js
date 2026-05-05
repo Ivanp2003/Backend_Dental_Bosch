@@ -152,7 +152,7 @@ const getAllowedOrigins = () => {
 
     return [
 
-      'https://dental-bosch.vercel.app',
+      'https://frontend-dental-bosch.vercel.app',
 
       'http://localhost:3000',
 
