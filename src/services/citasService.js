@@ -2,6 +2,7 @@ const Cita = require('../models/Cita');
 const Doctor = require('../models/Doctor');
 const Paciente = require('../models/Paciente');
 const Usuario = require('../models/Usuario');
+const CitasDTO = require('../utils/citasDTO');
 const mongoose = require('mongoose');
 
 class CitasService {
@@ -247,16 +248,24 @@ class CitasService {
       }
 
       const citas = await Cita.find(query)
-        .populate('paciente', 'usuario')
-        .populate('paciente.usuario', 'nombre apellido email telefono')
+        .populate({
+          path: 'paciente',
+          populate: {
+            path: 'usuario',
+            select: 'nombre apellido email telefono'
+          }
+        })
         .sort({ fecha: 1, horaInicio: 1 })
         .limit(limit * 1)
         .skip((page - 1) * limit);
 
       const total = await Cita.countDocuments(query);
 
+      // Transformar las citas con el DTO para eliminar IDs y formatear datos
+      const citasFormateadas = citas.map(cita => CitasDTO.transformarCitaDoctor(cita));
+
       return {
-        citas,
+        citas: citasFormateadas,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(total / limit),
