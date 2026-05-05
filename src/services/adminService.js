@@ -4,6 +4,7 @@ const Doctor = require('../models/Doctor');
 const Paciente = require('../models/Paciente');
 const Cita = require('../models/Cita');
 const bcrypt = require('bcryptjs');
+const CitasDTO = require('../utils/citasDTO');
 
 class AdminService {
   // 📝 NOTA: Los doctores ahora crean sus propias cuentas a través del endpoint de registro
@@ -554,8 +555,15 @@ class AdminService {
       const total = await Cita.countDocuments(query);
       console.log('🔍 Total de citas en BD:', total);
 
+      // 🔄 Transformar citas con DTO para respuesta limpia
+      const citasTransformadas = CitasDTO.transformarCitasAdmin(citas);
+      
+      // 📊 Generar estadísticas adicionales
+      const estadisticas = CitasDTO.generarEstadisticas(citas);
+
       return {
-        citas,
+        citas: citasTransformadas,
+        estadisticas,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(total / limit),
@@ -828,15 +836,44 @@ class AdminService {
       console.log('🔍 Obteniendo detalle de cita:', citaId);
 
       const cita = await Cita.findById(citaId)
-        .populate('doctor', 'especialidad')
-        .populate('paciente', 'nombre apellido email telefono')
-        .populate('doctor.usuario', 'nombre apellido');
+        .populate({
+          path: 'paciente',
+          select: 'usuario edad',
+          populate: {
+            path: 'usuario',
+            select: 'nombre apellido email telefono'
+          }
+        })
+        .populate({
+          path: 'doctor',
+          select: 'usuario especialidad',
+          populate: {
+            path: 'usuario',
+            select: 'nombre apellido email'
+          }
+        });
 
       if (!cita) {
         throw new Error('Cita no encontrada');
       }
 
-      return cita;
+      // 🔄 Transformar cita con DTO para respuesta limpia
+      const citaTransformada = CitasDTO.transformarCitaAdmin(cita);
+      
+      // 📊 Agregar información de estado
+      const estadoInfo = CitasDTO.getEstadoInfo(cita.estado);
+      
+      return {
+        ...citaTransformada,
+        estadoInfo,
+        // 📋 Información adicional para el detalle
+        detallesAdicionales: {
+          notas: cita.notas || '',
+          tratamientoRealizado: cita.tratamientoRealizado || '',
+          observaciones: cita.observaciones || '',
+          archivosAdjuntos: cita.archivosAdjuntos || []
+        }
+      };
 
     } catch (error) {
       console.error('❌ Error obteniendo detalle de cita:', error);
