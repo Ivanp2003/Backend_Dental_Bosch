@@ -5,6 +5,7 @@ const {
   registro,
   confirmarCuenta,
   recuperarPassword,
+  verificarCodigoRecuperacion,
   restablecerPassword,
   login,
   obtenerPerfil,
@@ -24,6 +25,9 @@ router.get('/confirmar/:token', confirmarCuenta);
 
 // Recuperación de contraseña
 router.post('/recuperar-password', recuperarPassword);
+
+// Verificar código de recuperación
+router.post('/verificar-codigo', verificarCodigoRecuperacion);
 
 // Restablecer contraseña con código
 router.post('/restablecer-password', restablecerPassword);

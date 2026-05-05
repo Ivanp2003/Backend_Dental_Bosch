@@ -206,6 +206,60 @@ exports.recuperarPassword = async (req, res, next) => {
   }
 };
 
+// @desc    Verificar código de recuperación
+// @route   POST /api/auth/verificar-codigo
+// @access  Public
+exports.verificarCodigoRecuperacion = async (req, res, next) => {
+  try {
+    const { codigo } = req.body;
+
+    if (!codigo) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El código de verificación es requerido'
+      });
+    }
+
+    // Buscar usuario con el código de recuperación
+    const usuario = await Usuario.findOne({
+      tokenRecuperacion: codigo
+    });
+
+    if (!usuario) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Código de verificación inválido'
+      });
+    }
+
+    // Verificar que el código no haya expirado
+    if (Date.now() > usuario.tokenExpiracion) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El código de verificación ha expirado'
+      });
+    }
+
+    // Código válido pero no expirado
+    res.status(200).json({
+      success: true,
+      mensaje: 'Código verificado correctamente',
+      datos: {
+        email: usuario.email,
+        nombre: usuario.nombre,
+        verificado: true
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en verificarCodigoRecuperacion:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al verificar el código'
+    });
+  }
+};
+
 // @desc    Restablecer contraseña con código
 // @route   POST /api/auth/restablecer-password
 // @access  Public
