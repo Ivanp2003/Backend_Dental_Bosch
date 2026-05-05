@@ -38,7 +38,7 @@ const citaSchema = new mongoose.Schema({
   // Estado y detalles
   estado: {
     type: String,
-    enum: ['pendiente', 'confirmada', 'finalizada', 'cancelada'],
+    enum: ['pendiente', 'finalizada', 'cancelada'],
     default: 'pendiente'
   },
   motivo: {
@@ -96,7 +96,7 @@ citaSchema.index(
   { paciente: 1, fecha: 1, horaInicio: 1, estado: 1 },
   { 
     unique: true,
-    partialFilterExpression: { estado: { $in: ['pendiente', 'confirmada'] } }
+    partialFilterExpression: { estado: { $in: ['pendiente'] } }
   }
 );
 
@@ -171,7 +171,7 @@ citaSchema.statics.verificarDisponibilidad = async function(doctorId, fecha, hor
   const query = {
     doctor: doctorId,
     fecha: new Date(fecha),
-    estado: { $in: ['pendiente', 'confirmada'] },
+    estado: { $in: ['pendiente'] },
     $or: [
       // Cita existente que solapa con el nuevo rango
       {

@@ -289,74 +289,6 @@ const cancelarCita = async (req, res) => {
   }
 };
 
-// ✅ CONFIRMAR CITA (DOCTOR/ADMIN)
-const confirmarCita = async (req, res) => {
-  try {
-    console.log('✅ Confirmando cita:', req.params.id);
-    
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        mensaje: 'ID de cita inválido'
-      });
-    }
-
-    // Solo doctores y admins pueden confirmar citas
-    if (req.usuario.rol === 'paciente') {
-      return res.status(403).json({
-        success: false,
-        mensaje: 'Los pacientes no pueden confirmar citas'
-      });
-    }
-
-    // Si es doctor, validar que sea su cita
-    if (req.usuario.rol === 'doctor') {
-      const Cita = require('../models/Cita');
-      const cita = await Cita.findById(id);
-      
-      if (!cita) {
-        return res.status(404).json({
-          success: false,
-          mensaje: 'Cita no encontrada'
-        });
-      }
-
-      const doctorData = await Doctor.findOne({ usuario: req.usuario.id });
-      if (!doctorData || cita.doctor.toString() !== doctorData._id.toString()) {
-        return res.status(403).json({
-          success: false,
-          mensaje: 'Solo puedes confirmar tus propias citas'
-        });
-      }
-    }
-
-    const citaConfirmada = await CitasService.confirmarCita(id);
-
-    res.status(200).json({
-      success: true,
-      mensaje: 'Cita confirmada exitosamente',
-      datos: citaConfirmada
-    });
-
-  } catch (error) {
-    console.error('❌ Error en confirmarCita:', error);
-    
-    if (error.message.includes('no encontrada') || error.message.includes('pendientes')) {
-      return res.status(404).json({
-        success: false,
-        mensaje: error.message
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      mensaje: error.message || 'Error interno del servidor'
-    });
-  }
-};
-
 // 🔄 ACTUALIZAR ESTADO DE CITA (DOCTOR/ADMIN)
 const actualizarEstadoCita = async (req, res) => {
   try {
@@ -373,7 +305,7 @@ const actualizarEstadoCita = async (req, res) => {
     }
 
     // Validar estados permitidos
-    const estadosPermitidos = ['pendiente', 'confirmada', 'finalizada', 'cancelada'];
+    const estadosPermitidos = ['pendiente', 'finalizada', 'cancelada'];
     if (!estadosPermitidos.includes(estado)) {
       return res.status(400).json({
         success: false,
@@ -556,7 +488,6 @@ module.exports = {
   obtenerCitasDoctor,
   obtenerTodasLasCitas,
   cancelarCita,
-  confirmarCita,
   actualizarEstadoCita,
   finalizarCita,
   obtenerDisponibilidadDoctor

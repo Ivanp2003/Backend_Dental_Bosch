@@ -420,6 +420,200 @@ exports.eliminarDoctor = async (req, res, next) => {
   }
 };
 
+// @desc    Obtener pacientes del doctor autenticado
+// @route   GET /api/doctores/mis-pacientes
+// @access  Private (Doctor)
+exports.obtenerMisPacientes = async (req, res, next) => {
+  try {
+    // Obtener doctor del usuario autenticado
+    const doctor = await Doctor.findOne({ usuario: req.usuario.id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Perfil de doctor no encontrado'
+      });
+    }
+
+    // Buscar citas del doctor para obtener sus pacientes
+    const Cita = require('../models/Cita');
+    const citas = await Cita.find({ doctor: doctor._id })
+      .populate('paciente')
+      .populate('paciente.usuario', 'nombre apellido email telefono')
+      .sort({ fecha: -1 });
+
+    // Extraer pacientes únicos de las citas
+    const pacientesUnicos = new Map();
+    citas.forEach(cita => {
+      if (cita.paciente && cita.paciente.usuario) {
+        const pacienteId = cita.paciente._id.toString();
+        if (!pacientesUnicos.has(pacienteId)) {
+          pacientesUnicos.set(pacienteId, {
+            _id: cita.paciente._id,
+            nombre: cita.paciente.usuario.nombre,
+            apellido: cita.paciente.usuario.apellido,
+            email: cita.paciente.usuario.email,
+            telefono: cita.paciente.usuario.telefono,
+            fechaUltimaCita: cita.fecha,
+            totalCitas: 1
+          });
+        } else {
+          // Actualizar última fecha y contar citas
+          const paciente = pacientesUnicos.get(pacienteId);
+          if (cita.fecha > paciente.fechaUltimaCita) {
+            paciente.fechaUltimaCita = cita.fecha;
+          }
+          paciente.totalCitas++;
+        }
+      }
+    });
+
+    const pacientes = Array.from(pacientesUnicos.values());
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Pacientes obtenidos exitosamente',
+      count: pacientes.length,
+      data: pacientes
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Obtener citas del doctor autenticado (versión simplificada para el perfil)
+// @route   GET /api/doctores/mis-citas
+// @access  Private (Doctor)
+exports.obtenerMisCitas = async (req, res, next) => {
+  try {
+    // Obtener doctor del usuario autenticado
+    const doctor = await Doctor.findOne({ usuario: req.usuario.id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Perfil de doctor no encontrado'
+      });
+    }
+
+    const { estado, desde, hasta, page = 1, limit = 10 } = req.query;
+    
+    // Usar el servicio existente para obtener citas
+    const CitasService = require('../services/citasService');
+    const resultado = await CitasService.obtenerCitasDoctor(
+      doctor._id, 
+      { estado, desde, hasta, page, limit }
+    );
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Citas obtenidas exitosamente',
+      datos: resultado
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Cambiar estado de cita (finalizar o cancelar)
+// @route   PUT /api/doctores/citas/:id/estado
+// @access  Private (Doctor)
+exports.cambiarEstadoCita = async (req, res, next) => {
+  try {
+    // Obtener doctor del usuario autenticado
+    const doctor = await Doctor.findOne({ usuario: req.usuario.id });
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Perfil de doctor no encontrado'
+      });
+    }
+
+    const { id } = req.params;
+    const { estado, motivoCancelacion, notas } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de cita inválido'
+      });
+    }
+
+    // Validar estados permitidos (solo pendiente, finalizada, cancelada)
+    const estadosPermitidos = ['pendiente', 'finalizada', 'cancelada'];
+    if (!estadosPermitidos.includes(estado)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Estado no válido. Estados permitidos: ' + estadosPermitidos.join(', ')
+      });
+    }
+
+    // Verificar que la cita pertenezca al doctor
+    const Cita = require('../models/Cita');
+    const cita = await Cita.findById(id);
+    
+    if (!cita) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Cita no encontrada'
+      });
+    }
+
+    if (cita.doctor.toString() !== doctor._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        mensaje: 'Solo puedes modificar el estado de tus propias citas'
+      });
+    }
+
+    // Usar el servicio para actualizar el estado
+    const CitasService = require('../services/citasService');
+    let citaActualizada;
+
+    if (estado === 'cancelada') {
+      if (!motivoCancelacion || motivoCancelacion.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          mensaje: 'El motivo de cancelación es obligatorio'
+        });
+      }
+      citaActualizada = await CitasService.cancelarCita(id, motivoCancelacion, 'doctor');
+    } else if (estado === 'finalizada') {
+      citaActualizada = await CitasService.finalizarCita(id, notas);
+    } else {
+      citaActualizada = await CitasService.actualizarEstadoCita(id, estado, notas, 'doctor');
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: `Cita ${estado === 'finalizada' ? 'finalizada' : estado === 'cancelada' ? 'cancelada' : 'actualizada'} exitosamente`,
+      datos: citaActualizada
+    });
+
+  } catch (error) {
+    console.error('❌ Error en cambiarEstadoCita:', error);
+    
+    if (error.message.includes('no encontrada') || error.message.includes('finalizada') || error.message.includes('cancelada')) {
+      return res.status(404).json({
+        success: false,
+        mensaje: error.message
+      });
+    }
+    
+    if (error.message.includes('24 horas')) {
+      return res.status(409).json({
+        success: false,
+        mensaje: error.message
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
 // @desc    Actualizar doctor (solo admin)
 // @route   PUT /api/doctores/:id
 // @access  Private/Admin

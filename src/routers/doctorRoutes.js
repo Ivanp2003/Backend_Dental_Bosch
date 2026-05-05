@@ -10,7 +10,10 @@ const {
   obtenerDoctoresPendientes,
   obtenerDoctoresAprobados,
   eliminarDoctor,
-  actualizarDoctor
+  actualizarDoctor,
+  obtenerMisPacientes,
+  obtenerMisCitas,
+  cambiarEstadoCita
 } = require('../controllers/doctorController');
 
 // Middleware de logging para todas las solicitudes a doctores
@@ -55,6 +58,19 @@ router.get('/perfil/doctor', obtenerPerfil);
 
 // Actualizar perfil del doctor autenticado 
 router.put('/perfil/doctor', actualizarPerfil);
+
+// Obtener pacientes del doctor autenticado
+// GET /api/doctores/mis-pacientes
+router.get('/mis-pacientes', autorizarRoles('doctor'), obtenerMisPacientes);
+
+// Obtener citas del doctor autenticado (desde su perfil)
+// GET /api/doctores/mis-citas?estado=pendiente&desde=2024-01-01&hasta=2024-12-31&page=1&limit=10
+router.get('/mis-citas', autorizarRoles('doctor'), obtenerMisCitas);
+
+// Cambiar estado de cita (finalizar o cancelar)
+// PUT /api/doctores/citas/:id/estado
+// Body: { estado: "finalizada|cancelada", motivoCancelacion: "si se cancela", notas: "si se finaliza" }
+router.put('/citas/:id/estado', autorizarRoles('doctor'), cambiarEstadoCita);
 
 // ========== RUTAS DE ADMINISTRADOR ==========
 

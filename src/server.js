@@ -361,11 +361,14 @@ app.get('/', (req, res) => {
         }
       },
 
-      doctores: {
+      doctor: {
         todos: 'GET /api/doctores',
         porId: 'GET /api/doctores/:id',
         perfil: 'GET /api/doctores/perfil/doctor',
         actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
+        misPacientes: 'GET /api/doctores/mis-pacientes (Doctor)',
+        misCitas: 'GET /api/doctores/mis-citas (Doctor)',
+        cambiarEstadoCita: 'PUT /api/doctores/citas/:id/estado (Doctor)',
         pendientes: 'GET /api/doctores/pendientes (Admin)',
         aprobados: 'GET /api/doctores/aprobados/lista (Público)',
         cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)',
@@ -416,7 +419,6 @@ app.get('/', (req, res) => {
         citasDoctor: 'GET /api/citas/doctor (Doctores)',
         todas: 'GET /api/citas (Admin)',
         cancelar: 'DELETE /api/citas/:id',
-        confirmar: 'PUT /api/citas/:id/confirmar (Doctores, Admin)',
         actualizarEstado: 'PUT /api/citas/:id/estado (Doctores, Admin)',
         finalizar: 'PUT /api/citas/:id/finalizar (Doctores, Admin)',
         disponibilidad: 'GET /api/citas/disponibilidad'

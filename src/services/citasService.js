@@ -49,7 +49,7 @@ class CitasService {
         paciente: pacienteId,
         fecha: new Date(fecha),
         horaInicio: horaInicio,
-        estado: { $in: ['pendiente', 'confirmada'] }
+        estado: { $in: ['pendiente'] }
       };
 
       if (excluirCitaId) {
@@ -316,30 +316,11 @@ class CitasService {
     }
   }
 
-  // Confirmar cita
-  static async confirmarCita(citaId) {
-    try {
-      const cita = await Cita.findById(citaId);
-
-      if (!cita) {
-        throw new Error('Cita no encontrada');
-      }
-
-      if (cita.estado !== 'pendiente') {
-        throw new Error('Solo se pueden confirmar citas pendientes');
-      }
-
-      cita.estado = 'confirmada';
-      cita.confirmada = true;
-      cita.fechaConfirmacion = new Date();
-
-      await cita.save();
-
-      return cita;
-    } catch (error) {
-      throw error;
-    }
-  }
+  // Confirmar cita (eliminado - ya no se usa el estado confirmada)
+  // static async confirmarCita(citaId) {
+  //   Este método ha sido eliminado ya que el estado 'confirmada' ya no existe
+  //   Las citas ahora van directamente de 'pendiente' a 'finalizada' o 'cancelada'
+  // }
 
   // Actualizar estado de cita
   static async actualizarEstadoCita(citaId, nuevoEstado, observaciones = '', rolUsuario) {
@@ -371,13 +352,9 @@ class CitasService {
           throw new Error('No se pueden finalizar citas futuras');
         }
 
-        if (cita.estado !== 'confirmada') {
-          throw new Error('Solo se pueden finalizar citas confirmadas');
+        if (cita.estado !== 'pendiente') {
+          throw new Error('Solo se pueden finalizar citas pendientes');
         }
-      }
-
-      if (nuevoEstado === 'confirmada' && cita.estado !== 'pendiente') {
-        throw new Error('Solo se pueden confirmar citas pendientes');
       }
 
       // Actualizar estado
@@ -385,12 +362,6 @@ class CitasService {
       
       if (observaciones) {
         cita.notas = observaciones;
-      }
-
-      // Si se confirma, marcar como confirmada
-      if (nuevoEstado === 'confirmada') {
-        cita.confirmada = true;
-        cita.fechaConfirmacion = new Date();
       }
 
       await cita.save();
@@ -412,8 +383,8 @@ class CitasService {
         throw new Error('Cita no encontrada');
       }
 
-      if (cita.estado !== 'confirmada') {
-        throw new Error('Solo se pueden finalizar citas confirmadas');
+      if (cita.estado !== 'pendiente') {
+        throw new Error('Solo se pueden finalizar citas pendientes');
       }
 
       // Validar que la cita sea hoy o anterior
@@ -499,7 +470,7 @@ class CitasService {
       const citas = await Cita.find({
         doctor: doctorId,
         fecha: new Date(fecha),
-        estado: { $in: ['pendiente', 'confirmada'] }
+        estado: { $in: ['pendiente'] }
       }).sort({ horaInicio: 1 });
 
       return {

@@ -31,13 +31,9 @@ router.get('/', autorizarRoles('admin'), citasController.obtenerTodasLasCitas);
 // Body: { motivoCancelacion: "Motivo de la cancelación" }
 router.delete('/:id', citasController.cancelarCita);
 
-// ✅ Confirmar cita (doctor, admin)
-// PUT /api/citas/:id/confirmar
-router.put('/:id/confirmar', autorizarRoles('doctor', 'admin'), citasController.confirmarCita);
-
 // 🔄 Actualizar estado de cita (doctor, admin)
 // PUT /api/citas/:id/estado
-// Body: { estado: "confirmada|finalizada|cancelada", observaciones: "Observaciones opcionales" }
+// Body: { estado: "pendiente|finalizada|cancelada", observaciones: "Observaciones opcionales" }
 router.put('/:id/estado', autorizarRoles('doctor', 'admin'), citasController.actualizarEstadoCita);
 
 // 🏁 Finalizar cita (doctor, admin)
