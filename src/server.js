@@ -381,7 +381,11 @@ app.get('/', (req, res) => {
         buscar: 'GET /api/pacientes/buscar',
         actualizar: 'PUT /api/pacientes/:id',
         eliminar: 'DELETE /api/pacientes/:id',
-        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
+        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor',
+        listar: 'GET /api/admin/pacientes (Todos los pacientes sin confirmación)',
+        detalle: 'GET /api/admin/pacientes/:id',
+        asignarDoctorAdmin: 'PUT /api/admin/pacientes/:id/doctor',
+        eliminarAdmin: 'DELETE /api/admin/pacientes/:id'
       },
 
       admin: {
@@ -398,9 +402,10 @@ app.get('/', (req, res) => {
           todas: 'GET /api/admin/citas'
         },
         pacientes: {
-          listar: 'GET /api/admin/pacientes',
+          listar: 'GET /api/admin/pacientes (Todos los pacientes sin confirmación)',
           detalle: 'GET /api/admin/pacientes/:id',
-          asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor'
+          asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor',
+          eliminar: 'DELETE /api/admin/pacientes/:id'
         },
         estadisticas: 'GET /api/admin/estadisticas'
       },
@@ -415,7 +420,18 @@ app.get('/', (req, res) => {
         actualizarEstado: 'PUT /api/citas/:id/estado (Doctores, Admin)',
         finalizar: 'PUT /api/citas/:id/finalizar (Doctores, Admin)',
         disponibilidad: 'GET /api/citas/disponibilidad'
+      },
+
+      historialClinico: {
+        crear: 'POST /api/historial-clinico/:pacienteId (Admin, Doctor)',
+        agregarRegistro: 'POST /api/historial-clinico/:pacienteId/registro (Admin, Doctor)',
+        completo: 'GET /api/historial-clinico/:pacienteId (Admin, Doctor, Paciente)',
+        registros: 'GET /api/historial-clinico/:pacienteId/registros (Admin, Doctor, Paciente)',
+        estadisticas: 'GET /api/historial-clinico/:pacienteId/estadisticas (Admin, Doctor, Paciente)',
+        actualizarRegistro: 'PUT /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)',
+        eliminarRegistro: 'DELETE /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)'
       }
+
     },
 
     documentacion: {
@@ -503,25 +519,17 @@ app.use((req, res, next) => {
 
 });
 
-
-
 app.use('/api/auth', authRoutes);
-
-
 
 app.use('/api/doctores', doctorRoutes);
 
-
-
 app.use('/api/pacientes', pacienteRoutes);
-
-
 
 app.use('/api/admin', adminRoutes);
 
-
-
 app.use('/api/citas', citasRoutes);
+
+app.use('/api/historial-clinico', require('./routers/historialClinicoRoutes'));
 
 
 

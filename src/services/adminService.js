@@ -480,6 +480,8 @@ class AdminService {
   // 👁️ OBTENER TODAS LAS CITAS DEL SISTEMA
   static async obtenerTodasLasCitas(filtros = {}) {
     try {
+      console.log('🔍 AdminService.obtenerTodasLasCitas - Filtros recibidos:', filtros);
+      
       const { doctor, fecha, estado, page = 1, limit = 10 } = filtros;
 
       const query = {};
@@ -492,16 +494,65 @@ class AdminService {
         query.fecha = { $gte: fechaInicio, $lt: fechaFin };
       }
 
-      const citas = await Cita.find(query)
-        .populate('paciente', 'usuario')
-        .populate('doctor', 'usuario especialidad')
-        .populate('paciente.usuario', 'nombre apellido email')
-        .populate('doctor.usuario', 'nombre apellido')
-        .sort({ fecha: -1, horaInicio: -1 })
-        .limit(limit * 1)
-        .skip((page - 1) * limit);
+      console.log('🔍 Query construida:', JSON.stringify(query, null, 2));
+      console.log('🔍 Ejecutando Cita.find()...');
+
+      let citas;
+      try {
+        // Primero obtener citas sin populate para verificar que existen
+        const citasBase = await Cita.find(query)
+          .sort({ fecha: -1, horaInicio: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+        
+        console.log('🔍 Citas base (sin populate):', citasBase.length);
+        
+        // Luego intentar populate con manejo de errores
+        citas = await Cita.find(query)
+          .populate({
+            path: 'paciente',
+            select: 'usuario',
+            populate: {
+              path: 'usuario',
+              select: 'nombre apellido email'
+            }
+          })
+          .populate({
+            path: 'doctor',
+            select: 'usuario especialidad',
+            populate: {
+              path: 'usuario',
+              select: 'nombre apellido'
+            }
+          })
+          .sort({ fecha: -1, horaInicio: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+
+        console.log('🔍 Citas con populate:', citas.length);
+        
+        // Si hay citas, mostrar la primera para debug
+        if (citas.length > 0) {
+          console.log('🔍 Primera cita:', {
+            id: citas[0]._id,
+            paciente: citas[0].paciente ? 'OK' : 'NULL',
+            doctor: citas[0].doctor ? 'OK' : 'NULL',
+            fecha: citas[0].fecha,
+            estado: citas[0].estado
+          });
+        }
+
+      } catch (populateError) {
+        console.error('❌ Error en populate:', populateError.message);
+        // Si falla el populate, obtener citas básicas
+        citas = await Cita.find(query)
+          .sort({ fecha: -1, horaInicio: -1 })
+          .limit(limit * 1)
+          .skip((page - 1) * limit);
+      }
 
       const total = await Cita.countDocuments(query);
+      console.log('🔍 Total de citas en BD:', total);
 
       return {
         citas,

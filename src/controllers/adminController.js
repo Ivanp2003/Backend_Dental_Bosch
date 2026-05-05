@@ -322,8 +322,7 @@ const obtenerTodasLasCitas = async (req, res) => {
     console.error('❌ Error en obtenerTodasLasCitas:', error);
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
@@ -351,8 +350,7 @@ const listarPacientes = async (req, res) => {
     console.error('❌ Error en listarPacientes:', error);
     res.status(500).json({
       success: false,
-      mensaje: 'Error interno del servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      mensaje: error.message || 'Error interno del servidor'
     });
   }
 };
