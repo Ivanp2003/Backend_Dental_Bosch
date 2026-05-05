@@ -928,25 +928,10 @@ class AdminService {
       // 📊 Agregar información de estado
       const estadoInfo = CitasDTO.getEstadoInfo(cita.estado);
       
-      // 🔄 Construir resultado final SIN spread operator
+      // 🔄 FORZAR respuesta transformada directa
       const resultadoFinal = {
-        id: citaTransformada.id,
-        fecha: citaTransformada.fecha,
-        horaInicio: citaTransformada.horaInicio,
-        horaFin: citaTransformada.horaFin,
-        duracion: citaTransformada.duracion,
-        estado: citaTransformada.estado,
-        motivo: citaTransformada.motivo,
-        creadoPor: citaTransformada.creadoPor,
-        confirmada: citaTransformada.confirmada,
-        canceladaPor: citaTransformada.canceladaPor,
-        fechaFormateada: citaTransformada.fechaFormateada,
-        horaFormateada: citaTransformada.horaFormateada,
-        paciente: citaTransformada.paciente,
-        doctor: citaTransformada.doctor,
-        metadatos: citaTransformada.metadatos,
+        ...citaTransformada,
         estadoInfo: estadoInfo,
-        // 📋 Información adicional para el detalle
         detallesAdicionales: {
           notas: cita.notas || '',
           tratamientoRealizado: cita.tratamientoRealizado || '',
@@ -955,9 +940,12 @@ class AdminService {
         }
       };
       
-      console.log('🔍 Resultado final:', JSON.stringify(resultadoFinal, null, 2));
+      console.log('🔍 Resultado final FORZADO:', JSON.stringify(resultadoFinal, null, 2));
+      console.log('🔍 Tipo de resultadoFinal:', typeof resultadoFinal);
+      console.log('🔍 ¿Es objeto?', typeof resultadoFinal === 'object');
       
-      return resultadoFinal;
+      // 🚀 FORZAR devolución directa
+      return JSON.parse(JSON.stringify(resultadoFinal));
 
     } catch (error) {
       console.error('❌ Error obteniendo detalle de cita:', error);

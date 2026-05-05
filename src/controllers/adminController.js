@@ -518,11 +518,20 @@ const obtenerDetalleCita = async (req, res) => {
     
     const cita = await AdminService.obtenerDetalleCita(req.params.id);
 
-    res.status(200).json({
+    console.log('🔍 Controlador - Cita recibida del servicio:', typeof cita);
+    console.log('🔍 Controlador - ¿Tiene fechaFormateada?', !!cita.fechaFormateada);
+    console.log('🔍 Controlador - ¿Tiene estadoInfo?', !!cita.estadoInfo);
+
+    // 🚀 FORZAR respuesta correcta
+    const respuesta = {
       success: true,
       mensaje: 'Detalle de cita obtenido exitosamente',
       data: cita
-    });
+    };
+
+    console.log('🔍 Controlador - Respuesta final:', JSON.stringify(respuesta, null, 2));
+
+    res.status(200).json(respuesta);
 
   } catch (error) {
     console.error('❌ Error en obtenerDetalleCita:', error);
