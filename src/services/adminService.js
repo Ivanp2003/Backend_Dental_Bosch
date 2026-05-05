@@ -868,11 +868,18 @@ class AdminService {
       try {
         citaTransformada = CitasDTO.transformarCitaAdmin(cita);
         console.log('✅ DTO aplicado correctamente');
+        
+        // Validar que el DTO funcionó
+        if (!citaTransformada.paciente || !citaTransformada.doctor) {
+          throw new Error('El DTO no generó datos de paciente/doctor');
+        }
+        
       } catch (dtoError) {
         console.error('❌ Error en DTO:', dtoError.message);
         console.error('❌ Stack:', dtoError.stack);
         
-        // Formato simple si el DTO falla
+        // 🔄 Transformación manual forzada
+        console.log('🔍 Aplicando transformación manual...');
         citaTransformada = {
           id: cita._id,
           fecha: cita.fecha,
@@ -883,26 +890,62 @@ class AdminService {
           motivo: cita.motivo,
           creadoPor: cita.creadoPor,
           confirmada: cita.confirmada,
+          canceladaPor: cita.canceladaPor,
+          
+          // 📅 Fechas formateadas
+          fechaFormateada: this.formatearFechaSimple(cita.fecha),
+          horaFormateada: this.formatearHoraSimple(cita.horaInicio, cita.horaFin),
+          
+          // 👤 Paciente - transformación manual
           paciente: {
             id: cita.paciente?._id,
-            nombreCompleto: 'Error cargando paciente',
-            email: 'No disponible'
+            nombreCompleto: this.extraerNombrePaciente(cita.paciente),
+            email: this.extraerEmailPaciente(cita.paciente),
+            telefono: this.extraerTelefonoPaciente(cita.paciente),
+            edad: cita.paciente?.edad || null
           },
+          
+          // 👨‍⚕️ Doctor - transformación manual
           doctor: {
             id: cita.doctor?._id,
-            nombreCompleto: cita.doctor?.nombreCompleto || 'Error cargando doctor',
-            especialidad: cita.doctor?.especialidad || 'No especificada'
+            nombreCompleto: this.extraerNombreDoctor(cita.doctor),
+            especialidad: cita.doctor?.especialidad || 'No especificada',
+            email: this.extraerEmailDoctor(cita.doctor)
+          },
+          
+          // 📊 Metadatos
+          metadatos: {
+            createdAt: cita.createdAt,
+            updatedAt: cita.updatedAt,
+            fechaHoraInicio: cita.fechaHoraInicio,
+            fechaHoraFin: cita.fechaHoraFin
           }
         };
+        
+        console.log('✅ Transformación manual aplicada');
       }
       
       // 📊 Agregar información de estado
       const estadoInfo = CitasDTO.getEstadoInfo(cita.estado);
       
-      // 🔄 NO usar spread operator para evitar mezclar datos originales
+      // 🔄 Construir resultado final SIN spread operator
       const resultadoFinal = {
-        ...citaTransformada,
-        estadoInfo,
+        id: citaTransformada.id,
+        fecha: citaTransformada.fecha,
+        horaInicio: citaTransformada.horaInicio,
+        horaFin: citaTransformada.horaFin,
+        duracion: citaTransformada.duracion,
+        estado: citaTransformada.estado,
+        motivo: citaTransformada.motivo,
+        creadoPor: citaTransformada.creadoPor,
+        confirmada: citaTransformada.confirmada,
+        canceladaPor: citaTransformada.canceladaPor,
+        fechaFormateada: citaTransformada.fechaFormateada,
+        horaFormateada: citaTransformada.horaFormateada,
+        paciente: citaTransformada.paciente,
+        doctor: citaTransformada.doctor,
+        metadatos: citaTransformada.metadatos,
+        estadoInfo: estadoInfo,
         // 📋 Información adicional para el detalle
         detallesAdicionales: {
           notas: cita.notas || '',
@@ -922,7 +965,78 @@ class AdminService {
     }
   }
 
-  // 🔄 REASIGNAR CITA MANUALMENTE
+  // � Métodos auxiliares para transformación manual
+  static formatearFechaSimple(fecha) {
+    if (!fecha) return null;
+    const date = new Date(fecha);
+    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString('es-ES', opciones);
+  }
+
+  static formatearHoraSimple(horaInicio, horaFin) {
+    if (!horaInicio || !horaFin) return null;
+    const inicio = this.convertirHora12(horaInicio);
+    const fin = this.convertirHora12(horaFin);
+    return `${inicio} - ${fin}`;
+  }
+
+  static convertirHora12(hora24) {
+    if (!hora24) return null;
+    const [horas, minutos] = hora24.split(':');
+    const hora = parseInt(horas);
+    const ampm = hora >= 12 ? 'PM' : 'AM';
+    const hora12 = hora % 12 || 12;
+    return `${hora12}:${minutos} ${ampm}`;
+  }
+
+  static extraerNombrePaciente(paciente) {
+    if (!paciente) return 'Paciente no encontrado';
+    
+    if (paciente.usuario?.nombreCompleto) {
+      return paciente.usuario.nombreCompleto;
+    }
+    
+    if (paciente.usuario?.nombre || paciente.usuario?.apellido) {
+      return `${paciente.usuario.nombre || ''} ${paciente.usuario.apellido || ''}`.trim() || 'Sin nombre';
+    }
+    
+    return 'Sin nombre';
+  }
+
+  static extraerEmailPaciente(paciente) {
+    if (!paciente?.usuario) return 'No disponible';
+    return paciente.usuario.email || 'No disponible';
+  }
+
+  static extraerTelefonoPaciente(paciente) {
+    if (!paciente?.usuario) return 'No disponible';
+    return paciente.usuario.telefono || 'No disponible';
+  }
+
+  static extraerNombreDoctor(doctor) {
+    if (!doctor) return 'Doctor no encontrado';
+    
+    if (doctor.nombreCompleto) {
+      return doctor.nombreCompleto;
+    }
+    
+    if (doctor.usuario?.nombreCompleto) {
+      return doctor.usuario.nombreCompleto;
+    }
+    
+    if (doctor.usuario?.nombre || doctor.usuario?.apellido) {
+      return `${doctor.usuario.nombre || ''} ${doctor.usuario.apellido || ''}`.trim() || 'Sin nombre';
+    }
+    
+    return 'Sin nombre';
+  }
+
+  static extraerEmailDoctor(doctor) {
+    if (!doctor?.usuario) return 'No disponible';
+    return doctor.usuario.email || 'No disponible';
+  }
+
+  // �🔄 REASIGNAR CITA MANUALMENTE
   static async reasignarCita(citaId, datos) {
     try {
       console.log('🔄 Reasignando cita:', citaId);
