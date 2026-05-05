@@ -140,10 +140,15 @@ const obtenerMisCitas = async (req, res) => {
 const obtenerCitasDoctor = async (req, res) => {
   try {
     console.log('👨‍⚕️ Obteniendo citas del doctor autenticado');
+    console.log('🔍 Usuario autenticado ID:', req.usuario.id);
+    console.log('🔍 Rol del usuario:', req.usuario.rol);
     
     // Obtener doctor del usuario autenticado
     const doctor = await Doctor.findOne({ usuario: req.usuario.id });
+    console.log('🔍 Doctor encontrado:', doctor ? `Sí (ID: ${doctor._id})` : 'No');
+    
     if (!doctor) {
+      console.log('❌ Perfil de doctor no encontrado para usuario:', req.usuario.id);
       return res.status(404).json({
         success: false,
         mensaje: 'Perfil de doctor no encontrado'
@@ -151,11 +156,17 @@ const obtenerCitasDoctor = async (req, res) => {
     }
 
     const { estado, desde, hasta, page, limit } = req.query;
+    console.log('🔍 Parámetros de consulta:', { estado, desde, hasta, page, limit });
     
     const resultado = await CitasService.obtenerCitasDoctor(
       doctor._id, 
       { estado, desde, hasta, page, limit }
     );
+    
+    console.log('🔍 Resultado del service:', {
+      totalCitas: resultado.citas?.length || 0,
+      pagination: resultado.pagination
+    });
 
     res.status(200).json({
       success: true,

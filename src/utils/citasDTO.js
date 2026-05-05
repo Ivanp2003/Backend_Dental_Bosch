@@ -4,33 +4,42 @@
  * 
  * 🎯 OBJETIVO: Proporcionar datos consistentes y seguros para el frontend
  * 
- * 📄 EJEMPLO DE RESPUESTA PARA DOCTOR:
+ * 📄 EJEMPLO DE RESPUESTA OPTIMIZADA PARA DOCTOR:
  * {
  *   "success": true,
  *   "datos": {
  *     "citas": [
  *       {
+ *         "id": "507f1f77bcf86cd79943901",
  *         "fecha": "2024-01-15T00:00:00.000Z",
  *         "horaInicio": "09:00",
  *         "horaFin": "10:00",
  *         "estado": "pendiente",
  *         "motivo": "Consulta general de revisión dental",
- *         "fechaFormateada": "lunes, 15 de enero de 2024",
+ *         "fechaCorta": "15/01/2024",
+ *         "fechaLarga": "lunes, 15 de enero de 2024",
  *         "horaFormateada": "9:00 AM - 10:00 AM",
  *         "paciente": {
  *           "nombreCompleto": "Juan Pérez González",
  *           "email": "juan.perez@email.com",
  *           "telefono": "809-123-4567"
  *         },
- *         "estadoInfo": {
+ *         "estado": {
+ *           "valor": "pendiente",
  *           "etiqueta": "Pendiente",
  *           "color": "#f59e0b",
- *           "icono": "⏳"
+ *           "icono": "⏳",
+ *           "esPendiente": true,
+ *           "esFinalizada": false,
+ *           "esCancelada": false
  *         },
- *         "metadatos": {
+ *         "ui": {
  *           "esHoy": false,
  *           "esPasada": false,
- *           "timestamp": 1705316400000
+ *           "esProxima": true,
+ *           "puedeCancelar": true,
+ *           "puedeFinalizar": false,
+ *           "urgencia": "normal"
  *         }
  *       }
  *     ],
@@ -196,6 +205,9 @@ class CitasDTO {
 
     try {
       return {
+        // 🆔 ID para acciones del frontend (eliminar, actualizar, etc.)
+        id: cita._id,
+        
         // 📅 Información básica de la cita
         fecha: cita.fecha || null,
         horaInicio: cita.horaInicio || '',
@@ -203,21 +215,33 @@ class CitasDTO {
         estado: cita.estado || 'desconocido',
         motivo: this.limpiarTexto(cita.motivo) || 'No especificado',
         
-        // 📅 Fechas y horas formateadas
-        fechaFormateada: this.formatearFecha(cita.fecha) || 'Fecha no válida',
-        horaFormateada: this.formatearHora(cita.horaInicio, cita.horaFin) || 'Hora no válida',
+        // 📅 Fechas y horas formateadas para mostrar en UI
+        fechaCorta: this.formatearFechaCorta(cita.fecha),
+        fechaLarga: this.formatearFecha(cita.fecha),
+        horaFormateada: this.formatearHora(cita.horaInicio, cita.horaFin),
         
-        // 👤 Información del paciente con validación
+        // 👤 Información completa del paciente
         paciente: this.extraerPacienteSeguro(cita.paciente),
         
         // 🏷️ Información del estado para UI
-        estadoInfo: this.getEstadoInfo(cita.estado),
+        estado: {
+          valor: cita.estado || 'desconocido',
+          etiqueta: this.getEstadoInfo(cita.estado).etiqueta,
+          color: this.getEstadoInfo(cita.estado).color,
+          icono: this.getEstadoInfo(cita.estado).icono,
+          esPendiente: cita.estado === 'pendiente',
+          esFinalizada: cita.estado === 'finalizada',
+          esCancelada: cita.estado === 'cancelada'
+        },
         
-        // 📊 Metadatos útiles
-        metadatos: {
+        // 🎯 Bandeas útiles para el frontend
+        ui: {
           esHoy: this.esHoy(cita.fecha),
-          esPasada: this.esPasada(cita.fecha, cita.horaInicio),
-          timestamp: this.getTimestamp(cita.fecha, cita.horaInicio)
+          esPasada: this.esPasada(cita.fecha, cita.horaFin),
+          esProxima: !this.esHoy(cita.fecha) && !this.esPasada(cita.fecha, cita.horaFin),
+          puedeCancelar: cita.estado === 'pendiente' && !this.esPasada(cita.fecha, cita.horaFin),
+          puedeFinalizar: cita.estado === 'pendiente' && this.esHoy(cita.fecha),
+          urgencia: this.calcularUrgencia(cita.fecha, cita.horaInicio)
         }
       };
     } catch (error) {
@@ -447,27 +471,90 @@ class CitasDTO {
   }
 
   /**
-   * 📋 Obtener estructura de cita vacía para fallback
+   * � Formatear fecha corta (DD/MM/YYYY)
+   */
+  static formatearFechaCorta(fecha) {
+    if (!fecha) return 'Fecha no disponible';
+    
+    try {
+      const date = new Date(fecha);
+      
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('❌ Error formateando fecha corta:', error);
+      return 'Error en fecha';
+    }
+  }
+
+  /**
+   * ⚡ Calcular urgencia de la cita
+   */
+  static calcularUrgencia(fecha, horaInicio) {
+    if (!fecha || !horaInicio) return 'normal';
+    
+    try {
+      const fechaCita = new Date(fecha);
+      const [horas, minutos] = horaInicio.split(':');
+      fechaCita.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+      
+      const ahora = new Date();
+      const diferenciaMs = fechaCita - ahora;
+      const diferenciaHoras = diferenciaMs / (1000 * 60 * 60);
+      
+      if (diferenciaHoras < 0) return 'pasada';
+      if (diferenciaHoras <= 2) return 'urgente';
+      if (diferenciaHoras <= 24) return 'alta';
+      if (diferenciaHoras <= 72) return 'media';
+      return 'normal';
+    } catch (error) {
+      console.error('❌ Error calculando urgencia:', error);
+      return 'normal';
+    }
+  }
+
+  /**
+   * �� Obtener estructura de cita vacía para fallback
    */
   static getCitaVacia() {
     return {
+      id: null,
       fecha: null,
       horaInicio: '',
       horaFin: '',
       estado: 'desconocido',
       motivo: 'No disponible',
-      fechaFormateada: 'Fecha no válida',
+      fechaCorta: 'Fecha no válida',
+      fechaLarga: 'Fecha no válida',
       horaFormateada: 'Hora no válida',
       paciente: {
         nombreCompleto: 'Paciente no disponible',
         email: 'No disponible',
         telefono: 'No disponible'
       },
-      estadoInfo: this.getEstadoInfo('desconocido'),
-      metadatos: {
+      estado: {
+        valor: 'desconocido',
+        etiqueta: 'Desconocido',
+        color: '#6b7280',
+        icono: '📅',
+        esPendiente: false,
+        esFinalizada: false,
+        esCancelada: false
+      },
+      ui: {
         esHoy: false,
         esPasada: false,
-        timestamp: 0
+        esProxima: false,
+        puedeCancelar: false,
+        puedeFinalizar: false,
+        urgencia: 'normal'
       }
     };
   }

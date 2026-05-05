@@ -233,8 +233,13 @@ exports.restablecerPassword = async (req, res, next) => {
       });
     }
 
-    // Establecer nueva contraseña
-    usuario.password = password;
+    // Encriptar nueva contraseña antes de guardar
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    // Establecer nueva contraseña encriptada
+    usuario.password = passwordHash;
     usuario.tokenRecuperacion = undefined;
     usuario.tokenExpiracion = undefined;
     await usuario.save();
@@ -377,8 +382,13 @@ exports.actualizarPassword = async (req, res, next) => {
       });
     }
 
-    // Actualizar contraseña
-    usuario.password = passwordNuevo;
+    // Encriptar nueva contraseña antes de actualizar
+    const bcrypt = require('bcryptjs');
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(passwordNuevo, salt);
+
+    // Actualizar contraseña encriptada
+    usuario.password = passwordHash;
     await usuario.save();
 
     res.status(200).json({

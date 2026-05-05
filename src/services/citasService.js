@@ -233,20 +233,33 @@ class CitasService {
   // Obtener citas de un doctor
   static async obtenerCitasDoctor(doctorId, opciones = {}) {
     try {
+      console.log('🔍 Service obtenerCitasDoctor - doctorId:', doctorId);
+      console.log('🔍 Service obtenerCitasDoctor - opciones:', opciones);
+      
       const { estado, desde, hasta, page = 1, limit = 10 } = opciones;
 
       const query = { doctor: doctorId };
+      console.log('🔍 Query base:', query);
       
       if (estado) {
         query.estado = estado;
+        console.log('🔍 Query con estado:', query);
       }
 
       if (desde || hasta) {
         query.fecha = {};
-        if (desde) query.fecha.$gte = new Date(desde);
-        if (hasta) query.fecha.$lte = new Date(hasta);
+        if (desde) {
+          query.fecha.$gte = new Date(desde);
+          console.log('🔍 Query con desde:', query);
+        }
+        if (hasta) {
+          query.fecha.$lte = new Date(hasta);
+          console.log('🔍 Query con hasta:', query);
+        }
       }
 
+      console.log('🔍 Query final:', JSON.stringify(query, null, 2));
+      
       const citas = await Cita.find(query)
         .populate({
           path: 'paciente',
@@ -259,12 +272,21 @@ class CitasService {
         .limit(limit * 1)
         .skip((page - 1) * limit);
 
+      console.log('🔍 Citas encontradas (crudas):', citas.length);
+      console.log('🔍 Primera cita (cruda):', citas[0]);
+
       const total = await Cita.countDocuments(query);
+      console.log('🔍 Total de documentos:', total);
 
       // Transformar las citas con el DTO para eliminar IDs y formatear datos
-      const citasFormateadas = citas.map(cita => CitasDTO.transformarCitaDoctor(cita));
+      const citasFormateadas = citas.map(cita => {
+        console.log('🔍 Transformando cita:', cita._id);
+        return CitasDTO.transformarCitaDoctor(cita);
+      });
+      
+      console.log('🔍 Citas formateadas:', citasFormateadas.length);
 
-      return {
+      const resultado = {
         citas: citasFormateadas,
         pagination: {
           currentPage: page,
@@ -275,7 +297,11 @@ class CitasService {
           hasPrevPage: page > 1
         }
       };
+      
+      console.log('🔍 Resultado final del service:', resultado);
+      return resultado;
     } catch (error) {
+      console.error('❌ Error en obtenerCitasDoctor:', error);
       throw error;
     }
   }
