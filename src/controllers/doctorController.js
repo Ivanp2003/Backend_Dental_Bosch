@@ -1,5 +1,6 @@
 const Doctor = require('../models/Doctor');
 const Usuario = require('../models/Usuario');
+const mongoose = require('mongoose');
 const { enviarEmailAprobacionDoctor, enviarEmailRechazoDoctor } = require('../utils/email');
 
 // @desc    Obtener perfil del doctor autenticado
