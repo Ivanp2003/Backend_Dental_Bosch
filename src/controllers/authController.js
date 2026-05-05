@@ -1,7 +1,7 @@
 const Usuario = require('../models/Usuario');
 const Doctor = require('../models/Doctor');
 const Paciente = require('../models/Paciente');
-const { generarJWT, generarToken, hashToken } = require('../utils/tokens');
+const { generarJWT, generarToken, hashToken, generarCodigoRecuperacion } = require('../utils/tokens');
 const { 
   enviarEmailConfirmacion, 
   enviarEmailRecuperacion, 
@@ -183,20 +183,22 @@ exports.recuperarPassword = async (req, res, next) => {
       });
     }
 
-    // Generar token de recuperación
-    const tokenRecuperacion = generarToken();
+    // Generar código de 6 dígitos
+    const codigoRecuperacion = generarCodigoRecuperacion();
 
-    // Guardar token original con expiración de 1 hora
-    usuario.tokenRecuperacion = tokenRecuperacion; // Token original, no hasheado
-    usuario.tokenExpiracion = Date.now() + 3600000; // 1 hora
+    // Guardar código con expiración de 15 minutos
+    usuario.tokenRecuperacion = codigoRecuperacion;
+    usuario.tokenExpiracion = Date.now() + 900000; // 15 minutos
     await usuario.save();
 
-    // Enviar email
-    await enviarEmailRecuperacion(email, usuario.nombre, tokenRecuperacion);
+    // Enviar email con código
+    await enviarEmailRecuperacion(email, usuario.nombre, codigoRecuperacion);
 
     res.status(200).json({
       success: true,
-      mensaje: 'Revisa tu email para restablecer tu contraseña'
+      mensaje: 'Revisa tu email para obtener el código de recuperación',
+      // Solo para desarrollo, remover en producción
+      ...(process.env.NODE_ENV === 'development' && { codigoRecuperacion })
     });
 
   } catch (error) {
@@ -204,24 +206,30 @@ exports.recuperarPassword = async (req, res, next) => {
   }
 };
 
-// @desc    Restablecer contraseña
-// @route   POST /api/auth/restablecer-password/:token
+// @desc    Restablecer contraseña con código
+// @route   POST /api/auth/restablecer-password
 // @access  Public
 exports.restablecerPassword = async (req, res, next) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { codigo, password } = req.body;
 
-    // Buscar usuario por token original (no hasheado)
+    if (!codigo || !password) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El código y la nueva contraseña son requeridos'
+      });
+    }
+
+    // Buscar usuario por código y verificar que no esté expirado
     const usuario = await Usuario.findOne({
-      tokenRecuperacion: token,
+      tokenRecuperacion: codigo,
       tokenExpiracion: { $gt: Date.now() }
     }).select('+password');
 
     if (!usuario) {
       return res.status(400).json({
         success: false,
-        mensaje: 'Token inválido o expirado'
+        mensaje: 'Código inválido o expirado'
       });
     }
 

@@ -209,25 +209,27 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
 // Enviar email de recuperación de contraseña
 
-exports.enviarEmailRecuperacion = async (email, nombre, token) => {
+exports.enviarEmailRecuperacion = async (email, nombre, codigo) => {
 
-  // URL de respaldo si URL_FRONTEND no está configurada correctamente
-  const frontendUrl = asegurarUrlConDiagonal(process.env.URL_FRONTEND || 'http://localhost:3000/');
-  const urlRecuperacion = `${frontendUrl}recuperar-password/${token}`;
-
-  console.log(' URL de recuperación generada:', urlRecuperacion);
+  console.log(' Código de recuperación generado:', codigo);
 
   const contenido = `
 
     <p>Hola <strong>${nombre}</strong>,</p>
 
-    <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente botón para continuar:</p>
+    <p>Has solicitado restablecer tu contraseña. Usa el siguiente código de verificación:</p>
 
-    <p><strong>Este enlace expira en 1 hora.</strong></p>
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #007bff;">
+      <h2 style="color: #007bff; margin: 0; font-size: 32px; letter-spacing: 8px; font-weight: bold;">${codigo}</h2>
+    </div>
+
+    <p><strong>Este código expira en 15 minutos.</strong></p>
+
+    <p style="color: #6c757d; font-size: 14px;">
+      Si no solicitaste restablecer tu contraseña, puedes ignorar este email de forma segura.
+    </p>
 
   `;
-
-
 
   const msg = {
 
@@ -235,13 +237,11 @@ exports.enviarEmailRecuperacion = async (email, nombre, token) => {
 
     from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
 
-    subject: 'Recuperar contraseña - Dental Bosch',
+    subject: 'Código de Recuperación - Dental Bosch',
 
-    html: plantillaHTML('Recuperar Contraseña', contenido, urlRecuperacion, 'Restablecer Contraseña')
+    html: plantillaHTML('Recuperar Contraseña', contenido)
 
   };
-
-
 
   try {
 

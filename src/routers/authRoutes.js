@@ -25,8 +25,8 @@ router.get('/confirmar/:token', confirmarCuenta);
 // Recuperación de contraseña
 router.post('/recuperar-password', recuperarPassword);
 
-// Restablecer contraseña
-router.post('/restablecer-password/:token', restablecerPassword);
+// Restablecer contraseña con código
+router.post('/restablecer-password', restablecerPassword);
 
 // Login
 router.post('/login', login);
