@@ -1008,10 +1008,11 @@ class AdminService {
       console.error('❌ Error reasignando cita individual:', error);
       throw error;
     }
-  };
+  }
 
-  // ... (rest of the code remains the same)
-
+  // 🔍 OBTENER DETALLE DE CITA
+  static async obtenerDetalleCita(citaId) {
+    try {
       const cita = await Cita.findById(citaId)
         .populate({
           path: 'paciente',
@@ -1124,10 +1125,10 @@ class AdminService {
       // 🚀 FORZAR devolución directa
       return JSON.parse(JSON.stringify(resultadoFinal));
 
-    } catch (error) {
-      console.error('❌ Error obteniendo detalle de cita:', error);
-      throw error;
-    }
+      } catch (error) {
+        console.error('❌ Error obteniendo detalle de cita:', error);
+        throw error;
+      }
   }
 
   // � Métodos auxiliares para transformación manual
