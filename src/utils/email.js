@@ -375,7 +375,13 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre, especialidad) => {
   }
 };
 
-// ...
+exports.enviarEmailRechazoDoctor = async (email, nombre, motivo) => {
+  const contenido = `
+    <p>¡Hola <strong>${nombre}</strong>!</p>
+    
+    <p>Te informamos que tu solicitud de registro como doctor ha sido <strong style="color: #dc3545;">rechazada</strong>.</p>
+    
+    ${motivo ? `
     <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
       <p style="margin: 0;"><strong>Motivo del rechazo:</strong></p>
       <p style="margin: 10px 0 0 0;">${motivo}</p>
@@ -408,7 +414,17 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre, especialidad) => {
     html: plantillaHTML('Solicitud Revisada', contenido)
   };
 
+  try {
+    await sgMail.send(msg);
+    console.log('Email de rechazo enviado a:', email);
+  } catch (error) {
+    console.error('Error al enviar email de rechazo:', error.message);
+    console.log('⚠️ Continuando flujo principal a pesar del error de email');
+  }
+};
 
+exports.enviarNotificacionReasignacion = async (datosNotificacion) => {
+  try {
     const {
       pacienteEmail,
       pacienteNombre,
