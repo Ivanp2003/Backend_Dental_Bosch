@@ -415,21 +415,35 @@ exports.obtenerPerfil = async (req, res, next) => {
 exports.actualizarPassword = async (req, res, next) => {
   try {
     const { passwordActual, passwordNuevo } = req.body;
+    console.log('🔐 Iniciando actualización de contraseña para usuario:', req.usuario.id);
 
-    if (!passwordActual || !passwordNuevo) {
+    // Usar validaciones mejoradas
+    const { validarActualizacionPassword } = require('../utils/validators');
+    const validacion = validarActualizacionPassword(passwordActual, passwordNuevo);
+
+    if (!validacion.esValido) {
       return res.status(400).json({
         success: false,
-        mensaje: 'Por favor ingrese la contraseña actual y la nueva'
+        mensaje: 'Error en la validación de contraseñas',
+        errores: validacion.errores
       });
     }
 
     // Obtener usuario con password
     const usuario = await Usuario.findById(req.usuario.id).select('+password');
+    
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Usuario no encontrado'
+      });
+    }
 
     // Verificar contraseña actual
     const passwordValido = await usuario.compararPassword(passwordActual);
 
     if (!passwordValido) {
+      console.log('❌ Contraseña actual incorrecta para usuario:', req.usuario.id);
       return res.status(401).json({
         success: false,
         mensaje: 'Contraseña actual incorrecta'
@@ -445,13 +459,20 @@ exports.actualizarPassword = async (req, res, next) => {
     usuario.password = passwordHash;
     await usuario.save();
 
+    console.log('✅ Contraseña actualizada exitosamente para usuario:', req.usuario.id);
+
     res.status(200).json({
       success: true,
       mensaje: 'Contraseña actualizada exitosamente'
     });
 
   } catch (error) {
-    next(error);
+    console.error('❌ Error en actualizarPassword:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar la contraseña',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+    });
   }
 };
 

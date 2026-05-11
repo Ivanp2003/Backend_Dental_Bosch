@@ -34,6 +34,8 @@ exports.obtenerPerfil = async (req, res, next) => {
 // @access  Private
 exports.actualizarPerfil = async (req, res, next) => {
   try {
+    console.log('🔍 Iniciando actualización de perfil para doctor:', req.usuario.id);
+    
     // Buscar doctor por el ID del usuario autenticado
     let doctor = await Doctor.findOne({ usuario: req.usuario.id });
 
@@ -44,15 +46,42 @@ exports.actualizarPerfil = async (req, res, next) => {
       });
     }
 
-    // Actualizar datos del doctor
-    const { especialidad, experiencia, consultorio, horarios } = req.body;
+    // Sanitizar y validar datos de entrada
+    const { sanitizarDatosPerfil, validarActualizacionPerfil } = require('../utils/validators');
+    const datosSanitizados = sanitizarDatosPerfil(req.body);
     
-    if (especialidad) doctor.especialidad = especialidad;
-    if (experiencia) doctor.experiencia = experiencia;
-    if (consultorio) doctor.consultorio = consultorio;
+    // Validar datos del perfil para rol 'doctor'
+    const validacion = validarActualizacionPerfil(datosSanitizados, 'doctor');
+    
+    if (!validacion.esValido) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Error en la validación de datos del perfil',
+        errores: validacion.errores
+      });
+    }
+
+    // Actualizar datos del doctor
+    const { especialidad, experiencia, consultorio, horarios } = datosSanitizados;
+    
+    if (especialidad) doctor.especialidad = especialidad.trim();
+    if (experiencia) doctor.experiencia = experiencia.trim();
+    if (consultorio) doctor.consultorio = consultorio.trim();
     if (horarios) doctor.horarios = horarios;
 
     await doctor.save();
+
+    // Actualizar datos del usuario si se proporcionaron
+    const usuarioActualizado = {};
+    if (datosSanitizados.nombre) usuarioActualizado.nombre = datosSanitizados.nombre;
+    if (datosSanitizados.apellido) usuarioActualizado.apellido = datosSanitizados.apellido;
+    if (datosSanitizados.email) usuarioActualizado.email = datosSanitizados.email;
+    if (datosSanitizados.telefono) usuarioActualizado.telefono = datosSanitizados.telefono;
+
+    if (Object.keys(usuarioActualizado).length > 0) {
+      await Usuario.findByIdAndUpdate(req.usuario.id, usuarioActualizado);
+      console.log('✅ Datos de usuario actualizados:', Object.keys(usuarioActualizado));
+    }
 
     // Si se subió una foto válida, actualizarla en el usuario
     if (req.fotoUrl && req.fotoUrl.trim() !== '') {
@@ -68,6 +97,8 @@ exports.actualizarPerfil = async (req, res, next) => {
     const doctorActualizado = await Doctor.findById(doctor._id)
       .populate('usuario', '-password');
 
+    console.log('✅ Perfil de doctor actualizado exitosamente');
+
     res.status(200).json({
       success: true,
       mensaje: 'Perfil actualizado exitosamente',
@@ -75,7 +106,12 @@ exports.actualizarPerfil = async (req, res, next) => {
     });
 
   } catch (error) {
-    next(error);
+    console.error('❌ Error en actualizarPerfil doctor:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar el perfil',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+    });
   }
 };
 

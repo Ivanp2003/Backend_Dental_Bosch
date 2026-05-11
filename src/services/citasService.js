@@ -43,14 +43,13 @@ class CitasService {
     }
   }
 
-  // Validar que el paciente no tenga cita duplicada
+  // Validar que el paciente no tenga cita duplicada (solo para pacientes)
   static async validarCitaPaciente(pacienteId, fecha, horaInicio, excluirCitaId = null) {
     try {
       const query = {
         paciente: pacienteId,
         fecha: new Date(fecha),
-        horaInicio: horaInicio,
-        estado: { $in: ['pendiente'] }
+        estado: { $in: ['pendiente', 'confirmada', 'pendiente_confirmacion_paciente'] }
       };
 
       if (excluirCitaId) {
@@ -60,7 +59,32 @@ class CitasService {
       const citaExistente = await Cita.findOne(query);
       
       if (citaExistente) {
-        throw new Error('El paciente ya tiene una cita programada para ese día y hora');
+        throw new Error('El paciente ya tiene una cita programada para ese día');
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Validar restricción diaria solo para pacientes
+  static async validarRestriccionDiariaPaciente(pacienteId, fecha, rolUsuario) {
+    try {
+      // Si es doctor, no aplicar restricción
+      if (rolUsuario === 'doctor') {
+        return true;
+      }
+
+      // Si es paciente, verificar que no tenga más de una cita por día
+      const citasDelDia = await Cita.countDocuments({
+        paciente: pacienteId,
+        fecha: new Date(fecha),
+        estado: { $in: ['pendiente', 'confirmada', 'pendiente_confirmacion_paciente'] }
+      });
+
+      if (citasDelDia > 0) {
+        throw new Error('Solo puedes agendar una cita por día');
       }
 
       return true;
@@ -73,6 +97,8 @@ class CitasService {
   static async crearCita(datosCita, rolUsuario) {
     try {
       const { paciente, doctor, fecha, horaInicio, horaFin, motivo, creadoPor } = datosCita;
+
+      console.log(`🔍 Creando cita - Rol: ${rolUsuario}, Paciente: ${paciente}, Doctor: ${doctor}`);
 
       // Validar IDs
       if (!mongoose.Types.ObjectId.isValid(paciente) || !mongoose.Types.ObjectId.isValid(doctor)) {
@@ -103,8 +129,8 @@ class CitasService {
         throw new Error('La cuenta del paciente está inactiva');
       }
 
-      // Los pacientes se aprueban automáticamente, no necesitan aprobación de admin
-      // Solo doctores necesitan aprobación explícita
+      // Validar restricción diaria solo para pacientes
+      await this.validarRestriccionDiariaPaciente(paciente, fecha, rolUsuario);
 
       // Validar que el doctor exista y esté aprobado
       const doctorExistente = await Doctor.findOne({ 
@@ -120,6 +146,15 @@ class CitasService {
       await this.validarDisponibilidadDoctor(doctor, fecha, horaInicio, horaFin);
       await this.validarCitaPaciente(paciente, fecha, horaInicio);
 
+      // Determinar estado según rol
+      let estadoCita = 'pendiente';
+      if (rolUsuario === 'doctor') {
+        estadoCita = 'pendiente_confirmacion_paciente';
+        console.log('📋 Cita creada por doctor - requiere confirmación del paciente');
+      } else {
+        console.log('📋 Cita creada por paciente - confirmada automáticamente');
+      }
+
       // Crear cita
       const nuevaCita = new Cita({
         paciente,
@@ -128,6 +163,7 @@ class CitasService {
         horaInicio,
         horaFin,
         motivo,
+        estado: estadoCita,
         creadoPor: creadoPor || rolUsuario
       });
 

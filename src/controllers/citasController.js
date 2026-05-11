@@ -493,6 +493,129 @@ const obtenerDisponibilidadDoctor = async (req, res) => {
   }
 };
 
+// ✅ CONFIRMAR CITA CREADA POR DOCTOR (PACIENTE)
+const confirmarCitaPaciente = async (req, res) => {
+  try {
+    console.log('✅ Paciente confirmando cita:', req.params.id);
+    
+    const { id } = req.params;
+
+    // Validar ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de cita inválido'
+      });
+    }
+
+    // Buscar cita y verificar que pertenezca al paciente autenticado
+    const paciente = await Paciente.findOne({ usuario: req.usuario.id });
+    if (!paciente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Paciente no encontrado'
+      });
+    }
+
+    const cita = await Cita.findOne({
+      _id: id,
+      paciente: paciente._id,
+      estado: 'pendiente_confirmacion_paciente'
+    }).populate('doctor', 'especialidad').populate('paciente', 'nombre apellido');
+
+    if (!cita) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Cita no encontrada o no requiere confirmación'
+      });
+    }
+
+    // Confirmar cita
+    cita.estado = 'confirmada';
+    cita.confirmada = true;
+    await cita.save();
+
+    console.log('✅ Cita confirmada exitosamente');
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Cita confirmada exitosamente',
+      datos: cita
+    });
+
+  } catch (error) {
+    console.error('❌ Error en confirmarCitaPaciente:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al confirmar la cita',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+    });
+  }
+};
+
+// ❌ RECHAZAR CITA CREADA POR DOCTOR (PACIENTE)
+const rechazarCitaPaciente = async (req, res) => {
+  try {
+    console.log('❌ Paciente rechazando cita:', req.params.id);
+    
+    const { id } = req.params;
+    const { motivo } = req.body;
+
+    // Validar ID
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de cita inválido'
+      });
+    }
+
+    // Buscar cita y verificar que pertenezca al paciente autenticado
+    const paciente = await Paciente.findOne({ usuario: req.usuario.id });
+    if (!paciente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Paciente no encontrado'
+      });
+    }
+
+    const cita = await Cita.findOne({
+      _id: id,
+      paciente: paciente._id,
+      estado: 'pendiente_confirmacion_paciente'
+    }).populate('doctor', 'especialidad').populate('paciente', 'nombre apellido');
+
+    if (!cita) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Cita no encontrada o no requiere confirmación'
+      });
+    }
+
+    // Rechazar cita
+    cita.estado = 'cancelada';
+    cita.canceladaPor = 'paciente';
+    cita.motivoCancelacion = motivo || 'Rechazada por el paciente';
+    cita.fechaCancelacion = new Date();
+    await cita.save();
+
+    console.log('❌ Cita rechazada exitosamente');
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Cita rechazada exitosamente',
+      datos: cita
+    });
+
+  } catch (error) {
+    console.error('❌ Error en rechazarCitaPaciente:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al rechazar la cita',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   crearCita,
   obtenerMisCitas,
@@ -501,5 +624,7 @@ module.exports = {
   cancelarCita,
   actualizarEstadoCita,
   finalizarCita,
-  obtenerDisponibilidadDoctor
+  obtenerDisponibilidadDoctor,
+  confirmarCitaPaciente,
+  rechazarCitaPaciente
 };

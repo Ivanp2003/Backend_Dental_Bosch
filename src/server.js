@@ -307,6 +307,43 @@ if (process.env.NODE_ENV === 'development') {
 
 
 
+
+// 🛡️ Middleware de seguridad mejorado
+
+app.use((req, res, next) => {
+
+  // Seguridad de headers
+
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+  
+
+  // Prevenir ataques de inyección de dependencias
+
+  if (req.url.includes('..')) {
+
+    return res.status(400).json({
+
+      success: false,
+
+      mensaje: 'Solicitud no válida'
+
+    });
+
+  }
+
+  
+
+  next();
+
+});
+
 // Ruta de bienvenida
 
 app.get('/', (req, res) => {
@@ -321,11 +358,26 @@ app.get('/', (req, res) => {
 
     sprint: 'Sprint 4 - Módulo de Citas y Gestión Completa',
 
+    seguridad: {
+
+      headersSeguros: true,
+
+      proteccionXSS: true,
+
+      prevencionInyeccion: true
+
+    },
+
     proyecto: {
+
       nombre: 'Dental Bosch Management System',
+
       descripcion: 'Sistema integral de gestión odontológica con módulos de pacientes, doctores, citas y administración',
+
       tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt'],
+
       caracteristicas: [
+
         'Autenticación y autorización por roles',
         'Gestión de pacientes y doctores',
         'Sistema de citas con disponibilidad',

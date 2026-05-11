@@ -44,6 +44,17 @@ const doctorSchema = new mongoose.Schema({
   activo: {
     type: Boolean,
     default: true
+  },
+  
+  // Campos para soft delete
+  eliminado: {
+    type: Boolean,
+    default: false
+  },
+  
+  fechaEliminacion: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true,

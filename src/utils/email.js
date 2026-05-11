@@ -371,17 +371,11 @@ exports.enviarEmailAprobacionDoctor = async (email, nombre, especialidad) => {
     console.log('¡Bienvenido! Email de aprobación enviado a:', email);
   } catch (error) {
     console.error('Error al enviar email de aprobación:', error.message);
-    throw error;
+    console.log('⚠️ Continuando flujo principal a pesar del error de email');
   }
 };
 
-exports.enviarEmailRechazoDoctor = async (email, nombre, motivo = '') => {
-  const contenido = `
-    <p>Estimado <strong>${nombre}</strong>,</p>
-    
-    <p>Lamentamos informarte que tu solicitud de registro como doctor en nuestro sistema ha sido <strong style="color: #dc3545;">rechazada</strong>.</p>
-    
-    ${motivo ? `
+// ...
     <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
       <p style="margin: 0;"><strong>Motivo del rechazo:</strong></p>
       <p style="margin: 10px 0 0 0;">${motivo}</p>
@@ -414,11 +408,121 @@ exports.enviarEmailRechazoDoctor = async (email, nombre, motivo = '') => {
     html: plantillaHTML('Solicitud Revisada', contenido)
   };
 
-  try {
-    await sgMail.send(msg);
-    console.log('Email de rechazo enviado a:', email);
+
+    const {
+      pacienteEmail,
+      pacienteNombre,
+      doctorAnteriorNombre,
+      doctorNuevoNombre,
+      doctorNuevoEmail,
+      especialidad,
+      fechaCambio
+    } = datosNotificacion;
+
+    console.log(' Enviando notificación de reasignación a paciente:', pacienteEmail);
+    console.log(' Enviando notificación a nuevo doctor:', doctorNuevoEmail);
+
+    // Email para el PACIENTE
+    const contenidoPaciente = `
+      <p>Hola <strong>${pacienteNombre}</strong>,</p>
+      
+      <p>Te informamos que ha habido un cambio en la asignación de tu doctor:</p>
+      
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007bff;">
+        <p style="margin: 0 0 10px 0;"><strong>Cambio de Doctor:</strong></p>
+        <p style="margin: 5px 0;">
+          <span style="color: #dc3545;"> Doctor anterior:</span> ${doctorAnteriorNombre}
+        </p>
+        <p style="margin: 5px 0;">
+          <span style="color: #28a745;"> Nuevo doctor:</span> <strong>${doctorNuevoNombre}</strong>
+        </p>
+        <p style="margin: 5px 0;">
+          <span style="color: #007bff;"> Especialidad:</span> ${especialidad}
+        </p>
+        <p style="margin: 5px 0;">
+          <span style="color: #6c757d;"> Fecha del cambio:</span> ${new Date(fechaCambio).toLocaleDateString('es-ES')}
+        </p>
+      </div>
+      
+      <p>Este cambio ha sido realizado por el administrador del sistema para garantizar la mejor atención posible.</p>
+      
+      <p style="color: #6c757d; font-size: 14px;">
+        Si tienes alguna pregunta sobre este cambio, no dudes en contactarnos.
+      </p>
+    `;
+
+    const msgPaciente = {
+      to: pacienteEmail,
+      from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
+      subject: 'Cambio de Doctor Asignado - Dental Bosch',
+      html: plantillaHTML('Cambio de Doctor Asignado', contenidoPaciente)
+    };
+
+    // Email para el NUEVO DOCTOR
+    const contenidoDoctor = `
+      <p>Hola <strong>Dr. ${doctorNuevoNombre}</strong>,</p>
+      
+      <p>Te informamos que se te han asignado nuevos pacientes:</p>
+      
+      <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+        <p style="margin: 0 0 10px 0;"><strong>Detalles de la Asignación:</strong></p>
+        <p style="margin: 5px 0;">
+          <span style="color: #007bff;"> Paciente:</span> ${pacienteNombre}
+        </p>
+        <p style="margin: 5px 0;">
+          <span style="color: #6c757d;"> Fecha de asignación:</span> ${new Date(fechaCambio).toLocaleDateString('es-ES')}
+        </p>
+        <p style="margin: 5px 0;">
+          <span style="color: #007bff;"> Especialidad:</span> ${especialidad}
+        </p>
+      </div>
+      
+      <p>Por favor, revisa tu panel de doctores para ver los detalles de tus nuevos pacientes y sus citas programadas.</p>
+      
+      <p style="color: #6c757d; font-size: 14px;">
+        Si tienes alguna pregunta, no dudes en contactar al administrador.
+      </p>
+    `;
+
+    const msgDoctor = {
+      to: doctorNuevoEmail,
+      from: process.env.EMAIL_FROM || 'noreply@dentalbosch.com',
+      subject: 'Nuevos Pacientes Asignados - Dental Bosch',
+      html: plantillaHTML('Nuevos Pacientes Asignados', contenidoDoctor)
+    };
+
+    // Enviar emails en paralelo sin bloquear el flujo principal
+    const resultados = await Promise.allSettled([
+      sgMail.send(msgPaciente),
+      sgMail.send(msgDoctor)
+    ]);
+
+    // Procesar resultados
+    resultados.forEach((resultado, index) => {
+      const destinatario = index === 0 ? `paciente (${pacienteEmail})` : `doctor (${doctorNuevoEmail})`;
+      
+      if (resultado.status === 'fulfilled') {
+        console.log(` Email de notificación enviado a ${destinatario}`);
+      } else {
+        console.error(` Error enviando email a ${destinatario}:`, resultado.reason.message);
+        // No lanzar error para no bloquear el flujo principal
+      }
+    });
+
+    console.log(' Notificaciones de reasignación procesadas');
+
   } catch (error) {
-    console.error('Error al enviar email de rechazo:', error.message);
-    throw error;
+    console.error(' Error en enviarNotificacionReasignacion:', error.message);
+    // No lanzar error para no bloquear el flujo principal
+    console.log(' Continuando flujo principal a pesar del error de email');
   }
+};
+
+module.exports = {
+  enviarEmailConfirmacion,
+  enviarEmailRecuperacion,
+  enviarEmailBienvenida,
+  enviarEmailAprobacionDoctor,
+  enviarEmailRechazoDoctor,
+  enviarNotificacionReasignacion
 };

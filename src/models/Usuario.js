@@ -39,15 +39,25 @@ const usuarioSchema = new mongoose.Schema({
   },
   cedula: {
     type: String,
-    required: [true, 'La cédula es obligatoria'],
+    required: false, // No hacerla obligatoria para pacientes
     unique: true,
     trim: true,
     validate: {
       validator: function(value) {
-        // Validación básica para cédula dominicana (10 dígitos)
-        return /^[0-9]{10}$/.test(value);
+        // Validación básica para cédula (formato dominicano)
+        if (!value) return true;
+        
+        // Permitir vacío o null
+        if (value.trim() === '') return true;
+        
+        // Validar formato dominicano: 10 dígitos numéricos
+        if (/^[0-9]{10}$/.test(value)) {
+          return true;
+        }
+        
+        return false; // No requerida para pacientes
       },
-      message: 'La cédula debe tener 10 dígitos numéricos'
+      message: 'La cédula debe tener formato válido (10 dígitos numéricos)'
     }
   },
   foto: {

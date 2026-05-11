@@ -276,13 +276,28 @@ const actualizarPaciente = async (req, res) => {
       });
     }
 
-    // Validar duplicados en email y cédula
-    if (req.body.email || req.body.cedula) {
+    // Sanitizar y validar datos de entrada
+    const { sanitizarDatosPerfil, validarActualizacionPerfil } = require('../utils/validators');
+    const datosSanitizados = sanitizarDatosPerfil(req.body);
+    
+    // Validar datos del perfil para rol 'paciente'
+    const validacion = validarActualizacionPerfil(datosSanitizados, 'paciente');
+    
+    if (!validacion.esValido) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Error en la validación de datos del perfil',
+        errores: validacion.errores
+      });
+    }
+
+    // Validar duplicados en email y cédula solo si se están actualizando
+    if (datosSanitizados.email || datosSanitizados.cedula) {
       const pacienteDuplicado = await Paciente.findOne({
         _id: { $ne: id },
         $or: [
-          ...(req.body.email ? [{ email: req.body.email }] : []),
-          ...(req.body.cedula ? [{ cedula: req.body.cedula }] : [])
+          ...(datosSanitizados.email ? [{ email: datosSanitizados.email }] : []),
+          ...(datosSanitizados.cedula ? [{ cedula: datosSanitizados.cedula }] : [])
         ]
       });
 
@@ -290,29 +305,32 @@ const actualizarPaciente = async (req, res) => {
         return res.status(400).json({
           success: false,
           mensaje: 'El email o cédula ya están registrados en otro paciente',
-          tipo: pacienteDuplicado.email === req.body.email ? 'email' : 'cedula'
+          tipo: pacienteDuplicado.email === datosSanitizados.email ? 'email' : 'cedula'
         });
       }
     }
 
     // Actualizar usuario asociado si se modifican campos de usuario
-    if (req.body.email || req.body.telefono || req.body.nombre || req.body.apellido) {
-      const usuarioActualizado = {};
-      if (req.body.email) usuarioActualizado.email = req.body.email;
-      if (req.body.telefono) usuarioActualizado.telefono = req.body.telefono;
-      if (req.body.nombre) usuarioActualizado.nombre = req.body.nombre;
-      if (req.body.apellido) usuarioActualizado.apellido = req.body.apellido;
+    const usuarioActualizado = {};
+    if (datosSanitizados.email) usuarioActualizado.email = datosSanitizados.email;
+    if (datosSanitizados.telefono) usuarioActualizado.telefono = datosSanitizados.telefono;
+    if (datosSanitizados.nombre) usuarioActualizado.nombre = datosSanitizados.nombre;
+    if (datosSanitizados.apellido) usuarioActualizado.apellido = datosSanitizados.apellido;
 
+    if (Object.keys(usuarioActualizado).length > 0) {
       await Usuario.findByIdAndUpdate(pacienteExistente.usuario, usuarioActualizado);
+      console.log('✅ Datos de usuario actualizados:', Object.keys(usuarioActualizado));
     }
 
-    // Actualizar paciente
+    // Actualizar paciente con datos sanitizados
     const pacienteActualizado = await Paciente.findByIdAndUpdate(
       id,
-      { ...req.body, ultimaVisita: new Date() },
+      { ...datosSanitizados, ultimaVisita: new Date() },
       { new: true, runValidators: true }
     ).populate('usuario', 'nombre apellido email telefono cedula foto')
      .populate('doctorAsignado', 'nombre apellido especialidad');
+
+    console.log('✅ Paciente actualizado exitosamente');
 
     res.status(200).json({
       success: true,
