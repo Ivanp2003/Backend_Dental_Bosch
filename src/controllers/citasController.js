@@ -11,11 +11,25 @@ const crearCita = async (req, res) => {
     const { paciente, doctor, fecha, horaInicio, horaFin, motivo } = req.body;
     
     // Validaciones básicas
-    if (!paciente || !doctor || !fecha || !horaInicio || !horaFin || !motivo) {
+    const camposRequeridos = ['doctor', 'fecha', 'horaInicio', 'horaFin', 'motivo'];
+    if (req.usuario.rol !== 'paciente') {
+      camposRequeridos.push('paciente');
+    }
+    
+    const camposFaltantes = [];
+    if (req.usuario.rol !== 'paciente' && !paciente) camposFaltantes.push('paciente');
+    if (!doctor) camposFaltantes.push('doctor');
+    if (!fecha) camposFaltantes.push('fecha');
+    if (!horaInicio) camposFaltantes.push('horaInicio');
+    if (!horaFin) camposFaltantes.push('horaFin');
+    if (!motivo) camposFaltantes.push('motivo');
+    
+    if (camposFaltantes.length > 0) {
       return res.status(400).json({
         success: false,
         mensaje: 'Todos los campos son obligatorios',
-        camposRequeridos: ['paciente', 'doctor', 'fecha', 'horaInicio', 'horaFin', 'motivo']
+        camposRequeridos,
+        camposFaltantes
       });
     }
 
@@ -31,15 +45,17 @@ const crearCita = async (req, res) => {
     // Determinar quién crea la cita según el rol
     let creadoPor = req.usuario.rol;
     
-    // Si es paciente, solo puede crear citas para sí mismo
+    // Si es paciente, asignar automáticamente su ID de paciente
+    let pacienteId = paciente;
     if (req.usuario.rol === 'paciente') {
       const pacienteData = await Paciente.findOne({ usuario: req.usuario.id });
-      if (!pacienteData || pacienteData._id.toString() !== paciente) {
-        return res.status(403).json({
+      if (!pacienteData) {
+        return res.status(404).json({
           success: false,
-          mensaje: 'Los pacientes solo pueden crear citas para sí mismos'
+          mensaje: 'Perfil de paciente no encontrado'
         });
       }
+      pacienteId = pacienteData._id.toString();
     }
     
     // Si es doctor, validar que pueda crear la cita
@@ -54,7 +70,7 @@ const crearCita = async (req, res) => {
     }
 
     const nuevaCita = await CitasService.crearCita({
-      paciente,
+      paciente: pacienteId,
       doctor,
       fecha,
       horaInicio,
