@@ -461,13 +461,30 @@ exports.eliminarDoctor = async (req, res, next) => {
 
     // Verificar si tiene citas pendientes o futuras
     const Cita = require('../models/Cita');
-    const citasPendientes = await Cita.find({
+    console.log('🔍 Buscando citas del doctor:', doctor._id);
+    
+    // Verificar TODAS las citas futuras (pendientes, confirmadas, finalizadas)
+    const todasLasCitasFuturas = await Cita.find({
       doctor: doctor._id,
-      estado: { $in: ['pendiente', 'confirmada'] },
       fecha: { $gte: new Date() }
-    });
+    }).populate('paciente', 'nombre apellido');
+
+    // Filtrar solo las que están activas (no canceladas)
+    const citasPendientes = todasLasCitasFuturas.filter(cita => 
+      ['pendiente', 'confirmada', 'finalizada'].includes(cita.estado)
+    );
+
+    console.log('📊 Todas las citas futuras:', todasLasCitasFuturas.length);
+    console.log('📊 Citas activas encontradas:', citasPendientes.length);
+    console.log('📅 Detalles de citas:', citasPendientes.map(c => ({
+      id: c._id,
+      estado: c.estado,
+      fecha: c.fecha,
+      horaInicio: c.horaInicio
+    })));
 
     if (citasPendientes.length > 0) {
+      console.log('❌ Doctor tiene citas pendientes, no se puede desactivar');
       return res.status(409).json({
         success: false,
         mensaje: 'No se puede desactivar el doctor. Tiene citas pendientes o futuras.',
