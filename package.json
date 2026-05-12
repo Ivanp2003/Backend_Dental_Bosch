@@ -4,9 +4,10 @@
   "description": "API RESTful para la gestión de un consultorio dental con Node.js, Express, MongoDB y autenticación JWT.",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node diagnostic.js && node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "diagnostic": "node diagnostic.js"
   },
   "repository": {
     "type": "git",
