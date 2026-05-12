@@ -22,7 +22,11 @@ router.get('/doctores', adminController.listarDoctores);
 // GET /api/admin/doctores-pendientes
 router.get('/doctores-pendientes', adminController.listarDoctores);
 
-// � Ver horarios de todos los doctores
+// 🚫 Listar doctores inactivos
+// GET /api/admin/doctores-inactivos
+router.get('/doctores-inactivos', adminController.listarDoctores);
+
+// 🏥 Ver horarios de todos los doctores
 // GET /api/admin/doctores/horarios
 router.get('/doctores/horarios', adminController.obtenerHorariosDoctores);
 

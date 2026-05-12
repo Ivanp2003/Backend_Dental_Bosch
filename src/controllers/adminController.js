@@ -223,11 +223,14 @@ const listarDoctores = async (req, res) => {
     
     const { estado, especialidad, page, limit } = req.query;
     
-    // Si la ruta es /doctores-pendientes, filtrar automáticamente por estado pendiente
+    // Detectar ruta específica para filtrar automáticamente
     let filtroEstado = estado;
     if (req.originalUrl.includes('/doctores-pendientes')) {
       filtroEstado = 'pendiente';
       console.log('🔍 Filtrando doctores pendientes de aprobación');
+    } else if (req.originalUrl.includes('/doctores-inactivos')) {
+      filtroEstado = false;
+      console.log('🚫 Filtrando doctores inactivos');
     }
     
     const resultado = await AdminService.listarDoctores({
@@ -237,9 +240,14 @@ const listarDoctores = async (req, res) => {
       limit: parseInt(limit) || 10
     });
 
-    const mensaje = req.originalUrl.includes('/doctores-pendientes') 
-      ? 'Doctores pendientes listados exitosamente'
-      : 'Doctores listados exitosamente';
+    let mensaje;
+    if (req.originalUrl.includes('/doctores-pendientes')) {
+      mensaje = 'Doctores pendientes listados exitosamente';
+    } else if (req.originalUrl.includes('/doctores-inactivos')) {
+      mensaje = 'Doctores inactivos listados exitosamente';
+    } else {
+      mensaje = 'Doctores listados exitosamente';
+    }
 
     res.status(200).json({
       success: true,
