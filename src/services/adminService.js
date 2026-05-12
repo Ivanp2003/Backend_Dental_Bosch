@@ -357,29 +357,67 @@ class AdminService {
       let doctores;
       let total;
 
-      // Si se filtra por estado del usuario, necesitamos hacer un lookup o populate con filtro
-      if (estado) {
-        doctores = await Doctor.find(query)
-          .populate({
-            path: 'usuario',
-            select: 'nombre apellido email telefono cedula estado confirmado createdAt',
-            match: { estado: estado } // Filtrar por estado del usuario
-          })
-          .sort({ createdAt: -1 })
-          .limit(limit * 1)
-          .skip((page - 1) * limit);
+      // Si se filtra por estado del usuario (incluyendo false), usar aggregation para mayor precisión
+      if (estado !== undefined) {
+        console.log(`🔍 Filtrando doctores por estado: ${estado} (${typeof estado})`);
+        
+        // Usar aggregation para filtrado preciso
+        const pipeline = [
+          {
+            $match: query
+          },
+          {
+            $lookup: {
+              from: 'usuarios',
+              localField: 'usuario',
+              foreignField: '_id',
+              as: 'usuario',
+              pipeline: [
+                {
+                  $project: {
+                    nombre: 1,
+                    apellido: 1,
+                    email: 1,
+                    telefono: 1,
+                    cedula: 1,
+                    estado: 1,
+                    confirmado: 1,
+                    createdAt: 1
+                  }
+                }
+              ]
+            }
+          },
+          {
+            $unwind: '$usuario'
+          },
+          {
+            $match: {
+              'usuario.estado': estado
+            }
+          },
+          {
+            $sort: { createdAt: -1 }
+          },
+          {
+            $facet: {
+              doctores: [
+                { $skip: (page - 1) * limit },
+                { $limit: limit }
+              ],
+              total: [
+                { $count: 'count' }
+              ]
+            }
+          }
+        ];
 
-        // Filtrar los doctores donde el usuario no sea null (por el match)
-        doctores = doctores.filter(doctor => doctor.usuario !== null);
-
-        // Contar el total con el mismo filtro
-        const allDoctores = await Doctor.find(query)
-          .populate({
-            path: 'usuario',
-            select: 'estado',
-            match: { estado: estado }
-          });
-        total = allDoctores.filter(doctor => doctor.usuario !== null).length;
+        const result = await Doctor.aggregate(pipeline);
+        doctores = result[0].doctores;
+        total = result[0].total[0]?.count || 0;
+        
+        console.log(`📊 Doctores después de filtrar: ${doctores.length}`);
+        console.log(`📈 Total de doctores con estado ${estado}: ${total}`);
       } else {
         // Sin filtro de estado, comportamiento normal pero excluir doctores huérfanos
         doctores = await Doctor.find(query)
