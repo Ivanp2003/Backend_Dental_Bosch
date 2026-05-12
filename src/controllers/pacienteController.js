@@ -670,7 +670,7 @@ const actualizarPerfilPacienteAutenticado = async (req, res) => {
     const pacienteActualizado = await Paciente.findByIdAndUpdate(
       pacienteExistente._id,
       { ...datosSanitizados, ultimaVisita: new Date() },
-      { new: true, runValidators: true }
+      { new: true, runValidators: false }  // Desactivar validación de esquema para permitir actualizaciones parciales
     ).populate('usuario', 'nombre apellido email telefono cedula foto')
      .populate('doctorAsignado', 'nombre apellido especialidad');
 

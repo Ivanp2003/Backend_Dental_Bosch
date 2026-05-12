@@ -9,24 +9,24 @@ const pacienteSchema = new mongoose.Schema({
   usuario: {
     type: Schema.Types.ObjectId,
     ref: 'Usuario',
-    required: [true, 'El usuario asociado es obligatorio'],
+    required: false,
     unique: true
   },
   
   // Información personal específica del paciente
   fechaNacimiento: {
     type: Date,
-    required: [true, 'La fecha de nacimiento es obligatoria'],
+    required: false,
     validate: {
       validator: function(value) {
-        return value < new Date();
+        return !value || value < new Date();
       },
       message: 'La fecha de nacimiento no puede ser futura'
     }
   },
   genero: {
     type: String,
-    required: [true, 'El género es obligatorio'],
+    required: false,
     enum: {
       values: ['masculino', 'femenino', 'otro'],
       message: 'El género debe ser: masculino, femenino u otro'
@@ -37,19 +37,19 @@ const pacienteSchema = new mongoose.Schema({
   direccion: {
     calle: {
       type: String,
-      required: [true, 'La calle es obligatoria'],
+      required: false,
       trim: true,
       maxlength: [100, 'La calle no puede exceder 100 caracteres']
     },
     ciudad: {
       type: String,
-      required: [true, 'La ciudad es obligatoria'],
+      required: false,
       trim: true,
       maxlength: [50, 'La ciudad no puede exceder 50 caracteres']
     },
     provincia: {
       type: String,
-      required: [true, 'La provincia es obligatoria'],
+      required: false,
       trim: true,
       maxlength: [50, 'La provincia no puede exceder 50 caracteres']
     }
@@ -59,18 +59,18 @@ const pacienteSchema = new mongoose.Schema({
   contactoEmergencia: {
     nombre: {
       type: String,
-      required: [true, 'El nombre del contacto de emergencia es obligatorio'],
+      required: false,
       trim: true
     },
     telefono: {
       type: String,
-      required: [true, 'El teléfono del contacto de emergencia es obligatorio'],
+      required: false,
       trim: true,
       match: [/^[0-9]{10}$/, 'El teléfono debe tener 10 dígitos numéricos']
     },
     parentesco: {
       type: String,
-      required: [true, 'El parentesco es obligatorio'],
+      required: false,
       trim: true
     }
   },
