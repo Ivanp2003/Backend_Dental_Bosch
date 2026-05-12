@@ -463,12 +463,16 @@ exports.eliminarDoctor = async (req, res, next) => {
     const Cita = require('../models/Cita');
     console.log('🔍 Buscando citas del doctor:', doctor._id);
     
+    const ahora = new Date();
+    ahora.setHours(0, 0, 0, 0);
+    
     const citasActivas = await Cita.find({
       doctor: doctor._id,
-      fecha: { $gte: new Date() },
+      fecha: { $gte: ahora },
       estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] }
     }).populate('paciente', 'nombre apellido');
 
+    console.log('📊 Fecha actual del servidor:', ahora.toISOString());
     console.log('📊 Citas activas encontradas:', citasActivas.length);
     console.log('📅 Detalles de citas:', citasActivas.map(c => ({
       id: c._id,
