@@ -192,9 +192,19 @@ class CitasService {
         throw new Error('La hora de fin debe ser posterior a la hora de inicio');
       }
       
-      // Validar duración máxima (ej: 4 horas)
-      if (finMinutos - inicioMinutos > 240) {
-        throw new Error('La cita no puede exceder 4 horas de duración');
+      // Validar duración según rol del usuario
+      const duracion = finMinutos - inicioMinutos;
+      
+      if (rolUsuario === 'paciente') {
+        // Para pacientes: exactamente 1 hora (60 minutos)
+        if (duracion !== 60) {
+          throw new Error('Los pacientes solo pueden agendar citas de 1 hora de duración');
+        }
+      } else {
+        // Para doctores y admin: máximo 4 horas (240 minutos)
+        if (duracion > 240) {
+          throw new Error('La cita no puede exceder 4 horas de duración');
+        }
       }
       
       console.log('✅ Validaciones pasadas');
