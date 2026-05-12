@@ -418,7 +418,7 @@ exports.obtenerDoctoresAprobados = async (req, res, next) => {
   }
 };
 
-// @desc    Eliminar doctor
+// @desc    Desactivar doctor (cambiar estado activo a false)
 // @route   DELETE /api/doctores/:id
 // @access  Private (Admin)
 exports.eliminarDoctor = async (req, res, next) => {
@@ -432,8 +432,8 @@ exports.eliminarDoctor = async (req, res, next) => {
       });
     }
 
-    // Buscar el doctor
-    const doctor = await Doctor.findById(req.params.id);
+    // Buscar el doctor con su usuario
+    const doctor = await Doctor.findById(req.params.id).populate('usuario');
     if (!doctor) {
       return res.status(404).json({
         success: false,
@@ -441,18 +441,119 @@ exports.eliminarDoctor = async (req, res, next) => {
       });
     }
 
-    // Eliminar el usuario asociado 
-    await Usuario.findByIdAndDelete(doctor.usuario);
+    // Verificar si el doctor ya está inactivo
+    if (!doctor.activo) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El doctor ya se encuentra inactivo'
+      });
+    }
+
+    // Verificar si tiene citas pendientes o futuras
+    const Cita = require('../models/Cita');
+    const citasPendientes = await Cita.find({
+      doctor: doctor._id,
+      estado: { $in: ['pendiente', 'confirmada'] },
+      fecha: { $gte: new Date() }
+    });
+
+    if (citasPendientes.length > 0) {
+      return res.status(409).json({
+        success: false,
+        mensaje: 'No se puede desactivar el doctor. Tiene citas pendientes o futuras.',
+        datos: {
+          totalCitasPendientes: citasPendientes.length,
+          citas: citasPendientes.map(cita => ({
+            id: cita._id,
+            fecha: cita.fecha,
+            horaInicio: cita.horaInicio,
+            estado: cita.estado
+          }))
+        }
+      });
+    }
+
+    // Cambiar estado activo del doctor a false
+    doctor.activo = false;
+    await doctor.save();
+
+    // También cambiar estado del usuario a inactivo
+    const usuarioDoctor = await Usuario.findById(doctor.usuario._id);
+    usuarioDoctor.estado = 'inactivo';
+    await usuarioDoctor.save();
 
     res.status(200).json({
       success: true,
-      mensaje: 'Doctor eliminado exitosamente',
+      mensaje: 'Doctor desactivado exitosamente',
       data: {
-        doctorId: doctor._id
+        doctorId: doctor._id,
+        nombre: `${usuarioDoctor.nombre} ${usuarioDoctor.apellido}`,
+        email: usuarioDoctor.email,
+        activo: doctor.activo,
+        estadoUsuario: usuarioDoctor.estado
       }
     });
 
   } catch (error) {
+    console.error('❌ Error en eliminarDoctor:', error);
+    next(error);
+  }
+};
+
+// @desc    Reactivar doctor (cambiar estado activo a true)
+// @route   PUT /api/doctores/:id/reactivar
+// @access  Private (Admin)
+exports.reactivarDoctor = async (req, res, next) => {
+  try {
+    // Verificar que el usuario sea admin
+    const usuarioAutenticado = await Usuario.findById(req.usuario.id);
+    if (!usuarioAutenticado || usuarioAutenticado.rol !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        mensaje: 'Acceso denegado. Se requiere rol de administrador.'
+      });
+    }
+
+    // Buscar el doctor con su usuario
+    const doctor = await Doctor.findById(req.params.id).populate('usuario');
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Doctor no encontrado'
+      });
+    }
+
+    // Verificar si el doctor ya está activo
+    if (doctor.activo) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'El doctor ya se encuentra activo'
+      });
+    }
+
+    // Cambiar estado activo del doctor a true
+    doctor.activo = true;
+    await doctor.save();
+
+    // También cambiar estado del usuario a aprobado
+    const usuarioDoctor = await Usuario.findById(doctor.usuario._id);
+    usuarioDoctor.estado = 'aprobado';
+    await usuarioDoctor.save();
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Doctor reactivado exitosamente',
+      data: {
+        doctorId: doctor._id,
+        nombre: `${usuarioDoctor.nombre} ${usuarioDoctor.apellido}`,
+        email: usuarioDoctor.email,
+        activo: doctor.activo,
+        estadoUsuario: usuarioDoctor.estado
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en reactivarDoctor:', error);
     next(error);
   }
 };
@@ -705,4 +806,20 @@ exports.actualizarDoctor = async (req, res, next) => {
     console.error('❌ Error actualizando doctor:', error);
     next(error);
   }
+};
+
+module.exports = {
+  obtenerPerfil,
+  actualizarPerfil,
+  obtenerDoctores,
+  obtenerDoctorPorId,
+  cambiarEstadoDoctor,
+  obtenerDoctoresPendientes,
+  obtenerDoctoresAprobados,
+  eliminarDoctor,
+  reactivarDoctor,
+  actualizarDoctor,
+  obtenerMisPacientes,
+  obtenerMisCitas,
+  cambiarEstadoCita
 };

@@ -10,6 +10,7 @@ const {
   obtenerDoctoresPendientes,
   obtenerDoctoresAprobados,
   eliminarDoctor,
+  reactivarDoctor,
   actualizarDoctor,
   obtenerMisPacientes,
   obtenerMisCitas,
@@ -77,8 +78,11 @@ router.put('/citas/:id/estado', autorizarRoles('doctor'), cambiarEstadoCita);
 // Cambiar estado de doctor (aprobar/rechazar) 
 router.put('/:id/estado', autorizarRoles('admin'), cambiarEstadoDoctor);
 
-// Eliminar doctor 
+// Eliminar doctor (desactivar)
 router.delete('/:id', autorizarRoles('admin'), eliminarDoctor);
+
+// Reactivar doctor 
+router.put('/:id/reactivar', autorizarRoles('admin'), reactivarDoctor);
 
 // Actualizar doctor (solo admin) 
 router.put('/:id', autorizarRoles('admin'), actualizarDoctor);

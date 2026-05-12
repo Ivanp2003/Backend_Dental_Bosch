@@ -344,7 +344,7 @@ app.use((req, res, next) => {
 
 });
 
-// Ruta de bienvenida
+// Ruta de bienvenida actualizada
 
 app.get('/', (req, res) => {
 
@@ -352,11 +352,11 @@ app.get('/', (req, res) => {
 
     success: true,
 
-    mensaje: '🦷 API Sistema de Gestión Odontológica - Dental Bosch',
+    mensaje: ' API Sistema de Gestión Odontológica - Dental Bosch v3.0',
 
-    version: '2.0.0',
+    version: '3.0.0',
 
-    sprint: 'Sprint 4 - Módulo de Citas y Gestión Completa',
+    sprint: 'Sprint 5 - Gestión Segura de Doctores y Mejoras en Citas',
 
     seguridad: {
 
@@ -364,7 +364,11 @@ app.get('/', (req, res) => {
 
       proteccionXSS: true,
 
-      prevencionInyeccion: true
+      prevencionInyeccion: true,
+
+      softDelete: true,
+
+      validacionCitas: true
 
     },
 
@@ -374,17 +378,34 @@ app.get('/', (req, res) => {
 
       descripcion: 'Sistema integral de gestión odontológica con módulos de pacientes, doctores, citas y administración',
 
-      tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt'],
+      tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt', 'Multer'],
 
       caracteristicas: [
 
-        'Autenticación y autorización por roles',
-        'Gestión de pacientes y doctores',
-        'Sistema de citas con disponibilidad',
-        'Panel de administración',
-        'Email notifications',
-        'File upload para avatares'
+        ' Autenticación y autorización por roles',
+
+        ' Gestión de pacientes y doctores',
+
+        ' Sistema de citas con disponibilidad',
+
+        ' Panel de administración',
+
+        ' Email notifications',
+
+        ' File upload para avatares',
+
+        ' Soft Delete para doctores (seguro)',
+
+        ' Verificación de citas pendientes antes de desactivar',
+
+        ' Agendado automático de citas para pacientes',
+
+        ' Reactivación de doctores',
+
+        ' Gestión mejorada de historial clínico'
+
       ]
+
     },
 
     entorno: process.env.NODE_ENV,
@@ -392,116 +413,219 @@ app.get('/', (req, res) => {
     baseDatos: process.env.NODE_ENV === 'production' ? 'MongoDB Atlas' : 'MongoDB Local',
 
     estado: {
-      servidor: '🟢 Activo',
-      database: '🟢 Conectada',
-      api: '🟢 Operativa'
+
+      servidor: ' Activo',
+
+      database: ' Conectada',
+
+      api: ' Operativa',
+
+      seguridad: ' Habilitada'
+
     },
+
+    novedades: [
+
+      ' Soft Delete para doctores con verificación de citas',
+
+      ' Pacientes pueden agendar citas sin especificar su ID',
+
+      ' Reactivación de doctores desactivados',
+
+      ' Validaciones de seguridad reforzadas',
+
+      ' Mejoras en gestión de historial clínico'
+
+    ],
 
     endpoints: {
 
       auth: {
+
         registro: 'POST /api/auth/registro',
+
         login: 'POST /api/auth/login',
+
         recuperarPassword: 'POST /api/auth/recuperar-password',
+
         restablecerPassword: 'POST /api/auth/restablecer-password/:token',
+
         actualizarPassword: 'PUT /api/auth/actualizar-password',
+
         perfil: 'GET /api/auth/perfil',
-        verificarToken: 'GET /api/auth/verificar-token',
-        google: {
-          iniciar: 'GET /api/auth/google',
-          callback: 'GET /api/auth/google/callback'
-        }
+
+        verificarToken: 'GET /api/auth/verificar-token'
+
       },
 
       doctor: {
+
         todos: 'GET /api/doctores',
+
         porId: 'GET /api/doctores/:id',
+
         perfil: 'GET /api/doctores/perfil/doctor',
+
         actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
+
         misPacientes: 'GET /api/doctores/mis-pacientes (Doctor)',
+
         misCitas: 'GET /api/doctores/mis-citas (Doctor)',
+
         cambiarEstadoCita: 'PUT /api/doctores/citas/:id/estado (Doctor)',
+
         pendientes: 'GET /api/doctores/pendientes (Admin)',
+
         aprobados: 'GET /api/doctores/aprobados/lista (Público)',
+
         cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)',
-        eliminar: 'DELETE /api/doctores/:id (Admin)'
+
+        ' desactivar': 'DELETE /api/doctores/:id (Admin - Soft Delete)',
+
+        ' reactivar': 'PUT /api/doctores/:id/reactivar (Admin)'
+
       },
 
       pacientes: {
+
         registro: 'POST /api/auth/registro (rol: paciente)',
+
         todos: 'GET /api/pacientes',
+
         porId: 'GET /api/pacientes/:id',
+
         perfil: 'GET /api/pacientes/perfil/paciente',
+
         actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',
+
         buscar: 'GET /api/pacientes/buscar',
+
         actualizar: 'PUT /api/pacientes/:id',
+
         eliminar: 'DELETE /api/pacientes/:id',
-        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor',
-        listar: 'GET /api/admin/pacientes (Todos los pacientes sin confirmación)',
-        detalle: 'GET /api/admin/pacientes/:id',
-        asignarDoctorAdmin: 'PUT /api/admin/pacientes/:id/doctor',
-        eliminarAdmin: 'DELETE /api/admin/pacientes/:id'
+
+        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
+
       },
 
       admin: {
+
         doctores: {
+
           crear: 'POST /api/admin/doctores',
+
           listar: 'GET /api/admin/doctores',
+
           detalle: 'GET /api/admin/doctores/:id',
+
           actualizar: 'PUT /api/admin/doctores/:id',
+
           estado: 'PUT /api/admin/doctores/:id/estado',
+
           horario: 'PUT /api/admin/doctores/:id/horario',
+
           horariosTodos: 'GET /api/admin/doctores/horarios'
+
         },
+
         citas: {
+
           todas: 'GET /api/admin/citas'
+
         },
+
         pacientes: {
-          listar: 'GET /api/admin/pacientes (Todos los pacientes sin confirmación)',
+
+          listar: 'GET /api/admin/pacientes',
+
           detalle: 'GET /api/admin/pacientes/:id',
+
           asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor',
+
           eliminar: 'DELETE /api/admin/pacientes/:id'
+
         },
+
         estadisticas: 'GET /api/admin/estadisticas'
+
       },
 
       citas: {
-        crear: 'POST /api/citas (Pacientes, Doctores, Admin)',
+
+        ' crear': 'POST /api/citas (Pacientes, Doctores, Admin)',
+
         misCitas: 'GET /api/citas/mis-citas (Pacientes)',
+
         citasDoctor: 'GET /api/citas/doctor (Doctores)',
+
         todas: 'GET /api/citas (Admin)',
+
         cancelar: 'DELETE /api/citas/:id',
+
         actualizarEstado: 'PUT /api/citas/:id/estado (Doctores, Admin)',
+
         finalizar: 'PUT /api/citas/:id/finalizar (Doctores, Admin)',
-        disponibilidad: 'GET /api/citas/disponibilidad'
+
+        disponibilidad: 'GET /api/citas/disponibilidad',
+
+        confirmar: 'PUT /api/citas/:id/confirmar (Pacientes)',
+
+        rechazar: 'PUT /api/citas/:id/rechazar (Pacientes)'
+
       },
 
       historialClinico: {
+
         crear: 'POST /api/historial-clinico/:pacienteId (Admin, Doctor)',
+
         agregarRegistro: 'POST /api/historial-clinico/:pacienteId/registro (Admin, Doctor)',
+
         completo: 'GET /api/historial-clinico/:pacienteId (Admin, Doctor, Paciente)',
+
         registros: 'GET /api/historial-clinico/:pacienteId/registros (Admin, Doctor, Paciente)',
+
         estadisticas: 'GET /api/historial-clinico/:pacienteId/estadisticas (Admin, Doctor, Paciente)',
+
         actualizarRegistro: 'PUT /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)',
+
         eliminarRegistro: 'DELETE /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)'
+
       }
 
     },
 
     documentacion: {
+
       health: 'GET /health',
-      postman: 'Pronto disponible',
-      swagger: 'Pronto disponible'
+
+      api: 'GET / (esta página)',
+
+      docs: '/docs/skills/ (documentación de habilidades)'
+
     },
 
     contacto: {
+
       desarrollador: 'Andrés P.',
+
       proyecto: 'Dental Bosch',
-      version: '2.0.0'
+
+      version: '3.0.0',
+
+      ultimasActualizaciones: [
+
+        'Soft Delete para doctores',
+
+        'Mejoras en agendado de citas',
+
+        'Validaciones de seguridad reforzadas'
+
+      ]
+
     }
 
-
   });
+
 
 
 
