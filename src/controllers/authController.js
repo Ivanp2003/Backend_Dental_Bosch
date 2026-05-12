@@ -398,12 +398,62 @@ exports.obtenerPerfil = async (req, res, next) => {
       });
     }
 
+    // Si es paciente, obtener datos adicionales
+    if (usuario.rol === 'paciente') {
+      const paciente = await Paciente.findOne({ usuario: usuario._id })
+        .populate('doctorAsignado', 'nombre apellido especialidad telefono email');
+
+      if (paciente) {
+        // Combinar datos de usuario con datos específicos de paciente
+        const perfilCompleto = {
+          ...usuario.toObject(),
+          // Datos específicos del paciente
+          fechaNacimiento: paciente.fechaNacimiento,
+          genero: paciente.genero,
+          direccion: paciente.direccion,
+          contactoEmergencia: paciente.contactoEmergencia,
+          doctorAsignado: paciente.doctorAsignado,
+          infoMedica: paciente.infoMedica,
+          // Datos adicionales útiles
+          edad: paciente.edad
+        };
+
+        return res.status(200).json({
+          success: true,
+          data: perfilCompleto
+        });
+      }
+    }
+
+    // Si es doctor, obtener datos adicionales
+    if (usuario.rol === 'doctor') {
+      const doctor = await Doctor.findOne({ usuario: usuario._id });
+
+      if (doctor) {
+        const perfilCompleto = {
+          ...usuario.toObject(),
+          // Datos específicos del doctor
+          especialidad: doctor.especialidad,
+          experiencia: doctor.experiencia,
+          consultorio: doctor.consultorio,
+          horarioAtencion: doctor.horarioAtencion
+        };
+
+        return res.status(200).json({
+          success: true,
+          data: perfilCompleto
+        });
+      }
+    }
+
+    // Para admin o si no encuentra datos específicos
     res.status(200).json({
       success: true,
       data: usuario
     });
 
   } catch (error) {
+    console.error('❌ Error en obtenerPerfil:', error);
     next(error);
   }
 };

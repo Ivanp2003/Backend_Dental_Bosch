@@ -426,9 +426,7 @@ const obtenerPerfilPaciente = async (req, res) => {
     // Buscar paciente por el usuario autenticado
     const paciente = await Paciente.findOne({ usuario: req.usuario.id })
       .populate('usuario', 'nombre apellido email telefono cedula foto')
-      .populate('doctorAsignado', 'nombre apellido especialidad telefono email')
-      .populate('citas', 'fecha hora estado motivo')
-      .populate('tratamientos', 'nombre estado fechaInicio');
+      .populate('doctorAsignado', 'nombre apellido especialidad telefono email');
 
     if (!paciente) {
       return res.status(404).json({
@@ -437,10 +435,23 @@ const obtenerPerfilPaciente = async (req, res) => {
       });
     }
 
+    // Obtener citas recientes del paciente (opcional, si se necesita)
+    const Cita = require('../models/Cita');
+    const citasRecientes = await Cita.find({ paciente: paciente._id })
+      .sort({ fecha: -1, horaInicio: -1 })
+      .limit(5)
+      .populate('doctor', 'nombre apellido especialidad');
+
+    // Agregar las citas al perfil
+    const perfilConCitas = {
+      ...paciente.toObject(),
+      citasRecientes: citasRecientes
+    };
+
     res.status(200).json({
       success: true,
       mensaje: 'Perfil obtenido exitosamente',
-      datos: paciente
+      datos: perfilConCitas
     });
 
   } catch (error) {
