@@ -101,6 +101,32 @@ exports.validarActualizacionPerfil = (datos, rol) => {
     errores.push('La cédula debe tener exactamente 10 dígitos');
   }
   
+  // Validar dirección si se proporciona
+  if (datos.direccion !== undefined && typeof datos.direccion === 'object') {
+    if (datos.direccion.calle !== undefined && datos.direccion.calle.trim() === '') {
+      errores.push('La calle no puede estar vacía');
+    }
+    if (datos.direccion.ciudad !== undefined && datos.direccion.ciudad.trim() === '') {
+      errores.push('La ciudad no puede estar vacía');
+    }
+    if (datos.direccion.provincia !== undefined && datos.direccion.provincia.trim() === '') {
+      errores.push('La provincia no puede estar vacía');
+    }
+  }
+  
+  // Validar contacto de emergencia si se proporciona
+  if (datos.contactoEmergencia !== undefined && typeof datos.contactoEmergencia === 'object') {
+    if (datos.contactoEmergencia.nombre !== undefined && datos.contactoEmergencia.nombre.trim() === '') {
+      errores.push('El nombre del contacto de emergencia no puede estar vacío');
+    }
+    if (datos.contactoEmergencia.telefono !== undefined && datos.contactoEmergencia.telefono.trim() !== '' && !exports.validarTelefono(datos.contactoEmergencia.telefono)) {
+      errores.push('El teléfono del contacto de emergencia debe tener 10 dígitos y empezar con 09');
+    }
+    if (datos.contactoEmergencia.parentesco !== undefined && datos.contactoEmergencia.parentesco.trim() === '') {
+      errores.push('El parentesco del contacto de emergencia no puede estar vacío');
+    }
+  }
+  
   return {
     esValido: errores.length === 0,
     errores
@@ -121,8 +147,8 @@ exports.sanitizarDatosPerfil = (datos) => {
   
   camposPermitidos.forEach(campo => {
     if (datos[campo] !== undefined) {
-      // Para horarios, mantener como objeto/array, no convertir a string
-      if (campo === 'horarios' && typeof datos[campo] === 'object') {
+      // Para objetos anidados, mantener estructura sin convertir a string
+      if (['horarios', 'direccion', 'contactoEmergencia'].includes(campo) && typeof datos[campo] === 'object') {
         sanitizados[campo] = datos[campo];
       } else {
         sanitizados[campo] = datos[campo].toString().trim();
