@@ -274,6 +274,14 @@ exports.restablecerPassword = async (req, res, next) => {
       });
     }
 
+    // Validar longitud mínima de contraseña
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'La contraseña debe tener al menos 6 caracteres'
+      });
+    }
+
     // Buscar usuario por código y verificar que no esté expirado
     const usuario = await Usuario.findOne({
       tokenRecuperacion: codigo,

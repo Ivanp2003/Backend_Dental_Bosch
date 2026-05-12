@@ -144,7 +144,11 @@ class CitasService {
 
       // Validar disponibilidad
       await this.validarDisponibilidadDoctor(doctor, fecha, horaInicio, horaFin);
-      await this.validarCitaPaciente(paciente, fecha, horaInicio);
+      
+      // Solo validar cita duplicada para pacientes y admin (no para doctor)
+      if (rolUsuario !== 'doctor') {
+        await this.validarCitaPaciente(paciente, fecha, horaInicio);
+      }
 
       // Determinar estado según rol
       let estadoCita = 'pendiente';

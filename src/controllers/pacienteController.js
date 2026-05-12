@@ -598,7 +598,18 @@ const asignarDoctor = async (req, res) => {
 // ✅ ACTUALIZAR PERFIL DEL PACIENTE AUTENTICADO
 const actualizarPerfilPacienteAutenticado = async (req, res) => {
   try {
-    console.log('🔄 Actualizando perfil del paciente autenticado:', req.usuario.id);
+    console.log('🔄 PUT /perfil/paciente - Usuario ID:', req.usuario.id);
+    console.log('📋 Usuario rol:', req.usuario.rol);
+    console.log('📋 Headers authorization:', req.headers.authorization ? 'presente' : 'ausente');
+    
+    // Validar que el usuario sea paciente
+    if (req.usuario.rol !== 'paciente') {
+      console.log('❌ Usuario no es paciente, rol:', req.usuario.rol);
+      return res.status(403).json({
+        success: false,
+        mensaje: 'Solo los pacientes pueden actualizar su perfil'
+      });
+    }
     
     // Buscar paciente por el usuario autenticado (no por params.id)
     const pacienteExistente = await Paciente.findOne({ usuario: req.usuario.id });
