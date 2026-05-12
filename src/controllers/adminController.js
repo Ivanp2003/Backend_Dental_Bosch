@@ -229,7 +229,7 @@ const listarDoctores = async (req, res) => {
       filtroEstado = 'pendiente';
       console.log('🔍 Filtrando doctores pendientes de aprobación');
     } else if (req.originalUrl.includes('/doctores-inactivos')) {
-      filtroEstado = false;
+      filtroEstado = 'inactivo';
       console.log('🚫 Filtrando doctores inactivos');
     }
     
