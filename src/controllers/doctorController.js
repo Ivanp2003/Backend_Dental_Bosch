@@ -487,9 +487,9 @@ exports.eliminarDoctor = async (req, res, next) => {
     doctor.activo = false;
     await doctor.save();
 
-    // También cambiar estado del usuario a inactivo
+    // También cambiar estado del usuario a rechazado (valor válido en el enum)
     const usuarioDoctor = await Usuario.findById(doctor.usuario._id);
-    usuarioDoctor.estado = 'inactivo';
+    usuarioDoctor.estado = 'rechazado';
     await usuarioDoctor.save();
 
     res.status(200).json({
@@ -500,7 +500,7 @@ exports.eliminarDoctor = async (req, res, next) => {
         nombre: `${usuarioDoctor.nombre} ${usuarioDoctor.apellido}`,
         email: usuarioDoctor.email,
         activo: doctor.activo,
-        estadoUsuario: usuarioDoctor.estado
+        estadoUsuario: usuarioDoctor.estado // 'rechazado'
       }
     });
 
