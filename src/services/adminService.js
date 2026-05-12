@@ -472,10 +472,19 @@ class AdminService {
 
       // Limpiar campos obsoletos de los resultados
       doctores = doctores.map(doctor => {
-        const doctorObj = doctor.toObject();
+        // Si viene de aggregation, ya es un objeto plano
+        // Si viene de find, necesita toObject()
+        const doctorObj = doctor.toObject ? doctor.toObject() : { ...doctor };
+        
         // Eliminar campos obsoletos si existen
         delete doctorObj.calificacionPromedio;
         delete doctorObj.totalCalificaciones;
+        
+        // Eliminar password del usuario si existe
+        if (doctorObj.usuario && doctorObj.usuario.password) {
+          delete doctorObj.usuario.password;
+        }
+        
         return doctorObj;
       });
 
