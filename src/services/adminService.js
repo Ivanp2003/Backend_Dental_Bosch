@@ -360,32 +360,27 @@ class AdminService {
       // Si se filtra por estado del usuario (incluyendo false), usar aggregation para mayor precisión
       if (estado !== undefined) {
         console.log(`🔍 Filtrando doctores por estado: ${estado} (${typeof estado})`);
+        console.log(`🔍 Query inicial:`, JSON.stringify(query, null, 2));
         
-        // Usar aggregation para filtrado preciso
+        // Primero, verificar qué doctores existen
+        const todosDoctores = await Doctor.find({});
+        console.log(`📊 Total doctores en BD: ${todosDoctores.length}`);
+        
+        // Verificar doctores con usuario
+        const doctoresConUsuario = await Doctor.find({ usuario: { $exists: true, $ne: null } });
+        console.log(`📊 Doctores con usuario: ${doctoresConUsuario.length}`);
+        
+        // Usar aggregation simplificada
         const pipeline = [
           {
-            $match: query
+            $match: { usuario: { $exists: true, $ne: null } }
           },
           {
             $lookup: {
               from: 'usuarios',
               localField: 'usuario',
               foreignField: '_id',
-              as: 'usuario',
-              pipeline: [
-                {
-                  $project: {
-                    nombre: 1,
-                    apellido: 1,
-                    email: 1,
-                    telefono: 1,
-                    cedula: 1,
-                    estado: 1,
-                    confirmado: 1,
-                    createdAt: 1
-                  }
-                }
-              ]
+              as: 'usuario'
             }
           },
           {
@@ -393,7 +388,8 @@ class AdminService {
           },
           {
             $match: {
-              'usuario.estado': estado
+              'usuario.estado': estado,
+              ...(especialidad && { especialidad: new RegExp(especialidad, 'i') })
             }
           },
           {
@@ -412,9 +408,42 @@ class AdminService {
           }
         ];
 
-        const result = await Doctor.aggregate(pipeline);
-        doctores = result[0].doctores;
-        total = result[0].total[0]?.count || 0;
+        console.log(`🔍 Pipeline aggregation:`, JSON.stringify(pipeline, null, 2));
+        
+        try {
+          const result = await Doctor.aggregate(pipeline);
+          console.log(`🔍 Resultado aggregation:`, JSON.stringify(result, null, 2));
+          
+          doctores = result[0]?.doctores || [];
+          total = result[0]?.total[0]?.count || 0;
+        } catch (aggError) {
+          console.error('❌ Error en aggregation:', aggError);
+          console.log('🔄 Usando método fallback...');
+          
+          // Fallback: buscar todos y filtrar manualmente
+          const todosDoctores = await Doctor.find({ usuario: { $exists: true, $ne: null } })
+            .populate('usuario');
+          
+          doctores = todosDoctores.filter(doctor => 
+            doctor.usuario && doctor.usuario.estado === estado
+          );
+          
+          if (especialidad) {
+            doctores = doctores.filter(doctor =>
+              doctor.especialidad && doctor.especialidad.toLowerCase().includes(especialidad.toLowerCase())
+            );
+          }
+          
+          // Paginación manual
+          const startIndex = (page - 1) * limit;
+          const endIndex = startIndex + limit;
+          const paginatedDoctores = doctores.slice(startIndex, endIndex);
+          
+          doctores = paginatedDoctores;
+          total = todosDoctores.filter(doctor => 
+            doctor.usuario && doctor.usuario.estado === estado
+          ).length;
+        }
         
         console.log(`📊 Doctores después de filtrar: ${doctores.length}`);
         console.log(`📈 Total de doctores con estado ${estado}: ${total}`);
