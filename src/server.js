@@ -13,6 +13,13 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+// Verificar configuración de SendGrid al inicio
+const { configurarEmail } = require('./config/emailConfig');
+const sendgridConfigurado = configurarEmail();
+if (!sendgridConfigurado) {
+  console.warn('⚠️ ADVERTENCIA: SendGrid no está configurado. Los emails de recuperación de contraseña NO se enviarán.');
+}
+
 const express = require('express');
 
 

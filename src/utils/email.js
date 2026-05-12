@@ -113,13 +113,12 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 
 // Enviar email de recuperación de contraseña
 exports.enviarEmailRecuperacion = async (email, nombre, codigo) => {
-  console.log(' Código de recuperación generado:', codigo);
+  console.log('🔐 Código de recuperación generado:', codigo);
   
   // Configurar email antes de enviar
   if (!configurarEmail()) {
-    console.log('⚠️ SendGrid no configurado. El código de recuperación es:', codigo);
-    // No lanzar error para no bloquear el flujo
-    return;
+    console.error('❌ SendGrid no configurado. No se puede enviar el email de recuperación.');
+    throw new Error('Servicio de email no disponible. Contacta al administrador.');
   }
 
   const contenido = `

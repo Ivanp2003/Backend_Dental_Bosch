@@ -174,9 +174,12 @@ exports.recuperarPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
 
+    console.log('📧 Solicitud de recuperación de contraseña para:', email);
+
     const usuario = await Usuario.findOne({ email });
 
     if (!usuario) {
+      console.log('❌ Usuario no encontrado con email:', email);
       return res.status(404).json({
         success: false,
         mensaje: 'No existe un usuario con ese email'
@@ -185,14 +188,18 @@ exports.recuperarPassword = async (req, res, next) => {
 
     // Generar código de 6 dígitos
     const codigoRecuperacion = generarCodigoRecuperacion();
+    console.log('🔐 Código generado:', codigoRecuperacion);
 
     // Guardar código con expiración de 15 minutos
     usuario.tokenRecuperacion = codigoRecuperacion;
     usuario.tokenExpiracion = Date.now() + 900000; // 15 minutos
     await usuario.save();
+    console.log('✅ Código guardado en BD para usuario:', email);
 
     // Enviar email con código
+    console.log('📤 Enviando email de recuperación a:', email);
     await enviarEmailRecuperacion(email, usuario.nombre, codigoRecuperacion);
+    console.log('✅ Email enviado exitosamente a:', email);
 
     res.status(200).json({
       success: true,
@@ -202,6 +209,7 @@ exports.recuperarPassword = async (req, res, next) => {
     });
 
   } catch (error) {
+    console.error('❌ Error en recuperarPassword:', error.message);
     next(error);
   }
 };
