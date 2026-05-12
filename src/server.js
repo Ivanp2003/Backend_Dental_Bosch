@@ -1,12 +1,21 @@
 require('dotenv').config();
 
-
-
-
-
-
+// Verificar variables críticas para producción
+if (process.env.NODE_ENV === 'production') {
+  const requiredVars = ['MONGODB_URI', 'JWT_SECRET'];
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+  
+  if (missingVars.length > 0) {
+    console.error('❌ VARIABLES DE ENTORNO FALTANTES EN PRODUCCIÓN:');
+    console.error(missingVars.map(varName => `- ${varName}`).join('\n'));
+    console.error('\n🔧 Configura estas variables en el panel de Render.');
+    process.exit(1);
+  }
+}
 
 const express = require('express');
+
+
 
 
 
