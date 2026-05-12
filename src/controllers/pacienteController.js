@@ -584,6 +584,77 @@ const asignarDoctor = async (req, res) => {
   }
 };
 
+// 🕐 OBTENER HORARIOS DE DOCTORES (PARA PACIENTES)
+const obtenerHorariosDoctores = async (req, res) => {
+  try {
+    console.log('🕐 Paciente obteniendo horarios de doctores disponibles');
+    
+    // Obtener todos los doctores activos y aprobados con sus horarios
+    const Doctor = require('../models/Doctor');
+    const doctores = await Doctor.find({ 
+      activo: true,
+      // Considerar que los doctores aprobados tienen usuario activo
+    })
+      .populate('usuario', 'nombre apellido email')
+      .select('horarioAtencion especialidad usuario')
+      .populate({
+        path: 'usuario',
+        match: { activo: true },
+        select: 'nombre apellido email'
+      });
+
+    // Filtrar doctores cuyo usuario esté activo
+    const doctoresActivos = doctores.filter(doctor => doctor.usuario);
+
+    // Formatear la respuesta
+    const doctoresConHorarios = doctoresActivos.map(doctor => {
+      const doctorObj = doctor.toObject();
+      
+      // Organizar horarios por día de la semana
+      const horariosOrganizados = {};
+      const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+      
+      diasSemana.forEach(dia => {
+        const horarioDia = doctor.horarioAtencion.find(h => h.dia === dia);
+        horariosOrganizados[dia] = horarioDia ? {
+          disponible: horarioDia.disponible,
+          horaInicio: horarioDia.horaInicio,
+          horaFin: horarioDia.horaFin
+        } : {
+          disponible: false,
+          horaInicio: null,
+          horaFin: null
+        };
+      });
+
+      return {
+        id: doctorObj._id,
+        nombre: `${doctorObj.usuario?.nombre || ''} ${doctorObj.usuario?.apellido || ''}`.trim(),
+        email: doctorObj.usuario?.email,
+        especialidad: doctorObj.especialidad,
+        horarios: horariosOrganizados,
+        totalDiasDisponibles: doctor.horarioAtencion.filter(h => h.disponible).length
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Horarios de doctores obtenidos exitosamente',
+      datos: {
+        doctores: doctoresConHorarios,
+        total: doctoresConHorarios.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerHorariosDoctores:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   registrarPaciente,
   listarPacientes,
@@ -593,6 +664,7 @@ module.exports = {
   obtenerPerfilPaciente,
   buscarPacientes,
   asignarDoctor,
+  obtenerHorariosDoctores,
   // Mantener compatibilidad con código existente
   obtenerPerfil: obtenerPerfilPaciente,
   actualizarPerfil: actualizarPaciente

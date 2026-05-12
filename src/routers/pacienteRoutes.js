@@ -10,12 +10,17 @@ const {
   obtenerPerfilPaciente,
   buscarPacientes,
   asignarDoctor,
+  obtenerHorariosDoctores,
   // Mantener compatibilidad con código existente
   obtenerPerfil,
   actualizarPerfil
 } = require('../controllers/pacienteController');
 
 // ========== RUTAS PÚBLICAS ==========
+
+// 🕐 Obtener horarios de todos los doctores (público para pacientes)
+// GET /api/pacientes/doctores/horarios
+router.get('/doctores/horarios', obtenerHorariosDoctores);
 
 // Búsqueda avanzada de pacientes
 router.get('/buscar', buscarPacientes);
