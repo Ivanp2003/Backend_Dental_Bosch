@@ -808,18 +808,5 @@ exports.actualizarDoctor = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  obtenerPerfil,
-  actualizarPerfil,
-  obtenerDoctores,
-  obtenerDoctorPorId,
-  cambiarEstadoDoctor,
-  obtenerDoctoresPendientes,
-  obtenerDoctoresAprobados,
-  eliminarDoctor,
-  reactivarDoctor,
-  actualizarDoctor,
-  obtenerMisPacientes,
-  obtenerMisCitas,
-  cambiarEstadoCita
-};
+// Las funciones ya están exportadas con exports.nombreFuncion
+// No se necesita module.exports adicional
