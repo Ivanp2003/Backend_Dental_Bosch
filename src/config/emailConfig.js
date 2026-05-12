@@ -9,11 +9,18 @@ const configurarEmail = () => {
   const emailFrom = process.env.EMAIL_FROM;
   
   console.log('📧 Variables de email:');
-  console.log('- SENDGRID_API_KEY:', sendgridApiKey ? '✅ Configurada' : '❌ No configurada');
+  console.log('- SENDGRID_API_KEY:', sendgridApiKey ? `${sendgridApiKey.substring(0, 10)}...` : '❌ No configurada');
   console.log('- EMAIL_FROM:', emailFrom || 'noreply@dentalbosch.com (default)');
   
   if (!sendgridApiKey) {
     console.log('⚠️ SENDGRID_API_KEY no está configurada');
+    return false;
+  }
+  
+  // Validar formato de API Key
+  if (!sendgridApiKey.startsWith('SG.')) {
+    console.log('❌ SENDGRID_API_KEY no tiene el formato válido (debe empezar con SG.)');
+    console.log('🔑 Formato esperado: SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxx.xxxxxxxx-xxxxxxxx-xxxxxxxx-xxxxxxxx');
     return false;
   }
   
