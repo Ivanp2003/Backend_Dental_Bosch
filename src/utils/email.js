@@ -1,4 +1,4 @@
-const sgMail = require('../config/sendgrid');
+const { configurarEmail, sgMail } = require('../config/emailConfig');
 const { generarURLsPrueba } = require('./emailUtils');
 const { asegurarUrlConDiagonal } = require('./urlUtils');
 
@@ -114,6 +114,13 @@ exports.enviarEmailConfirmacion = async (email, nombre, token) => {
 // Enviar email de recuperación de contraseña
 exports.enviarEmailRecuperacion = async (email, nombre, codigo) => {
   console.log(' Código de recuperación generado:', codigo);
+  
+  // Configurar email antes de enviar
+  if (!configurarEmail()) {
+    console.log('⚠️ SendGrid no configurado. El código de recuperación es:', codigo);
+    // No lanzar error para no bloquear el flujo
+    return;
+  }
 
   const contenido = `
     <p>Hola <strong>${nombre}</strong>,</p>

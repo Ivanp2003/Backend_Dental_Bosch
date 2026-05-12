@@ -4,6 +4,15 @@ exports.validarEmail = (email) => {
   return regex.test(email);
 };
 
+// Validar nombre y apellido (solo letras y espacios, mínimo 2 caracteres)
+exports.validarNombre = (nombre) => {
+  if (!nombre || nombre.trim() === '') return false;
+  
+  // Permitir letras, espacios, acentos y ñ
+  const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/;
+  return regex.test(nombre.trim());
+};
+
 // Validar cédula (exactamente 10 dígitos)
 exports.validarCedula = (cedula) => {
   if (!cedula) return false;
@@ -65,39 +74,31 @@ exports.validarActualizacionPassword = (passwordActual, passwordNuevo) => {
   };
 };
 
-// Validar datos de perfil
+// Validar datos de perfil (actualización parcial)
 exports.validarActualizacionPerfil = (datos, rol) => {
   const errores = [];
   const { nombre, apellido, email, telefono, cedula } = datos;
   
-  // Validaciones generales
-  if (!nombre || nombre.trim() === '') {
-    errores.push('El nombre es requerido');
+  // Validaciones generales (solo si se proporcionan y no están vacíos)
+  if (nombre !== undefined && nombre.trim() !== '' && !exports.validarNombre(nombre)) {
+    errores.push('El nombre no es válido');
   }
   
-  if (!apellido || apellido.trim() === '') {
-    errores.push('El apellido es requerido');
+  if (apellido !== undefined && apellido.trim() !== '' && !exports.validarNombre(apellido)) {
+    errores.push('El apellido no es válido');
   }
   
-  if (!email || email.trim() === '') {
-    errores.push('El email es requerido');
-  } else if (!exports.validarEmail(email)) {
+  if (email !== undefined && email.trim() !== '' && !exports.validarEmail(email)) {
     errores.push('El email no es válido');
   }
   
-  if (!telefono || telefono.trim() === '') {
-    errores.push('El teléfono es requerido');
-  } else if (!exports.validarTelefono(telefono)) {
+  if (telefono !== undefined && telefono.trim() !== '' && !exports.validarTelefono(telefono)) {
     errores.push('El teléfono debe tener 10 dígitos y empezar con 09');
   }
   
-  // Validaciones específicas por rol
-  if (rol === 'paciente') {
-    if (!cedula || cedula.trim() === '') {
-      errores.push('La cédula es requerida para pacientes');
-    } else if (!exports.validarCedula(cedula)) {
-      errores.push('La cédula debe tener exactamente 10 dígitos');
-    }
+  // Validaciones específicas por rol (solo si se proporcionan)
+  if (rol === 'paciente' && cedula !== undefined && cedula.trim() !== '' && !exports.validarCedula(cedula)) {
+    errores.push('La cédula debe tener exactamente 10 dígitos');
   }
   
   return {
@@ -110,12 +111,22 @@ exports.validarActualizacionPerfil = (datos, rol) => {
 exports.sanitizarDatosPerfil = (datos) => {
   const sanitizados = {};
   
-  // Limpiar y asignar solo campos permitidos
-  const camposPermitidos = ['nombre', 'apellido', 'email', 'telefono', 'cedula', 'fechaNacimiento', 'genero', 'direccion', 'contactoEmergencia'];
+  // Limpiar y asignar solo campos permitidos (incluyendo campos de doctores)
+  const camposPermitidos = [
+    'nombre', 'apellido', 'email', 'telefono', 'cedula', 
+    'fechaNacimiento', 'genero', 'direccion', 'contactoEmergencia',
+    // Campos específicos de doctores
+    'especialidad', 'experiencia', 'consultorio', 'horarios'
+  ];
   
   camposPermitidos.forEach(campo => {
     if (datos[campo] !== undefined) {
-      sanitizados[campo] = datos[campo].toString().trim();
+      // Para horarios, mantener como objeto/array, no convertir a string
+      if (campo === 'horarios' && typeof datos[campo] === 'object') {
+        sanitizados[campo] = datos[campo];
+      } else {
+        sanitizados[campo] = datos[campo].toString().trim();
+      }
     }
   });
   
