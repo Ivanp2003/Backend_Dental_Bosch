@@ -142,9 +142,18 @@ exports.enviarEmailRecuperacion = async (email, nombre, codigo) => {
 
   try {
     await sgMail.send(msg);
-    console.log('Email de recuperación enviado a:', email);
+    console.log('✅ Email de recuperación enviado a:', email);
   } catch (error) {
-    console.error('Error al enviar email de recuperación:', error.message);
+    console.error('❌ Error al enviar email de recuperación:', error.message);
+    
+    // Mensaje específico para error de remitente no verificado
+    if (error.code === 403 || error.message?.includes('Forbidden')) {
+      const remitente = process.env.EMAIL_FROM || 'noreply@dentalbosch.com';
+      console.error(`🔑 El remitente ${remitente} NO está verificado en SendGrid.`);
+      console.error('📋 Solución: Ve a Settings → Sender Authentication en SendGrid y verifica tu email.');
+      throw new Error(`El email de recuperación no pudo ser enviado. El remitente ${remitente} debe estar verificado en SendGrid.`);
+    }
+    
     throw error;
   }
 };
