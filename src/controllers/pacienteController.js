@@ -252,7 +252,7 @@ const obtenerPacientePorId = async (req, res) => {
   }
 };
 
-// ✅ ACTUALIZAR INFORMACIÓN DEL PACIENTE
+// ✅ ACTUALIZAR INFORMACIÓN DEL PACIENTE (PARA ADMIN/DOCTOR)
 const actualizarPaciente = async (req, res) => {
   try {
     console.log('🔄 Actualizando paciente:', req.params.id);
@@ -595,6 +595,112 @@ const asignarDoctor = async (req, res) => {
   }
 };
 
+// ✅ ACTUALIZAR PERFIL DEL PACIENTE AUTENTICADO
+const actualizarPerfilPacienteAutenticado = async (req, res) => {
+  try {
+    console.log('🔄 Actualizando perfil del paciente autenticado:', req.usuario.id);
+    
+    // Buscar paciente por el usuario autenticado (no por params.id)
+    const pacienteExistente = await Paciente.findOne({ usuario: req.usuario.id });
+    if (!pacienteExistente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Perfil de paciente no encontrado'
+      });
+    }
+
+    // Sanitizar y validar datos de entrada
+    const { sanitizarDatosPerfil, validarActualizacionPerfil } = require('../utils/validators');
+    const datosSanitizados = sanitizarDatosPerfil(req.body);
+    
+    // Validar datos del perfil para rol 'paciente'
+    const validacion = validarActualizacionPerfil(datosSanitizados, 'paciente');
+    
+    if (!validacion.esValido) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Error en la validación de datos del perfil',
+        errores: validacion.errores
+      });
+    }
+
+    // Validar duplicados en email y cédula solo si se están actualizando
+    if (datosSanitizados.email || datosSanitizados.cedula) {
+      const pacienteDuplicado = await Paciente.findOne({
+        _id: { $ne: pacienteExistente._id },
+        $or: [
+          ...(datosSanitizados.email ? [{ email: datosSanitizados.email }] : []),
+          ...(datosSanitizados.cedula ? [{ cedula: datosSanitizados.cedula }] : [])
+        ]
+      });
+
+      if (pacienteDuplicado) {
+        return res.status(400).json({
+          success: false,
+          mensaje: 'El email o cédula ya están registrados en otro paciente',
+          tipo: pacienteDuplicado.email === datosSanitizados.email ? 'email' : 'cedula'
+        });
+      }
+    }
+
+    // Actualizar usuario asociado si se modifican campos de usuario
+    const usuarioActualizado = {};
+    if (datosSanitizados.email) usuarioActualizado.email = datosSanitizados.email;
+    if (datosSanitizados.telefono) usuarioActualizado.telefono = datosSanitizados.telefono;
+    if (datosSanitizados.nombre) usuarioActualizado.nombre = datosSanitizados.nombre;
+    if (datosSanitizados.apellido) usuarioActualizado.apellido = datosSanitizados.apellido;
+
+    if (Object.keys(usuarioActualizado).length > 0) {
+      await Usuario.findByIdAndUpdate(pacienteExistente.usuario, usuarioActualizado);
+      console.log('✅ Datos de usuario actualizados:', Object.keys(usuarioActualizado));
+    }
+
+    // Actualizar paciente con datos sanitizados
+    const pacienteActualizado = await Paciente.findByIdAndUpdate(
+      pacienteExistente._id,
+      { ...datosSanitizados, ultimaVisita: new Date() },
+      { new: true, runValidators: true }
+    ).populate('usuario', 'nombre apellido email telefono cedula foto')
+     .populate('doctorAsignado', 'nombre apellido especialidad');
+
+    console.log('✅ Perfil de paciente actualizado exitosamente');
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Perfil actualizado exitosamente',
+      datos: pacienteActualizado
+    });
+
+  } catch (error) {
+    console.error('❌ Error en actualizarPerfilPacienteAutenticado:', error);
+    
+    // Manejar errores de validación
+    if (error.name === 'ValidationError') {
+      const errores = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Error de validación',
+        errores
+      });
+    }
+
+    // Manejar error de duplicado
+    if (error.code === 11000) {
+      const campo = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        success: false,
+        mensaje: `El ${campo} ya está registrado`
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // 🕐 OBTENER HORARIOS DE DOCTORES (PARA PACIENTES)
 const obtenerHorariosDoctores = async (req, res) => {
   try {
@@ -676,7 +782,8 @@ module.exports = {
   buscarPacientes,
   asignarDoctor,
   obtenerHorariosDoctores,
+  actualizarPerfilPacienteAutenticado,
   // Mantener compatibilidad con código existente
   obtenerPerfil: obtenerPerfilPaciente,
-  actualizarPerfil: actualizarPaciente
+  actualizarPerfil: actualizarPerfilPacienteAutenticado  // ← Usar la función correcta
 };
