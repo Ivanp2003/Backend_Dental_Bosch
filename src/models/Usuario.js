@@ -71,7 +71,7 @@ const usuarioSchema = new mongoose.Schema({
   // Estados unificados y normalizados
   estado: {
     type: String,
-    enum: ['pendiente', 'aprobado', 'rechazado'],
+    enum: ['pendiente', 'aprobado', 'rechazado', 'inactivo'],
     default: function() {
       return this.rol === 'doctor' ? 'pendiente' : 'aprobado';
     }

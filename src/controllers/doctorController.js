@@ -459,38 +459,32 @@ exports.eliminarDoctor = async (req, res, next) => {
       });
     }
 
-    // Verificar si tiene citas pendientes o futuras
+    // Verificar si tiene citas activas (pendientes o confirmadas)
     const Cita = require('../models/Cita');
     console.log('🔍 Buscando citas del doctor:', doctor._id);
     
-    // Verificar TODAS las citas futuras (pendientes, confirmadas, finalizadas)
-    const todasLasCitasFuturas = await Cita.find({
+    const citasActivas = await Cita.find({
       doctor: doctor._id,
-      fecha: { $gte: new Date() }
+      fecha: { $gte: new Date() },
+      estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] }
     }).populate('paciente', 'nombre apellido');
 
-    // Filtrar solo las que están activas (no canceladas)
-    const citasPendientes = todasLasCitasFuturas.filter(cita => 
-      ['pendiente', 'confirmada', 'finalizada'].includes(cita.estado)
-    );
-
-    console.log('📊 Todas las citas futuras:', todasLasCitasFuturas.length);
-    console.log('📊 Citas activas encontradas:', citasPendientes.length);
-    console.log('📅 Detalles de citas:', citasPendientes.map(c => ({
+    console.log('📊 Citas activas encontradas:', citasActivas.length);
+    console.log('📅 Detalles de citas:', citasActivas.map(c => ({
       id: c._id,
       estado: c.estado,
       fecha: c.fecha,
       horaInicio: c.horaInicio
     })));
 
-    if (citasPendientes.length > 0) {
-      console.log('❌ Doctor tiene citas pendientes, no se puede desactivar');
+    if (citasActivas.length > 0) {
+      console.log('❌ Doctor tiene citas activas, no se puede desactivar');
       return res.status(409).json({
         success: false,
-        mensaje: 'No se puede desactivar el doctor. Tiene citas pendientes o futuras.',
+        mensaje: 'No se puede desactivar el doctor. Tiene citas activas (pendientes o confirmadas).',
         datos: {
-          totalCitasPendientes: citasPendientes.length,
-          citas: citasPendientes.map(cita => ({
+          totalCitasActivas: citasActivas.length,
+          citas: citasActivas.map(cita => ({
             id: cita._id,
             fecha: cita.fecha,
             horaInicio: cita.horaInicio,
@@ -504,9 +498,9 @@ exports.eliminarDoctor = async (req, res, next) => {
     doctor.activo = false;
     await doctor.save();
 
-    // También cambiar estado del usuario a rechazado (valor válido en el enum)
+    // Cambiar estado del usuario a inactivo
     const usuarioDoctor = await Usuario.findById(doctor.usuario._id);
-    usuarioDoctor.estado = 'rechazado';
+    usuarioDoctor.estado = 'inactivo';
     await usuarioDoctor.save();
 
     res.status(200).json({
@@ -517,7 +511,7 @@ exports.eliminarDoctor = async (req, res, next) => {
         nombre: `${usuarioDoctor.nombre} ${usuarioDoctor.apellido}`,
         email: usuarioDoctor.email,
         activo: doctor.activo,
-        estadoUsuario: usuarioDoctor.estado // 'rechazado'
+        estadoUsuario: usuarioDoctor.estado // 'inactivo'
       }
     });
 
