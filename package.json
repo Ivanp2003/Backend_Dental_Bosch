@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "diagnostic": "node diagnostic.js"
+    "diagnostic": "node diagnostic.js",
+    "restore-patients": "node scripts/restaurarDatosPacientes.js"
   },
   "repository": {
     "type": "git",

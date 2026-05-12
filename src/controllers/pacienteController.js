@@ -666,10 +666,40 @@ const actualizarPerfilPacienteAutenticado = async (req, res) => {
       console.log('✅ Datos de usuario actualizados:', Object.keys(usuarioActualizado));
     }
 
-    // Actualizar paciente con datos sanitizados
+    // Construir objeto de actualización para objetos anidados (merge inteligente)
+    const actualizacionPaciente = { ...datosSanitizados, ultimaVisita: new Date() };
+    
+    // Manejar dirección: merge con existente si se proporciona parcialmente
+    if (datosSanitizados.direccion && typeof datosSanitizados.direccion === 'object') {
+      actualizacionPaciente.direccion = {
+        ...pacienteExistente.direccion, // Mantener datos existentes
+        ...datosSanitizados.direccion  // Sobrescribir solo los campos enviados
+      };
+      console.log('📍 Dirección actualizada con merge:', actualizacionPaciente.direccion);
+    }
+    
+    // Manejar contacto de emergencia: merge con existente si se proporciona parcialmente
+    if (datosSanitizados.contactoEmergencia && typeof datosSanitizados.contactoEmergencia === 'object') {
+      actualizacionPaciente.contactoEmergencia = {
+        ...pacienteExistente.contactoEmergencia, // Mantener datos existentes
+        ...datosSanitizados.contactoEmergencia  // Sobrescribir solo los campos enviados
+      };
+      console.log('📞 Contacto de emergencia actualizado con merge:', actualizacionPaciente.contactoEmergencia);
+    }
+    
+    // Manejar información médica: merge con existente si se proporciona parcialmente
+    if (datosSanitizados.infoMedica && typeof datosSanitizados.infoMedica === 'object') {
+      actualizacionPaciente.infoMedica = {
+        ...pacienteExistente.infoMedica, // Mantener datos existentes
+        ...datosSanitizados.infoMedica  // Sobrescribir solo los campos enviados
+      };
+      console.log('🏥 Información médica actualizada con merge:', actualizacionPaciente.infoMedica);
+    }
+
+    // Actualizar paciente con merge inteligente
     const pacienteActualizado = await Paciente.findByIdAndUpdate(
       pacienteExistente._id,
-      { ...datosSanitizados, ultimaVisita: new Date() },
+      actualizacionPaciente,
       { new: true, runValidators: false }  // Desactivar validación de esquema para permitir actualizaciones parciales
     ).populate('usuario', 'nombre apellido email telefono cedula foto')
      .populate('doctorAsignado', 'nombre apellido especialidad');
