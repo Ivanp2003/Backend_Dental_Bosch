@@ -423,23 +423,33 @@ exports.obtenerDoctoresAprobados = async (req, res, next) => {
 // @access  Private (Admin)
 exports.eliminarDoctor = async (req, res, next) => {
   try {
+    console.log('🔍 Iniciando eliminarDoctor');
+    console.log('ID del doctor a eliminar:', req.params.id);
+    console.log('Usuario autenticado:', req.usuario.id);
+    
     // Verificar que el usuario sea admin
     const usuarioAutenticado = await Usuario.findById(req.usuario.id);
     if (!usuarioAutenticado || usuarioAutenticado.rol !== 'admin') {
+      console.log('❌ Usuario no es admin:', usuarioAutenticado?.rol);
       return res.status(403).json({
         success: false,
         mensaje: 'Acceso denegado. Se requiere rol de administrador.'
       });
     }
 
+    console.log('✅ Usuario verificado como admin');
+
     // Buscar el doctor con su usuario
     const doctor = await Doctor.findById(req.params.id).populate('usuario');
     if (!doctor) {
+      console.log('❌ Doctor no encontrado con ID:', req.params.id);
       return res.status(404).json({
         success: false,
         mensaje: 'Doctor no encontrado'
       });
     }
+
+    console.log('✅ Doctor encontrado:', doctor._id);
 
     // Verificar si el doctor ya está inactivo
     if (!doctor.activo) {
@@ -496,6 +506,9 @@ exports.eliminarDoctor = async (req, res, next) => {
 
   } catch (error) {
     console.error('❌ Error en eliminarDoctor:', error);
+    console.error('Tipo de error:', error.name);
+    console.error('Mensaje:', error.message);
+    console.error('Stack:', error.stack);
     next(error);
   }
 };
