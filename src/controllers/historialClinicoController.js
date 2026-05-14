@@ -20,7 +20,7 @@ const crearHistorialClinico = async (req, res) => {
     console.log('🏥 Creando historial clínico para paciente:', req.params.pacienteId);
     
     const { pacienteId } = req.params;
-    const { datosAdicionales } = req.body;
+    const { datosAdicionales = {} } = req.body || {};
 
     // Validar ID de paciente
     if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
