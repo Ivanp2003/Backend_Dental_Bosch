@@ -660,12 +660,11 @@ historialClinicoSchema.statics.agregarConsulta = async function(pacienteId, cons
 // ==============================
 
 // Actualizar métricas antes de guardar
-historialClinicoSchema.pre('save', function(next) {
+historialClinicoSchema.pre('save', async function() {
   if (this.consultas.length > 0) {
     this.metricas.totalConsultas = this.consultas.length;
     this.metricas.ultimaVisita = this.consultas[this.consultas.length - 1].fecha;
   }
-  next();
 });
 
 // Prevenir eliminación física (soft delete)
