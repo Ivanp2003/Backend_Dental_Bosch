@@ -33,9 +33,6 @@ router.get('/', obtenerDoctores);
 // Obtener doctores aprobados (público) 
 router.get('/aprobados/lista', obtenerDoctoresAprobados);
 
-// Obtener doctor por ID - GENÉRICA (PÚBLICA)
-router.get('/:id', obtenerDoctorPorId);
-
 // Obtener doctores pendientes de aprobación (Admin) 
 router.get(
   '/pendientes',
@@ -86,5 +83,10 @@ router.put('/:id/reactivar', autorizarRoles('admin'), reactivarDoctor);
 
 // Actualizar doctor (solo admin) 
 router.put('/:id', autorizarRoles('admin'), actualizarDoctor);
+
+// ========== RUTA DINÁMICA (AL FINAL) ==========
+
+// Obtener doctor por ID - DEBE estar al final para no interferir con rutas específicas
+router.get('/:id', obtenerDoctorPorId);
 
 module.exports = router;
