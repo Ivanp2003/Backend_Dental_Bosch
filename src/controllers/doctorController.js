@@ -605,8 +605,10 @@ exports.obtenerMisPacientes = async (req, res, next) => {
     const HistorialClinico = require('../models/HistorialClinico');
     
     const citas = await Cita.find({ doctor: doctor._id })
-      .populate('paciente')
-      .populate('paciente.usuario', 'nombre apellido email telefono')
+      .populate({
+        path: 'paciente',
+        populate: { path: 'usuario', select: 'nombre apellido email telefono' }
+      })
       .sort({ fecha: -1 });
 
     // Extraer pacientes únicos de las citas
