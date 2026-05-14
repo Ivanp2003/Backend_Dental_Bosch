@@ -26,21 +26,6 @@ router.post('/:pacienteId/consulta',
   historialClinicoController.agregarConsulta
 );
 
-// 📄 Obtener historial completo de paciente
-// GET /api/historial-clinico/:pacienteId
-// Roles: admin, doctor, paciente (solo su propio historial)
-router.get('/:pacienteId', 
-  (req, res, next) => {
-    // Si es paciente, solo puede ver su propio historial
-    if (req.usuario.rol === 'paciente') {
-      return verificarAccesoPropio(req, res, next);
-    }
-    next();
-  },
-  autorizarRoles('admin', 'doctor', 'paciente'), 
-  historialClinicoController.obtenerHistorialCompleto
-);
-
 // 🔍 Obtener consultas filtradas
 // GET /api/historial-clinico/:pacienteId/consultas?fechaDesde=2024-01-01&fechaHasta=2024-12-31&doctor=doctorId&diagnostico=caries&page=1&limit=10
 // Roles: admin, doctor, paciente (solo su propio historial)
@@ -86,6 +71,22 @@ router.put('/:pacienteId/consulta/:consultaId',
 router.delete('/:pacienteId/consulta/:consultaId', 
   autorizarRoles('admin', 'doctor'), 
   historialClinicoController.eliminarConsulta
+);
+
+// 📄 Obtener historial completo de paciente
+// GET /api/historial-clinico/:pacienteId
+// Roles: admin, doctor, paciente (solo su propio historial)
+// IMPORTANTE: Debe estar DESPUÉS de las rutas específicas (/consultas, /estadisticas, /consulta/:consultaId)
+router.get('/:pacienteId', 
+  (req, res, next) => {
+    // Si es paciente, solo puede ver su propio historial
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('admin', 'doctor', 'paciente'), 
+  historialClinicoController.obtenerHistorialCompleto
 );
 
 // 🗑️ Eliminar historial completo (SOFT DELETE)
