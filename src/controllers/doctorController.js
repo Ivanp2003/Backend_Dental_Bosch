@@ -602,6 +602,8 @@ exports.obtenerMisPacientes = async (req, res, next) => {
 
     // Buscar citas del doctor para obtener sus pacientes
     const Cita = require('../models/Cita');
+    const HistorialClinico = require('../models/HistorialClinico');
+    
     const citas = await Cita.find({ doctor: doctor._id })
       .populate('paciente')
       .populate('paciente.usuario', 'nombre apellido email telefono')
@@ -609,29 +611,40 @@ exports.obtenerMisPacientes = async (req, res, next) => {
 
     // Extraer pacientes únicos de las citas
     const pacientesUnicos = new Map();
-    citas.forEach(cita => {
+    for (const cita of citas) {
       if (cita.paciente && cita.paciente.usuario) {
         const pacienteId = cita.paciente._id.toString();
+        
         if (!pacientesUnicos.has(pacienteId)) {
+          // Obtener historial clínico del paciente
+          const historial = await HistorialClinico.findOne({ 
+            paciente: cita.paciente._id, 
+            activo: true 
+          });
+
           pacientesUnicos.set(pacienteId, {
             _id: cita.paciente._id,
             nombre: cita.paciente.usuario.nombre,
             apellido: cita.paciente.usuario.apellido,
             email: cita.paciente.usuario.email,
             telefono: cita.paciente.usuario.telefono,
+            fechaNacimiento: cita.paciente.fechaNacimiento || null,
+            numeroHistoriaClinica: historial?.numeroHistoriaClinica || null,
             fechaUltimaCita: cita.fecha,
-            totalCitas: 1
+            totalCitas: 1,
+            ultimoMotivo: null
           });
         } else {
           // Actualizar última fecha y contar citas
           const paciente = pacientesUnicos.get(pacienteId);
           if (cita.fecha > paciente.fechaUltimaCita) {
             paciente.fechaUltimaCita = cita.fecha;
+            paciente.ultimoMotivo = cita.motivo;
           }
           paciente.totalCitas++;
         }
       }
-    });
+    }
 
     const pacientes = Array.from(pacientesUnicos.values());
 
