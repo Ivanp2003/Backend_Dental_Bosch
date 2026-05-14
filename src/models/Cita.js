@@ -77,6 +77,22 @@ const citaSchema = new mongoose.Schema({
   },
   fechaConfirmacion: {
     type: Date
+  },
+  
+  // ==============================
+  // INTEGRACIÓN CON HISTORIAL CLÍNICO
+  // ==============================
+  // Relación con el historial clínico del paciente
+  historialClinicoId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'HistorialClinico',
+    default: null
+  },
+  
+  // Relación con la consulta específica en el historial
+  consultaId: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null
   }
 }, {
   timestamps: true,

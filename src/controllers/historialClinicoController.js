@@ -1,15 +1,26 @@
 const HistorialClinico = require('../models/HistorialClinico');
 const Paciente = require('../models/Paciente');
 const Doctor = require('../models/Doctor');
+const Cita = require('../models/Cita');
+const {
+  obtenerProximoNumeroHistoriaClinica,
+  calcularGrupoEtario,
+  calcularEdad,
+  calcularTotalCPO
+} = require('../helpers/historialClinicoHelper');
 const mongoose = require('mongoose');
 
-// 🏥 CREAR HISTORIAL CLÍNICO (solo una vez por paciente)
+// ==============================
+// 🏥 CREAR HISTORIAL CLÍNICO
+// ==============================
+// POST /api/historial-clinico/:pacienteId
+// Roles: admin, doctor
 const crearHistorialClinico = async (req, res) => {
   try {
     console.log('🏥 Creando historial clínico para paciente:', req.params.pacienteId);
     
     const { pacienteId } = req.params;
-    const { informacionGeneral } = req.body;
+    const { datosAdicionales } = req.body;
 
     // Validar ID de paciente
     if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
@@ -20,7 +31,7 @@ const crearHistorialClinico = async (req, res) => {
     }
 
     // Verificar que el paciente existe
-    const paciente = await Paciente.findById(pacienteId);
+    const paciente = await Paciente.findById(pacienteId).populate('usuario');
     if (!paciente) {
       return res.status(404).json({
         success: false,
@@ -28,33 +39,66 @@ const crearHistorialClinico = async (req, res) => {
       });
     }
 
-    // Verificar que no exista historial previo
-    const historialExistente = await HistorialClinico.findOne({ paciente: pacienteId });
+    // Verificar que no exista historial previo (activo)
+    const historialExistente = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true 
+    });
+    
     if (historialExistente) {
       return res.status(400).json({
         success: false,
-        mensaje: 'El paciente ya tiene un historial clínico'
+        mensaje: 'El paciente ya tiene un historial clínico activo',
+        numeroHistoriaClinica: historialExistente.numeroHistoriaClinica
       });
     }
+
+    // Generar número único de historia clínica
+    const numeroHistoriaClinica = await obtenerProximoNumeroHistoriaClinica(HistorialClinico);
+
+    // Calcular grupo etario y edad automáticamente (Skill 2)
+    const grupoEtario = calcularGrupoEtario(paciente.fechaNacimiento);
+    const edad = calcularEdad(paciente.fechaNacimiento);
 
     // Crear historial clínico
     const historialClinico = await HistorialClinico.create({
       paciente: pacienteId,
-      informacionGeneral: informacionGeneral || {}
+      numeroHistoriaClinica,
+      createdBy: req.perfil._id, // Usuario autenticado
+      updatedBy: req.perfil._id,
+      // Los campos de auditoría (createdAt, updatedAt) se generan automáticamente
     });
 
     const historialCompleto = await HistorialClinico.findById(historialClinico._id)
       .populate('paciente', 'usuario')
-      .populate('paciente.usuario', 'nombre apellido email');
+      .populate('paciente.usuario', 'nombre apellido email')
+      .populate('createdBy', 'nombre apellido')
+      .populate('updatedBy', 'nombre apellido');
 
     res.status(201).json({
       success: true,
       mensaje: 'Historial clínico creado exitosamente',
-      datos: historialCompleto
+      datos: {
+        ...historialCompleto.toObject(),
+        informacionComplementaria: {
+          grupoEtario,
+          edad,
+          nombreCompleto: `${paciente.usuario.nombre} ${paciente.usuario.apellido}`
+        }
+      }
     });
 
   } catch (error) {
     console.error('❌ Error en crearHistorialClinico:', error);
+    
+    // Manejar error de duplicado de número de historia clínica
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        mensaje: 'Ya existe un historial con este número. Intente nuevamente.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -62,13 +106,17 @@ const crearHistorialClinico = async (req, res) => {
   }
 };
 
-// 📋 AGREGAR REGISTRO AL HISTORIAL (lo más importante)
-const agregarRegistroHistorial = async (req, res) => {
+// ==============================
+// 📋 AGREGAR CONSULTA AL HISTORIAL
+// ==============================
+// POST /api/historial-clinico/:pacienteId/consulta
+// Roles: admin, doctor
+const agregarConsulta = async (req, res) => {
   try {
-    console.log('📋 Agregando registro al historial del paciente:', req.params.pacienteId);
+    console.log('📋 Agregando consulta al historial del paciente:', req.params.pacienteId);
     
     const { pacienteId } = req.params;
-    const registroData = req.body;
+    const consultaData = req.body;
 
     // Validar ID de paciente
     if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
@@ -87,27 +135,82 @@ const agregarRegistroHistorial = async (req, res) => {
       });
     }
 
-    // Agregar información del doctor
-    registroData.doctor = req.perfil._id; // Doctor autenticado
-    registroData.fecha = registroData.fecha || new Date();
+    // Verificar que exista historial clínico
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true 
+    });
+    
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'El paciente no tiene un historial clínico activo. Debe crearlo primero.'
+      });
+    }
 
-    // Usar el método estático para agregar registro
-    const historialActualizado = await HistorialClinico.agregarRegistro(pacienteId, registroData);
+    // ==============================
+    // INTEGRACIÓN CON CITAS (Skill 3)
+    // ==============================
+    // Si hay cita asociada, heredar motivo y establecer relación
+    if (consultaData.citaId) {
+      const cita = await Cita.findById(consultaData.citaId);
+      if (cita) {
+        // Heredar motivo de la cita (NO permitir edición si existe cita)
+        consultaData.motivoConsulta = cita.motivo;
+        consultaData.cita = cita._id;
+      }
+    }
+
+    // ==============================
+    // CAMPOS AUTOMÁTICOS (Skill 1)
+    // ==============================
+    consultaData.doctor = req.perfil._id; // Doctor autenticado
+    consultaData.fecha = consultaData.fecha || new Date();
+
+    // ==============================
+    // VALIDACIONES ESPECÍFICAS
+    // ==============================
+    
+    // Validar CIE-10 si existe
+    if (consultaData.diagnosticos && consultaData.diagnosticos.length > 0) {
+      for (const diagnostico of consultaData.diagnosticos) {
+        if (diagnostico.cie10 && !validarCIE10(diagnostico.cie10)) {
+          return res.status(400).json({
+            success: false,
+            mensaje: `Formato CIE-10 inválido para: ${diagnostico.cie10}`
+          });
+        }
+      }
+    }
+
+    // Calcular total CPO si existe índice
+    if (consultaData.indicadoresSaludBucal?.indiceCPO) {
+      consultaData.indicadoresSaludBucal.indiceCPO = 
+        calcularTotalCPO(consultaData.indicadoresSaludBucal.indiceCPO);
+    }
+
+    // Usar el método estático para agregar consulta
+    const historialActualizado = await HistorialClinico.agregarConsulta(
+      pacienteId, 
+      consultaData, 
+      req.perfil._id
+    );
 
     const historialCompleto = await HistorialClinico.findById(historialActualizado._id)
       .populate('paciente', 'usuario')
       .populate('paciente.usuario', 'nombre apellido email')
-      .populate('registros.doctor', 'usuario especialidad')
-      .populate('registros.doctor.usuario', 'nombre apellido');
+      .populate('consultas.doctor', 'usuario especialidad')
+      .populate('consultas.doctor.usuario', 'nombre apellido')
+      .populate('consultas.cita', 'motivo fecha estado');
 
     res.status(201).json({
       success: true,
-      mensaje: 'Registro agregado exitosamente al historial clínico',
+      mensaje: 'Consulta agregada exitosamente al historial clínico',
       datos: historialCompleto
     });
 
   } catch (error) {
-    console.error('❌ Error en agregarRegistroHistorial:', error);
+    console.error('❌ Error en agregarConsulta:', error);
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -115,7 +218,11 @@ const agregarRegistroHistorial = async (req, res) => {
   }
 };
 
-// 📄 OBTENER HISTORIAL COMPLETO DE PACIENTE
+// ==============================
+// 📄 OBTENER HISTORIAL COMPLETO
+// ==============================
+// GET /api/historial-clinico/:pacienteId
+// Roles: admin, doctor, paciente (solo su propio historial)
 const obtenerHistorialCompleto = async (req, res) => {
   try {
     console.log('📄 Obteniendo historial completo del paciente:', req.params.pacienteId);
@@ -140,10 +247,22 @@ const obtenerHistorialCompleto = async (req, res) => {
       });
     }
 
+    // Calcular información complementaria
+    const paciente = await Paciente.findById(pacienteId).populate('usuario');
+    const grupoEtario = calcularGrupoEtario(paciente?.fechaNacimiento);
+    const edad = calcularEdad(paciente?.fechaNacimiento);
+
     res.status(200).json({
       success: true,
       mensaje: 'Historial clínico obtenido exitosamente',
-      datos: historial
+      datos: {
+        ...historial.toObject(),
+        informacionComplementaria: {
+          grupoEtario,
+          edad,
+          nombreCompleto: paciente ? `${paciente.usuario.nombre} ${paciente.usuario.apellido}` : null
+        }
+      }
     });
 
   } catch (error) {
@@ -155,17 +274,20 @@ const obtenerHistorialCompleto = async (req, res) => {
   }
 };
 
-// 🔍 OBTENER REGISTROS ESPECÍFICOS (con filtros)
-const obtenerRegistrosFiltrados = async (req, res) => {
+// ==============================
+// 🔍 OBTENER CONSULTAS FILTRADAS
+// ==============================
+// GET /api/historial-clinico/:pacienteId/consultas?fechaDesde=2024-01-01&fechaHasta=2024-12-31&doctor=doctorId&tipoConsulta=consulta&page=1&limit=10
+// Roles: admin, doctor, paciente (solo su propio historial)
+const obtenerConsultasFiltradas = async (req, res) => {
   try {
-    console.log('🔍 Obteniendo registros filtrados del paciente:', req.params.pacienteId);
+    console.log('🔍 Obteniendo consultas filtradas del paciente:', req.params.pacienteId);
     
     const { pacienteId } = req.params;
     const { 
       fechaDesde, 
       fechaHasta, 
       doctor, 
-      tipoConsulta, 
       diagnostico,
       page = 1, 
       limit = 10 
@@ -180,11 +302,12 @@ const obtenerRegistrosFiltrados = async (req, res) => {
     }
 
     // Obtener historial
-    const historial = await HistorialClinico.findOne({ paciente: pacienteId })
+    const historial = await HistorialClinico.findOne({ paciente: pacienteId, activo: true })
       .populate('paciente', 'usuario')
       .populate('paciente.usuario', 'nombre apellido email')
-      .populate('registros.doctor', 'usuario especialidad')
-      .populate('registros.doctor.usuario', 'nombre apellido');
+      .populate('consultas.doctor', 'usuario especialidad')
+      .populate('consultas.doctor.usuario', 'nombre apellido')
+      .populate('consultas.cita', 'motivo fecha estado');
 
     if (!historial) {
       return res.status(404).json({
@@ -193,63 +316,59 @@ const obtenerRegistrosFiltrados = async (req, res) => {
       });
     }
 
-    // Filtrar registros
-    let registrosFiltrados = historial.registros;
+    // Filtrar consultas
+    let consultasFiltradas = historial.consultas;
 
     if (fechaDesde) {
       const desde = new Date(fechaDesde);
-      registrosFiltrados = registrosFiltrados.filter(registro => 
-        new Date(registro.fecha) >= desde
+      consultasFiltradas = consultasFiltradas.filter(consulta => 
+        new Date(consulta.fecha) >= desde
       );
     }
 
     if (fechaHasta) {
       const hasta = new Date(fechaHasta);
-      registrosFiltrados = registrosFiltrados.filter(registro => 
-        new Date(registro.fecha) <= hasta
+      consultasFiltradas = consultasFiltradas.filter(consulta => 
+        new Date(consulta.fecha) <= hasta
       );
     }
 
     if (doctor) {
-      registrosFiltrados = registrosFiltrados.filter(registro => 
-        registro.doctor._id.toString() === doctor
-      );
-    }
-
-    if (tipoConsulta) {
-      registrosFiltrados = registrosFiltrados.filter(registro => 
-        registro.tipoConsulta === tipoConsulta
+      consultasFiltradas = consultasFiltradas.filter(consulta => 
+        consulta.doctor._id.toString() === doctor
       );
     }
 
     if (diagnostico) {
-      registrosFiltrados = registrosFiltrados.filter(registro => 
-        registro.diagnostico.principal.descripcion.toLowerCase().includes(diagnostico.toLowerCase())
+      consultasFiltradas = consultasFiltradas.filter(consulta => 
+        consulta.diagnosticos?.some(d => 
+          d.descripcion.toLowerCase().includes(diagnostico.toLowerCase())
+        )
       );
     }
 
     // Ordenar por fecha descendente
-    registrosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    consultasFiltradas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     // Paginación
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + parseInt(limit);
-    const paginatedResults = registrosFiltrados.slice(startIndex, endIndex);
+    const consultasPaginadas = consultasFiltradas.slice(startIndex, endIndex);
 
     res.status(200).json({
       success: true,
-      mensaje: 'Registros filtrados obtenidos exitosamente',
+      mensaje: 'Consultas filtradas obtenidas exitosamente',
       datos: {
-        registros: paginatedResults,
-        total: registrosFiltrados.length,
+        consultas: consultasPaginadas,
+        total: consultasFiltradas.length,
         page: parseInt(page),
         limit: parseInt(limit),
-        totalPages: Math.ceil(registrosFiltrados.length / limit)
+        totalPages: Math.ceil(consultasFiltradas.length / limit)
       }
     });
 
   } catch (error) {
-    console.error('❌ Error en obtenerRegistrosFiltrados:', error);
+    console.error('❌ Error en obtenerConsultasFiltradas:', error);
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -257,55 +376,71 @@ const obtenerRegistrosFiltrados = async (req, res) => {
   }
 };
 
-// ✏️ ACTUALIZAR REGISTRO ESPECÍFICO
-const actualizarRegistro = async (req, res) => {
+// ==============================
+// ✏️ ACTUALIZAR CONSULTA ESPECÍFICA
+// ==============================
+// PUT /api/historial-clinico/:pacienteId/consulta/:consultaId
+// Roles: admin, doctor
+const actualizarConsulta = async (req, res) => {
   try {
-    console.log('✏️ Actualizando registro:', req.params.registroId);
+    console.log('✏️ Actualizando consulta:', req.params.consultaId);
     
-    const { pacienteId, registroId } = req.params;
+    const { pacienteId, consultaId } = req.params;
     const datosActualizacion = req.body;
 
     // Validar IDs
-    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(registroId)) {
+    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(consultaId)) {
       return res.status(400).json({
         success: false,
         mensaje: 'IDs inválidos'
       });
     }
 
-    // Buscar y actualizar el registro específico
-    const historial = await HistorialClinico.findOneAndUpdate(
+    // Verificar que el historial existe
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    // Actualizar el updatedBy
+    datosActualizacion.updatedBy = req.perfil._id;
+
+    // Buscar y actualizar la consulta específica
+    const historialActualizado = await HistorialClinico.findOneAndUpdate(
       { 
         paciente: pacienteId,
-        'registros._id': registroId
+        'consultas._id': consultaId,
+        activo: true
       },
       { 
         $set: { 
-          'registros.$': { ...datosActualizacion, _id: registroId }
+          [`consultas.$`]: { ...datosActualizacion, _id: consultaId },
+          updatedBy: req.perfil._id
         }
       },
       { new: true }
     )
     .populate('paciente', 'usuario')
     .populate('paciente.usuario', 'nombre apellido email')
-    .populate('registros.doctor', 'usuario especialidad')
-    .populate('registros.doctor.usuario', 'nombre apellido');
-
-    if (!historial) {
-      return res.status(404).json({
-        success: false,
-        mensaje: 'Registro no encontrado'
-      });
-    }
+    .populate('consultas.doctor', 'usuario especialidad')
+    .populate('consultas.doctor.usuario', 'nombre apellido');
 
     res.status(200).json({
       success: true,
-      mensaje: 'Registro actualizado exitosamente',
-      datos: historial
+      mensaje: 'Consulta actualizada exitosamente',
+      datos: historialActualizado
     });
 
   } catch (error) {
-    console.error('❌ Error en actualizarRegistro:', error);
+    console.error('❌ Error en actualizarConsulta:', error);
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -313,29 +448,89 @@ const actualizarRegistro = async (req, res) => {
   }
 };
 
-// 🗑️ ELIMINAR REGISTRO ESPECÍFICO
-const eliminarRegistro = async (req, res) => {
+// ==============================
+// 🗑️ ELIMINAR CONSULTA (SOFT DELETE)
+// ==============================
+// DELETE /api/historial-clinico/:pacienteId/consulta/:consultaId
+// Roles: admin, doctor
+// NOTA: Según Skill 1, NO se permite eliminación física
+const eliminarConsulta = async (req, res) => {
   try {
-    console.log('🗑️ Eliminando registro:', req.params.registroId);
+    console.log('🗑️ Eliminando consulta (soft delete):', req.params.consultaId);
     
-    const { pacienteId, registroId } = req.params;
+    const { pacienteId, consultaId } = req.params;
 
     // Validar IDs
-    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(registroId)) {
+    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(consultaId)) {
       return res.status(400).json({
         success: false,
         mensaje: 'IDs inválidos'
       });
     }
 
-    const historial = await HistorialClinico.findOneAndUpdate(
-      { paciente: pacienteId },
+    // Verificar que el historial existe
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    // Eliminar la consulta del array (soft delete a nivel de consulta)
+    const historialActualizado = await HistorialClinico.findOneAndUpdate(
+      { paciente: pacienteId, activo: true },
       { 
-        $pull: { registros: { _id: registroId } },
+        $pull: { consultas: { _id: consultaId } },
+        $set: { updatedBy: req.perfil._id },
         $inc: { 'metricas.totalConsultas': -1 }
       },
       { new: true }
     );
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Consulta eliminada exitosamente'
+    });
+
+  } catch (error) {
+    console.error('❌ Error en eliminarConsulta:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
+// ==============================
+// 🗑️ ELIMINAR HISTORIAL (SOFT DELETE)
+// ==============================
+// DELETE /api/historial-clinico/:pacienteId
+// Roles: admin
+// NOTA: Según Skill 1, NO se permite eliminación física
+const eliminarHistorial = async (req, res) => {
+  try {
+    console.log('🗑️ Eliminando historial (soft delete):', req.params.pacienteId);
+    
+    const { pacienteId } = req.params;
+
+    // Validar ID
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de paciente inválido'
+      });
+    }
+
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true 
+    });
 
     if (!historial) {
       return res.status(404).json({
@@ -344,13 +539,16 @@ const eliminarRegistro = async (req, res) => {
       });
     }
 
+    // Usar el método de soft delete
+    await historial.eliminar(req.perfil._id);
+
     res.status(200).json({
       success: true,
-      mensaje: 'Registro eliminado exitosamente'
+      mensaje: 'Historial clínico eliminado exitosamente'
     });
 
   } catch (error) {
-    console.error('❌ Error en eliminarRegistro:', error);
+    console.error('❌ Error en eliminarHistorial:', error);
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -358,7 +556,11 @@ const eliminarRegistro = async (req, res) => {
   }
 };
 
+// ==============================
 // 📊 OBTENER ESTADÍSTICAS DEL HISTORIAL
+// ==============================
+// GET /api/historial-clinico/:pacienteId/estadisticas
+// Roles: admin, doctor, paciente (solo sus propias estadísticas)
 const obtenerEstadisticasHistorial = async (req, res) => {
   try {
     console.log('📊 Obteniendo estadísticas del historial del paciente:', req.params.pacienteId);
@@ -373,9 +575,9 @@ const obtenerEstadisticasHistorial = async (req, res) => {
       });
     }
 
-    const historial = await HistorialClinico.findOne({ paciente: pacienteId })
-      .populate('registros.doctor', 'usuario especialidad')
-      .populate('registros.doctor.usuario', 'nombre apellido');
+    const historial = await HistorialClinico.findOne({ paciente: pacienteId, activo: true })
+      .populate('consultas.doctor', 'usuario especialidad')
+      .populate('consultas.doctor.usuario', 'nombre apellido');
 
     if (!historial) {
       return res.status(404).json({
@@ -386,46 +588,46 @@ const obtenerEstadisticasHistorial = async (req, res) => {
 
     // Calcular estadísticas
     const estadisticas = {
-      totalConsultas: historial.registros.length,
-      consultasPorTipo: {},
+      totalConsultas: historial.consultas.length,
       consultasPorDoctor: {},
       diagnosticosFrecuentes: {},
       tratamientosRealizados: [],
       evolucionMensual: {},
-      alergias: historial.informacionGeneral.alergias || [],
-      condicionesMedicas: historial.informacionGeneral.condicionesMedicas || [],
       metricas: historial.metricas
     };
 
-    // Procesar registros para estadísticas
-    historial.registros.forEach(registro => {
-      // Consultas por tipo
-      estadisticas.consultasPorTipo[registro.tipoConsulta] = 
-        (estadisticas.consultasPorTipo[registro.tipoConsulta] || 0) + 1;
-
+    // Procesar consultas para estadísticas
+    historial.consultas.forEach(consulta => {
       // Consultas por doctor
-      const doctorNombre = registro.doctor.usuario.nombreCompleto;
-      estadisticas.consultasPorDoctor[doctorNombre] = 
-        (estadisticas.consultasPorDoctor[doctorNombre] || 0) + 1;
+      if (consulta.doctor?.usuario?.nombreCompleto) {
+        const doctorNombre = consulta.doctor.usuario.nombreCompleto;
+        estadisticas.consultasPorDoctor[doctorNombre] = 
+          (estadisticas.consultasPorDoctor[doctorNombre] || 0) + 1;
+      }
 
       // Diagnósticos frecuentes
-      const diagnostico = registro.diagnostico.principal.descripcion;
-      estadisticas.diagnosticosFrecuentes[diagnostico] = 
-        (estadisticas.diagnosticosFrecuentes[diagnostico] || 0) + 1;
+      if (consulta.diagnosticos && consulta.diagnosticos.length > 0) {
+        consulta.diagnosticos.forEach(diagnostico => {
+          const descripcion = diagnostico.descripcion;
+          estadisticas.diagnosticosFrecuentes[descripcion] = 
+            (estadisticas.diagnosticosFrecuentes[descripcion] || 0) + 1;
+        });
+      }
 
       // Tratamientos realizados
-      if (registro.tratamientoRealizado) {
-        registro.tratamientoRealizado.forEach(tratamiento => {
+      if (consulta.tratamientos && consulta.tratamientos.length > 0) {
+        consulta.tratamientos.forEach(tratamiento => {
           estadisticas.tratamientosRealizados.push({
-            procedimiento: tratamiento.procedimiento,
-            fecha: registro.fecha,
-            doctor: doctorNombre
+            sesion: tratamiento.sesion,
+            fecha: tratamiento.fecha,
+            procedimientos: tratamiento.procedimientos,
+            doctor: consulta.doctor?.usuario?.nombreCompleto
           });
         });
       }
 
       // Evolución mensual
-      const mes = new Date(registro.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+      const mes = new Date(consulta.fecha).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
       estadisticas.evolucionMensual[mes] = 
         (estadisticas.evolucionMensual[mes] || 0) + 1;
     });
@@ -445,12 +647,23 @@ const obtenerEstadisticasHistorial = async (req, res) => {
   }
 };
 
+// ==============================
+// FUNCIONES AUXILIARES
+// ==============================
+
+function validarCIE10(codigo) {
+  if (!codigo) return false;
+  const regex = /^[A-Z]\d{2}(\.\d{1,4})?$/;
+  return regex.test(codigo.toUpperCase());
+}
+
 module.exports = {
   crearHistorialClinico,
-  agregarRegistroHistorial,
+  agregarConsulta,
   obtenerHistorialCompleto,
-  obtenerRegistrosFiltrados,
-  actualizarRegistro,
-  eliminarRegistro,
+  obtenerConsultasFiltradas,
+  actualizarConsulta,
+  eliminarConsulta,
+  eliminarHistorial,
   obtenerEstadisticasHistorial
 };
