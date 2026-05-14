@@ -851,5 +851,102 @@ exports.actualizarDoctor = async (req, res, next) => {
   }
 };
 
+// @desc    Obtener detalle de un paciente específico
+// @route   GET /api/doctores/pacientes/:id
+// @access  Private (Doctor)
+exports.obtenerDetallePaciente = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const doctorActual = await Doctor.findOne({ usuario: req.usuario.id });
+    
+    if (!doctorActual) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Perfil de doctor no encontrado'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de paciente inválido'
+      });
+    }
+
+    const Paciente = require('../models/Paciente');
+    const Cita = require('../models/Cita');
+    const HistorialClinico = require('../models/HistorialClinico');
+
+    const paciente = await Paciente.findById(id)
+      .populate('usuario', 'nombre apellido email telefono createdAt estado')
+      .populate('doctorAsignado', 'usuario especialidad')
+      .populate('doctorAsignado.usuario', 'nombre apellido')
+      .lean();
+
+    if (!paciente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Paciente no encontrado'
+      });
+    }
+
+    const tieneCitaConDoctor = await Cita.findOne({
+      paciente: id,
+      doctor: doctorActual._id
+    });
+
+    if (!tieneCitaConDoctor) {
+      return res.status(403).json({
+        success: false,
+        mensaje: 'No tienes acceso a este paciente. Solo puedes ver pacientes con los que has tenido citas.'
+      });
+    }
+
+    const historialCitas = await Cita.find({
+      paciente: id,
+      doctor: doctorActual._id
+    })
+      .populate('doctor', 'usuario especialidad')
+      .populate('doctor.usuario', 'nombre apellido')
+      .sort({ fecha: -1, horaInicio: -1 })
+      .limit(10);
+
+    const statsCitas = await Cita.aggregate([
+      { $match: { paciente: new mongoose.Types.ObjectId(id), doctor: doctorActual._id } },
+      {
+        $group: {
+          _id: '$estado',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const citasStats = statsCitas.reduce((acc, stat) => {
+      acc[stat._id] = stat.count;
+      return acc;
+    }, {});
+
+    const historialClinico = await HistorialClinico.findOne({
+      paciente: id,
+      activo: true
+    });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Detalle del paciente obtenido exitosamente',
+      data: {
+        ...paciente,
+        numeroHistoriaClinica: historialClinico?.numeroHistoriaClinica || null,
+        historialCitas,
+        citasStats
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo detalle del paciente:', error);
+    next(error);
+  }
+};
+
 // Las funciones ya están exportadas con exports.nombreFuncion
 // No se necesita module.exports adicional

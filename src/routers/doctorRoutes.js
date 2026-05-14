@@ -14,7 +14,8 @@ const {
   actualizarDoctor,
   obtenerMisPacientes,
   obtenerMisCitas,
-  cambiarEstadoCita
+  cambiarEstadoCita,
+  obtenerDetallePaciente
 } = require('../controllers/doctorController');
 
 // Middleware de logging para todas las solicitudes a doctores
@@ -60,6 +61,10 @@ router.put('/perfil/doctor', actualizarPerfil);
 // Obtener pacientes del doctor autenticado
 // GET /api/doctores/mis-pacientes
 router.get('/mis-pacientes', autorizarRoles('doctor'), obtenerMisPacientes);
+
+// Obtener detalle de un paciente específico
+// GET /api/doctores/pacientes/:id
+router.get('/pacientes/:id', autorizarRoles('doctor'), obtenerDetallePaciente);
 
 // Obtener citas del doctor autenticado (desde su perfil)
 // GET /api/doctores/mis-citas?estado=pendiente&desde=2024-01-01&hasta=2024-12-31&page=1&limit=10
