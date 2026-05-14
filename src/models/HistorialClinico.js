@@ -538,18 +538,14 @@ const historialClinicoSchema = new mongoose.Schema({
       firmaDoctor: {
         doctorId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'Doctor',
-          required: true
+          ref: 'Doctor'
         },
         nombreDoctor: {
           type: String,
-          required: true,
           trim: true
         },
         fecha: {
-          type: Date,
-          default: Date.now,
-          required: true
+          type: Date
         }
       }
     }]
