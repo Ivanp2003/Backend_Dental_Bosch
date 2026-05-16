@@ -880,7 +880,7 @@ const obtenerHorariosDoctores = async (req, res) => {
       
       // Organizar horarios por día de la semana
       const horariosOrganizados = {};
-      const diasSemana = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+      const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
       
       diasSemana.forEach(dia => {
         const horarioDia = doctor.horarioAtencion.find(h => h.dia === dia);

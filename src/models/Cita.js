@@ -61,13 +61,17 @@ const citaSchema = new mongoose.Schema({
   },
   canceladaPor: {
     type: String,
-    enum: ['paciente', 'doctor', 'admin'],
+    enum: ['paciente', 'doctor', 'admin', 'sistema'],
     default: null
   },
   motivoCancelacion: {
     type: String,
     maxlength: [300, 'El motivo de cancelación no puede exceder 300 caracteres'],
     trim: true
+  },
+  fechaCancelacion: {
+    type: Date,
+    default: null
   },
   
   // Confirmación

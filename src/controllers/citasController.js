@@ -1,4 +1,5 @@
 const CitasService = require('../services/citasService');
+const Cita = require('../models/Cita');
 const Paciente = require('../models/Paciente');
 const Doctor = require('../models/Doctor');
 const mongoose = require('mongoose');

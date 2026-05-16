@@ -39,8 +39,9 @@ const usuarioSchema = new mongoose.Schema({
   },
   cedula: {
     type: String,
-    required: false, // No hacerla obligatoria para pacientes
+    required: false,
     unique: true,
+    sparse: true,
     trim: true,
     validate: {
       validator: function(value) {

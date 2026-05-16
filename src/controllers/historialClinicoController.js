@@ -410,6 +410,104 @@ const actualizarConsulta = async (req, res) => {
       });
     }
 
+    const consultaExistente = historial.consultas.id(consultaId);
+
+    if (!consultaExistente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    const ZONA_HORARIA_ECUADOR = -5;
+    function getAhoraEnEcuador() {
+      const ahora = new Date();
+      const utc = ahora.getTime() + ahora.getTimezoneOffset() * 60000;
+      return new Date(utc + (ZONA_HORARIA_ECUADOR * 3600000));
+    }
+
+    const ahoraEcuador = getAhoraEnEcuador();
+
+    if (consultaExistente.cita) {
+      const Cita = require('../models/Cita');
+      const citaAsociada = await Cita.findById(consultaExistente.cita)
+        .select('fecha horaFin');
+
+      if (citaAsociada) {
+        const [hora, minuto] = citaAsociada.horaFin.split(':');
+        const fechaFinCita = new Date(citaAsociada.fecha);
+        fechaFinCita.setHours(parseInt(hora), parseInt(minuto), 0, 0);
+        const utc = fechaFinCita.getTime() + fechaFinCita.getTimezoneOffset() * 60000;
+        const fechaFinEcuador = new Date(utc + (ZONA_HORARIA_ECUADOR * 3600000));
+
+        if (ahoraEcuador > fechaFinEcuador) {
+          return res.status(403).json({
+            success: false,
+            mensaje: 'Esta consulta ya no puede modificarse. El período de edición terminó al finalizar la cita.',
+            detalle: `La cita asociada finalizó el ${fechaFinEcuador.toLocaleString('es-EC')}.`
+          });
+        }
+      }
+    }
+
+    if (!consultaExistente.cita) {
+      const fechaConsulta = new Date(consultaExistente.fecha);
+      const ventanaGracia = new Date(fechaConsulta.getTime() + 24 * 60 * 60 * 1000);
+
+      if (ahoraEcuador > ventanaGracia) {
+        return res.status(403).json({
+          success: false,
+          mensaje: 'Esta consulta ya no puede modificarse. Han pasado más de 24 horas desde su creación.'
+        });
+      }
+    }
+
+    const CAMPOS_INMUTABLES_TRATAMIENTO = [
+      'sesion',
+      'fecha',
+      'diagnosticosComplicaciones',
+      'procedimientos',
+      'prescripciones',
+      'codigo',
+      'firmaDoctor'
+    ];
+
+    if (datosActualizacion.tratamientos && Array.isArray(datosActualizacion.tratamientos)) {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const utcHoy = hoy.getTime() + hoy.getTimezoneOffset() * 60000;
+      const hoyEcuador = new Date(utcHoy + (ZONA_HORARIA_ECUADOR * 3600000));
+
+      for (const tratamientoNuevo of datosActualizacion.tratamientos) {
+        const tratamientoOriginal = consultaExistente.tratamientos?.find(
+          t => t.sesion === tratamientoNuevo.sesion
+        );
+
+        if (!tratamientoOriginal) continue;
+
+        const fechaTratamiento = new Date(tratamientoOriginal.fecha);
+        fechaTratamiento.setHours(0, 0, 0, 0);
+        const utcTrat = fechaTratamiento.getTime() + fechaTratamiento.getTimezoneOffset() * 60000;
+        const fechaTratEcuador = new Date(utcTrat + (ZONA_HORARIA_ECUADOR * 3600000));
+
+        if (fechaTratEcuador < hoyEcuador) {
+          const camposIntentados = Object.keys(tratamientoNuevo).filter(
+            campo => CAMPOS_INMUTABLES_TRATAMIENTO.includes(campo)
+          );
+
+          if (camposIntentados.length > 0) {
+            return res.status(403).json({
+              success: false,
+              mensaje: `No se pueden modificar los campos de registro del tratamiento pasado la fecha de atención.`,
+              camposBloqueados: camposIntentados,
+              sesion: tratamientoOriginal.sesion,
+              fechaAtencion: tratamientoOriginal.fecha
+            });
+          }
+        }
+      }
+    }
+
     // Actualizar el updatedBy
     datosActualizacion.updatedBy = req.perfil._id;
 
