@@ -89,13 +89,12 @@ router.get('/:pacienteId',
   historialClinicoController.obtenerHistorialCompleto
 );
 
-// 🗑️ Eliminar historial completo (SOFT DELETE)
+// 🗑️ ELIMINACIÓN BLOQUEADA - Una HC nunca debe eliminarse
 // DELETE /api/historial-clinico/:pacienteId
-// Roles: admin
-// NOTA: Según Skill 1, NO se permite eliminación física
-router.delete('/:pacienteId', 
-  autorizarRoles('admin'), 
-  historialClinicoController.eliminarHistorial
-);
+// Razón: Una historia clínica es un registro médico-legal y no debe eliminarse
+// router.delete('/:pacienteId', 
+//   autorizarRoles('admin'), 
+//   historialClinicoController.eliminarHistorial
+// );
 
 module.exports = router;
