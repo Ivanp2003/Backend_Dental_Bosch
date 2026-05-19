@@ -32,15 +32,6 @@ router.put('/:id/estado', autorizarRoles('doctor', 'admin'), citasController.act
 // Body: { notas: "Notas de la cita" }
 router.put('/:id/finalizar', autorizarRoles('doctor', 'admin'), citasController.finalizarCita);
 
-// ✅ Confirmar cita creada por doctor (paciente)
-// PUT /api/citas/:id/confirmar
-router.put('/:id/confirmar', autorizarRoles('paciente'), citasController.confirmarCitaPaciente);
-
-// ❌ Rechazar cita creada por doctor (paciente)
-// PUT /api/citas/:id/rechazar
-// Body: { motivo: "Motivo del rechazo" }
-router.put('/:id/rechazar', autorizarRoles('paciente'), citasController.rechazarCitaPaciente);
-
 // ❌ Cancelar cita
 // DELETE /api/citas/:id
 // Body: { motivoCancelacion: "Motivo de la cancelación" }

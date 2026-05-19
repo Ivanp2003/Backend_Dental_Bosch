@@ -50,7 +50,7 @@ class CitasService {
       const query = {
         paciente: pacienteId,
         fecha: new Date(fecha),
-        estado: { $in: ['pendiente', 'confirmada', 'pendiente_confirmacion_paciente'] }
+        estado: { $in: ['pendiente'] }
       };
 
       if (excluirCitaId) {
@@ -81,7 +81,7 @@ class CitasService {
       const citasDelDia = await Cita.countDocuments({
         paciente: pacienteId,
         fecha: new Date(fecha),
-        estado: { $in: ['pendiente', 'confirmada', 'pendiente_confirmacion_paciente'] }
+        estado: { $in: ['pendiente'] }
       });
 
       if (citasDelDia > 0) {
@@ -201,14 +201,9 @@ class CitasService {
         await this.validarCitaPaciente(paciente, fecha, horaInicio);
       }
 
-      // Determinar estado según rol
-      let estadoCita = 'pendiente';
-      if (rolUsuario === 'doctor') {
-        estadoCita = 'pendiente_confirmacion_paciente';
-        console.log('📋 Cita creada por doctor - requiere confirmación del paciente');
-      } else {
-        console.log('📋 Cita creada por paciente - confirmada automáticamente');
-      }
+      // Todas las citas se crean como pendiente
+      const estadoCita = 'pendiente';
+      console.log('📋 Cita creada - estado: pendiente');
 
       // Crear cita
       const nuevaCita = new Cita({
@@ -442,7 +437,6 @@ class CitasService {
       cita.estado = 'cancelada';
       cita.canceladaPor = canceladoPor;
       cita.motivoCancelacion = motivoCancelacion;
-      cita.confirmada = false;
 
       await cita.save();
 

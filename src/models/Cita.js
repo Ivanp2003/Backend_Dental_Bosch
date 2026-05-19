@@ -38,7 +38,7 @@ const citaSchema = new mongoose.Schema({
   // Estado y detalles
   estado: {
     type: String,
-    enum: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada', 'finalizada', 'cancelada'],
+    enum: ['pendiente', 'finalizada', 'cancelada'],
     default: 'pendiente'
   },
   motivo: {
@@ -74,14 +74,6 @@ const citaSchema = new mongoose.Schema({
     default: null
   },
   
-  // Confirmación
-  confirmada: {
-    type: Boolean,
-    default: false
-  },
-  fechaConfirmacion: {
-    type: Date
-  },
   
   // ==============================
   // INTEGRACIÓN CON HISTORIAL CLÍNICO

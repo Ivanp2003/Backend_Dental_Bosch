@@ -26,7 +26,7 @@ async function cancelarCitasVencidas() {
   console.log(`Ejecutando a las ${ahora.toISOString()} (hora Ecuador)`);
 
   const candidatas = await Cita.find({
-    estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] },
+    estado: { $in: ['pendiente'] },
     fecha: { $lte: ahora }
   });
 

@@ -22,7 +22,7 @@
 
 Cuando una cita llega a su `fecha` + `horaFin` y el doctor **no** cambió el estado a `finalizada` ni `cancelada`, el sistema debe marcarla automáticamente como `cancelada` con un motivo estándar.
 
-Estados que deben auto-cancelarse: `pendiente`, `pendiente_confirmacion_paciente`, `confirmada`.
+Estados que deben auto-cancelarse: `pendiente`.
 Estados que **no** se tocan: `finalizada`, `cancelada` (ya cerradas).
 
 ### Estrategia: script manual + cron opcional
@@ -56,7 +56,7 @@ const ahora = new Date();
 // Traer citas activas cuya fecha sea de hoy o anterior
 // (el filtro fino por horaFin se hace en JS después)
 const citasCandidatas = await Cita.find({
-  estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] },
+  estado: { $in: ['pendiente'] },
   fecha: { $lte: ahora }   // fecha del día <= hoy
 });
 ```
@@ -135,7 +135,7 @@ async function cancelarCitasVencidas() {
   const ahora = new Date();
 
   const candidatas = await Cita.find({
-    estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] },
+    estado: { $in: ['pendiente'] },
     fecha: { $lte: ahora }
   });
 
@@ -189,7 +189,7 @@ async function autoCancelarCitasVencidas() {
   const ahora = new Date();
 
   const candidatas = await Cita.find({
-    estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] },
+    estado: { $in: ['pendiente'] },
     fecha: { $lte: ahora }
   });
 

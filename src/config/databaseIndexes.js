@@ -60,7 +60,7 @@ const configurarIndices = async () => {
       { 
         key: { paciente: 1, fecha: 1, horaInicio: 1, estado: 1 }, 
         unique: true,
-        partialFilterExpression: { estado: { $in: ['pendiente', 'confirmada'] } }
+        partialFilterExpression: { estado: { $in: ['pendiente'] } }
       },
       
       // Índices para rangos de fechas
@@ -70,7 +70,7 @@ const configurarIndices = async () => {
       // Índices para consultas de disponibilidad
       { 
         key: { doctor: 1, fecha: 1, estado: 1, horaInicio: 1, horaFin: 1 },
-        partialFilterExpression: { estado: { $in: ['pendiente', 'confirmada'] } }
+        partialFilterExpression: { estado: { $in: ['pendiente'] } }
       }
     ]);
 

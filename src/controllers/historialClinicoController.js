@@ -168,6 +168,25 @@ const agregarConsulta = async (req, res) => {
     consultaData.fecha = consultaData.fecha || new Date();
 
     // ==============================
+    // FIRMA AUTOMÁTICA DEL DOCTOR EN TRATAMIENTOS
+    // ==============================
+    // Obtener doctor con usuario para obtener nombre completo
+    const doctor = await Doctor.findById(req.perfil._id).populate('usuario');
+    if (doctor && consultaData.tratamientos && Array.isArray(consultaData.tratamientos)) {
+      const nombreCompletoDoctor = `${doctor.usuario.nombre} ${doctor.usuario.apellido}`;
+      
+      consultaData.tratamientos.forEach(tratamiento => {
+        if (!tratamiento.firmaDoctor) {
+          tratamiento.firmaDoctor = {
+            doctorId: doctor._id,
+            nombreDoctor: nombreCompletoDoctor,
+            fecha: new Date()
+          };
+        }
+      });
+    }
+
+    // ==============================
     // VALIDACIONES ESPECÍFICAS
     // ==============================
     
@@ -506,6 +525,30 @@ const actualizarConsulta = async (req, res) => {
           }
         }
       }
+    }
+
+    // ==============================
+    // FIRMA AUTOMÁTICA DEL DOCTOR EN TRATAMIENTOS NUEVOS
+    // ==============================
+    // Obtener doctor con usuario para obtener nombre completo
+    const doctor = await Doctor.findById(req.perfil._id).populate('usuario');
+    if (doctor && datosActualizacion.tratamientos && Array.isArray(datosActualizacion.tratamientos)) {
+      const nombreCompletoDoctor = `${doctor.usuario.nombre} ${doctor.usuario.apellido}`;
+      
+      datosActualizacion.tratamientos.forEach(tratamiento => {
+        // Solo llenar firmaDoctor si es un tratamiento nuevo (no existe en consultaExistente)
+        const tratamientoOriginal = consultaExistente.tratamientos?.find(
+          t => t.sesion === tratamiento.sesion
+        );
+        
+        if (!tratamientoOriginal && !tratamiento.firmaDoctor) {
+          tratamiento.firmaDoctor = {
+            doctorId: doctor._id,
+            nombreDoctor: nombreCompletoDoctor,
+            fecha: new Date()
+          };
+        }
+      });
     }
 
     // Actualizar el updatedBy

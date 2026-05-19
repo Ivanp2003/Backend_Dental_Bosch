@@ -894,7 +894,7 @@ class AdminService {
       const citasFuturas = await Cita.countDocuments({
         doctor: doctorId,
         fecha: { $gte: new Date() },
-        estado: { $in: ['pendiente', 'confirmada', 'pendiente_confirmacion_paciente'] }
+        estado: { $in: ['pendiente'] }
       });
 
       console.log(`📋 Citas futuras del doctor ${doctorId}: ${citasFuturas}`);

@@ -74,7 +74,6 @@ class CitasDTO {
       estado: cita.estado,
       motivo: cita.motivo,
       creadoPor: cita.creadoPor,
-      confirmada: cita.confirmada,
       canceladaPor: cita.canceladaPor,
       
       // 📅 Fechas formateadas
@@ -174,7 +173,6 @@ class CitasDTO {
       duracion: cita.duracion,
       estado: cita.estado,
       motivo: cita.motivo,
-      confirmada: cita.confirmada,
       
       // 📅 Fechas formateadas
       fechaFormateada: this.formatearFecha(cita.fecha),
@@ -334,10 +332,8 @@ class CitasDTO {
   static getEstadoInfo(estado) {
     const estados = {
       pendiente: { etiqueta: 'Pendiente', color: '#f59e0b', icono: '⏳' },
-      confirmada: { etiqueta: 'Confirmada', color: '#10b981', icono: '✅' },
-      cancelada: { etiqueta: 'Cancelada', color: '#ef4444', icono: '❌' },
-      completada: { etiqueta: 'Completada', color: '#6366f1', icono: '✨' },
-      en_progreso: { etiqueta: 'En Progreso', color: '#3b82f6', icono: '🔄' }
+      finalizada: { etiqueta: 'Finalizada', color: '#6366f1', icono: '✨' },
+      cancelada: { etiqueta: 'Cancelada', color: '#ef4444', icono: '❌' }
     };
     
     return estados[estado] || { etiqueta: estado, color: '#6b7280', icono: '📅' };
@@ -590,7 +586,7 @@ class CitasDTO {
       stats.porDoctor[doctorNombre] = (stats.porDoctor[doctorNombre] || 0) + 1;
       
       // 📅 Próximas citas
-      if (cita.estado !== 'cancelada' && cita.estado !== 'completada') {
+      if (cita.estado !== 'cancelada' && cita.estado !== 'finalizada') {
         const fechaCita = new Date(cita.fecha);
         if (fechaCita >= hoy) {
           stats.proximas.push(cita);

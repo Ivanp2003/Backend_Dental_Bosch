@@ -663,6 +663,31 @@ historialClinicoSchema.pre('save', async function() {
   }
 });
 
+// ==============================
+// MIDDLEWARE: FIRMA AUTOMÁTICA EN TRATAMIENTOS
+// ==============================
+// Llenar firmaDoctor automáticamente si está vacío
+historialClinicoSchema.pre('save', async function(next) {
+  // Iterar sobre todas las consultas
+  for (const consulta of this.consultas) {
+    // Si la consulta tiene doctor y tratamientos
+    if (consulta.doctor && consulta.tratamientos && Array.isArray(consulta.tratamientos)) {
+      // Iterar sobre los tratamientos
+      for (const tratamiento of consulta.tratamientos) {
+        // Si el tratamiento no tiene firmaDoctor, llenarla
+        if (!tratamiento.firmaDoctor || !tratamiento.firmaDoctor.doctorId) {
+          tratamiento.firmaDoctor = {
+            doctorId: consulta.doctor,
+            nombreDoctor: '', // Se llena en el controller con el nombre completo
+            fecha: tratamiento.fecha || new Date()
+          };
+        }
+      }
+    }
+  }
+  next();
+});
+
 // Prevenir eliminación física (soft delete)
 historialClinicoSchema.methods.eliminar = async function(usuarioId) {
   this.activo = false;

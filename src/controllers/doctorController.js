@@ -469,7 +469,7 @@ exports.eliminarDoctor = async (req, res, next) => {
     const citasActivas = await Cita.find({
       doctor: doctor._id,
       fecha: { $gte: ahora },
-      estado: { $in: ['pendiente', 'pendiente_confirmacion_paciente', 'confirmada'] }
+      estado: { $in: ['pendiente'] }
     }).populate('paciente', 'nombre apellido');
 
     console.log('📊 Fecha actual del servidor:', ahora.toISOString());
