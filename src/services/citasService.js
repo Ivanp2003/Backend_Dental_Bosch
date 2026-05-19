@@ -1,6 +1,7 @@
 const Cita = require('../models/Cita');
 const Doctor = require('../models/Doctor');
 const Paciente = require('../models/Paciente');
+const HistorialClinico = require('../models/HistorialClinico');
 const Usuario = require('../models/Usuario');
 const CitasDTO = require('../utils/citasDTO');
 const mongoose = require('mongoose');
@@ -93,6 +94,53 @@ class CitasService {
     }
   }
 
+  // Validar que el doctor no agende para hoy si el paciente ya fue atendido hoy
+  static async validarAgendamientoDoctorDespuesDeAtencionHoy(pacienteId, fecha, rolUsuario) {
+    try {
+      if (rolUsuario !== 'doctor') {
+        return true;
+      }
+
+      const fechaCita = new Date(fecha);
+      if (Number.isNaN(fechaCita.getTime())) {
+        throw new Error('Fecha de cita inválida');
+      }
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+
+      const fechaCitaNormalizada = new Date(fechaCita);
+      fechaCitaNormalizada.setHours(0, 0, 0, 0);
+
+      // Solo bloquear si la nueva cita también es para hoy
+      if (fechaCitaNormalizada.getTime() !== hoy.getTime()) {
+        return true;
+      }
+
+      const inicioHoy = new Date(hoy);
+      const finHoy = new Date(hoy);
+      finHoy.setHours(23, 59, 59, 999);
+
+      const historialHoy = await HistorialClinico.findOne({
+        paciente: pacienteId,
+        activo: true,
+        consultas: {
+          $elemMatch: {
+            fecha: { $gte: inicioHoy, $lte: finHoy }
+          }
+        }
+      }).select('_id');
+
+      if (historialHoy) {
+        throw new Error('No se puede agendar una cita para hoy si el paciente ya fue atendido hoy. Debe programarse para una fecha posterior.');
+      }
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Crear nueva cita
   static async crearCita(datosCita, rolUsuario) {
     try {
@@ -131,6 +179,9 @@ class CitasService {
 
       // Validar restricción diaria solo para pacientes
       await this.validarRestriccionDiariaPaciente(paciente, fecha, rolUsuario);
+
+      // Validar regla especial para doctores: si el paciente ya fue atendido hoy, la cita debe ser para otra fecha
+      await this.validarAgendamientoDoctorDespuesDeAtencionHoy(paciente, fecha, rolUsuario);
 
       // Validar que el doctor exista y esté aprobado
       const doctorExistente = await Doctor.findOne({ 

@@ -102,8 +102,15 @@ const crearCita = async (req, res) => {
         mensaje: error.message
       });
     }
+
+    if (error.message.includes('atendido hoy') || error.message.includes('historial clínico')) {
+      return res.status(409).json({
+        success: false,
+        mensaje: error.message
+      });
+    }
     
-    if (error.message.includes('inválidos') || error.message.includes('pasadas')) {
+    if (error.message.includes('inválid') || error.message.includes('pasadas')) {
       return res.status(400).json({
         success: false,
         mensaje: error.message
