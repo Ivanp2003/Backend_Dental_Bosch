@@ -754,7 +754,7 @@ historialClinicoSchema.statics.agregarConsulta = async function(pacienteId, cons
       $set: { updatedBy: usuarioId },
       $inc: { 'metricas.totalConsultas': 1 }
     },
-    { new: true }
+    { returnDocument: 'after', validateBeforeSave: false }
   );
   
   if (historial) {

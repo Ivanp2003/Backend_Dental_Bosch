@@ -168,6 +168,28 @@ const agregarConsulta = async (req, res) => {
     consultaData.fecha = consultaData.fecha || new Date();
 
     // ==============================
+    // NORMALIZACIÓN DE CAMPOS (compatibilidad con formato simple)
+    // ==============================
+    // Si se envía diagnostico como string, convertir a array de objetos
+    if (consultaData.diagnostico && !consultaData.diagnosticos) {
+      consultaData.diagnosticos = [{
+        descripcion: consultaData.diagnostico,
+        tipo: 'presuntivo'
+      }];
+      delete consultaData.diagnostico;
+    }
+
+    // Si se envía tratamiento como string, convertir a array de objetos
+    if (consultaData.tratamiento && !consultaData.tratamientos) {
+      consultaData.tratamientos = [{
+        sesion: 1,
+        procedimientos: [consultaData.tratamiento],
+        fecha: new Date()
+      }];
+      delete consultaData.tratamiento;
+    }
+
+    // ==============================
     // FIRMA AUTOMÁTICA DEL DOCTOR EN TRATAMIENTOS
     // ==============================
     // Obtener doctor con usuario para obtener nombre completo
@@ -567,7 +589,7 @@ const actualizarConsulta = async (req, res) => {
           updatedBy: req.perfil._id
         }
       },
-      { new: true }
+      { returnDocument: 'after' }
     )
     .populate('paciente', 'usuario')
     .populate('paciente.usuario', 'nombre apellido email')
@@ -631,7 +653,7 @@ const eliminarConsulta = async (req, res) => {
         $set: { updatedBy: req.perfil._id },
         $inc: { 'metricas.totalConsultas': -1 }
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     res.status(200).json({
