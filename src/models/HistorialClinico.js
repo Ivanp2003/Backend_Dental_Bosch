@@ -785,10 +785,10 @@ historialClinicoSchema.pre('save', async function() {
 // MIDDLEWARE: FIRMA AUTOMÁTICA EN TRATAMIENTOS
 // ==============================
 // Llenar firmaDoctor automáticamente si está vacío
-historialClinicoSchema.pre('save', async function(next) {
+historialClinicoSchema.pre('save', async function() {
   // Verificar si hay consultas antes de iterar
   if (!this.consultas || !Array.isArray(this.consultas) || this.consultas.length === 0) {
-    return next();
+    return;
   }
 
   // Iterar sobre todas las consultas
@@ -808,7 +808,6 @@ historialClinicoSchema.pre('save', async function(next) {
       }
     }
   }
-  next();
 });
 
 // Prevenir eliminación física (soft delete)
