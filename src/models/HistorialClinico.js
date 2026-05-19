@@ -786,6 +786,11 @@ historialClinicoSchema.pre('save', async function() {
 // ==============================
 // Llenar firmaDoctor automáticamente si está vacío
 historialClinicoSchema.pre('save', async function(next) {
+  // Verificar si hay consultas antes de iterar
+  if (!this.consultas || !Array.isArray(this.consultas) || this.consultas.length === 0) {
+    return next();
+  }
+
   // Iterar sobre todas las consultas
   for (const consulta of this.consultas) {
     // Si la consulta tiene doctor y tratamientos
