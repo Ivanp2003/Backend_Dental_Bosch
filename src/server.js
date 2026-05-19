@@ -510,6 +510,8 @@ app.get('/', (req, res) => {
 
         porId: 'GET /api/pacientes/:id',
 
+        porCedula: 'GET /api/pacientes/cedula/:cedula',
+
         perfil: 'GET /api/pacientes/perfil/paciente',
 
         actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',

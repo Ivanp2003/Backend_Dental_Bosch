@@ -5,6 +5,7 @@ const {
   registrarPaciente,
   listarPacientes,
   obtenerPacientePorId,
+  obtenerPacientePorCedula,
   actualizarPaciente,
   eliminarPaciente,
   obtenerPerfilPaciente,
@@ -24,6 +25,9 @@ router.get('/doctores/horarios', obtenerHorariosDoctores);
 
 // Búsqueda avanzada de pacientes
 router.get('/buscar', buscarPacientes);
+
+// Obtener paciente por cédula
+router.get('/cedula/:cedula', obtenerPacientePorCedula);
 
 // Obtener paciente por ID (público)
 router.get('/:id', obtenerPacientePorId);

@@ -252,6 +252,59 @@ const obtenerPacientePorId = async (req, res) => {
   }
 };
 
+// ✅ FILTRAR PACIENTE POR CÉDULA
+const obtenerPacientePorCedula = async (req, res) => {
+  try {
+    console.log('🔍 Buscando paciente por cédula:', req.params.cedula);
+
+    const { cedula } = req.params;
+    const cedulaLimpia = String(cedula || '').replace(/[^0-9]/g, '');
+
+    if (!cedulaLimpia || cedulaLimpia.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'La cédula debe tener exactamente 10 dígitos numéricos'
+      });
+    }
+
+    const usuario = await Usuario.findOne({
+      cedula: cedulaLimpia,
+      rol: 'paciente'
+    }).select('_id nombre apellido email telefono cedula foto');
+
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'No se encontró un paciente con esa cédula'
+      });
+    }
+
+    const paciente = await Paciente.findOne({ usuario: usuario._id })
+      .populate('usuario', 'nombre apellido email telefono cedula foto')
+      .populate('doctorAsignado', 'nombre apellido especialidad telefono email');
+
+    if (!paciente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'No se encontró un perfil de paciente asociado a esa cédula'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Paciente encontrado exitosamente',
+      datos: paciente
+    });
+  } catch (error) {
+    console.error('❌ Error en obtenerPacientePorCedula:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 // ✅ ACTUALIZAR INFORMACIÓN DEL PACIENTE (PARA ADMIN/DOCTOR)
 const actualizarPaciente = async (req, res) => {
   try {
@@ -817,6 +870,7 @@ module.exports = {
   registrarPaciente,
   listarPacientes,
   obtenerPacientePorId,
+  obtenerPacientePorCedula,
   actualizarPaciente,
   eliminarPaciente,
   obtenerPerfilPaciente,
