@@ -1,6 +1,7 @@
 /**
  * Utilidades para manejo de odontogramas
  * Sistema de nomenclatura FDI (ISO 3950)
+ * Caras: M=Mesial, D=Distal, O=Oclusal/Incisal, V=Vestibular, L=Lingual, P=Palatina
  */
 
 /**
@@ -17,13 +18,14 @@ function generarOdontogramaInicial(tipoDenticion = 'permanente') {
       for (let posicion = 1; posicion <= 8; posicion++) {
         dientes.push({
           codigoFDI: `${cuadrante}${posicion}`,
-          estadoGeneral: 'sano',
+          estadoGeneral: 'SANO',
           superficies: {
-            vestibular: { estado: 'sano', observacion: '' },
-            palatina: { estado: 'sano', observacion: '' },
-            oclusal: { estado: 'sano', observacion: '' },
-            mesial: { estado: 'sano', observacion: '' },
-            distal: { estado: 'sano', observacion: '' }
+            M: { estado: 'SANO', observacion: '' },
+            D: { estado: 'SANO', observacion: '' },
+            O: { estado: 'SANO', observacion: '' },
+            V: { estado: 'SANO', observacion: '' },
+            L: { estado: 'SANO', observacion: '' },
+            P: { estado: 'SANO', observacion: '' }
           },
           movilidad: null,
           tratamientosPendientes: [],
@@ -39,13 +41,14 @@ function generarOdontogramaInicial(tipoDenticion = 'permanente') {
       for (let posicion = 1; posicion <= 5; posicion++) {
         dientes.push({
           codigoFDI: `${cuadrante}${posicion}`,
-          estadoGeneral: 'sano',
+          estadoGeneral: 'SANO',
           superficies: {
-            vestibular: { estado: 'sano', observacion: '' },
-            palatina: { estado: 'sano', observacion: '' },
-            oclusal: { estado: 'sano', observacion: '' },
-            mesial: { estado: 'sano', observacion: '' },
-            distal: { estado: 'sano', observacion: '' }
+            M: { estado: 'SANO', observacion: '' },
+            D: { estado: 'SANO', observacion: '' },
+            O: { estado: 'SANO', observacion: '' },
+            V: { estado: 'SANO', observacion: '' },
+            L: { estado: 'SANO', observacion: '' },
+            P: { estado: 'SANO', observacion: '' }
           },
           movilidad: null,
           tratamientosPendientes: [],
@@ -148,8 +151,110 @@ function obtenerNombreDiente(codigoFDI) {
   return `${nombre} ${ubicaciones[cuadrante] || ''} (${codigoFDI})`;
 }
 
+/**
+ * Valida que un estado clínico sea válido
+ * @param {String} estado - Estado a validar
+ * @returns {Boolean} true si es válido
+ */
+function validarEstadoClinico(estado) {
+  const estadosValidos = [
+    'SANO',
+    'CARIES',
+    'OBTURADO',
+    'SELLANTE_NECESARIO',
+    'SELLANTE_REALIZADO',
+    'EXTRACCION_INDICADA',
+    'PERDIDA_POR_CARIES',
+    'PERDIDA_OTRA_CAUSA',
+    'ENDODONCIA',
+    'CORONA',
+    'PROTESIS_FIJA',
+    'PROTESIS_REMOVIBLE',
+    'PROTESIS_TOTAL'
+  ];
+  return estadosValidos.includes(estado);
+}
+
+/**
+ * Valida que una cara sea válida
+ * @param {String} cara - Cara a validar (M, D, O, V, L, P)
+ * @returns {Boolean} true si es válida
+ */
+function validarCara(cara) {
+  const carasValidas = ['M', 'D', 'O', 'V', 'L', 'P'];
+  return carasValidas.includes(cara);
+}
+
+/**
+ * Valida compatibilidad entre estados (previene estados incompatibles)
+ * @param {String} estadoActual - Estado actual del diente
+ * @param {String} nuevoEstado - Nuevo estado a asignar
+ * @returns {Object} { valido: Boolean, mensaje: String }
+ */
+function validarCompatibilidadEstados(estadoActual, nuevoEstado) {
+  // Si es el mismo estado, es válido
+  if (estadoActual === nuevoEstado) {
+    return { valido: true, mensaje: '' };
+  }
+
+  // PROHIBIDO: CARIES + OBTURADO en misma cara
+  if (estadoActual === 'CARIES' && nuevoEstado === 'OBTURADO') {
+    return { valido: true, mensaje: '' }; // Es válido, caries puede ser obturada
+  }
+  if (estadoActual === 'OBTURADO' && nuevoEstado === 'CARIES') {
+    return { valido: false, mensaje: 'PROHIBIDO: Un diente obturado no puede tener caries en la misma cara' };
+  }
+
+  // PROHIBIDO: PIEZA_PERDIDA + CARIES
+  if ((estadoActual === 'PERDIDA_POR_CARIES' || estadoActual === 'PERDIDA_OTRA_CAUSA') && nuevoEstado === 'CARIES') {
+    return { valido: false, mensaje: 'PROHIBIDO: Una pieza perdida no puede tener caries' };
+  }
+  if (estadoActual === 'CARIES' && (nuevoEstado === 'PERDIDA_POR_CARIES' || nuevoEstado === 'PERDIDA_OTRA_CAUSA')) {
+    return { valido: true, mensaje: '' }; // Es válido, caries puede llevar a pérdida
+  }
+
+  // PROHIBIDO: PROTESIS_TOTAL + pieza existente
+  if (estadoActual === 'PROTESIS_TOTAL' && nuevoEstado !== 'SANO' && nuevoEstado !== 'PROTESIS_TOTAL') {
+    return { valido: false, mensaje: 'PROHIBIDO: Una prótesis total no puede tener otros estados' };
+  }
+  if (nuevoEstado === 'PROTESIS_TOTAL' && estadoActual !== 'SANO' && estadoActual !== 'PERDIDA_POR_CARIES' && estadoActual !== 'PERDIDA_OTRA_CAUSA') {
+    return { valido: false, mensaje: 'PROHIBIDO: Solo se puede colocar prótesis total en piezas sanas o perdidas' };
+  }
+
+  // PROHIBIDO: EXTRACCION_INDICADA + PERDIDA
+  if ((estadoActual === 'EXTRACCION_INDICADA' && (nuevoEstado === 'PERDIDA_POR_CARIES' || nuevoEstado === 'PERDIDA_OTRA_CAUSA')) ||
+      ((estadoActual === 'PERDIDA_POR_CARIES' || estadoActual === 'PERDIDA_OTRA_CAUSA') && nuevoEstado === 'EXTRACCION_INDICADA')) {
+    return { valido: false, mensaje: 'PROHIBIDO: Una pieza no puede estar indicada para extracción y estar perdida simultáneamente' };
+  }
+
+  // PROHIBIDO: SANO + cualquier patología
+  if (estadoActual === 'SANO' && nuevoEstado === 'SANO') {
+    return { valido: true, mensaje: '' };
+  }
+  if (nuevoEstado === 'SANO' && estadoActual !== 'SANO') {
+    return { valido: false, mensaje: 'PROHIBIDO: No se puede cambiar un estado patológico a SANO sin tratamiento' };
+  }
+
+  // Por defecto, permitir el cambio
+  return { valido: true, mensaje: '' };
+}
+
+/**
+ * Valida que un estado de superficie sea válido
+ * @param {String} estadoSuperficie - Estado de superficie
+ * @returns {Boolean} true si es válido
+ */
+function validarEstadoSuperficie(estadoSuperficie) {
+  const estadosValidos = ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'];
+  return estadosValidos.includes(estadoSuperficie);
+}
+
 module.exports = {
   generarOdontogramaInicial,
   validarCodigoFDI,
-  obtenerNombreDiente
+  obtenerNombreDiente,
+  validarEstadoClinico,
+  validarCara,
+  validarCompatibilidadEstados,
+  validarEstadoSuperficie
 };

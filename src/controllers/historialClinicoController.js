@@ -802,7 +802,7 @@ function validarCIE10(codigo) {
 // ODONTOGRAMA - FUNCIONES ESPECÍFICAS
 // ==============================
 
-const { generarOdontogramaInicial, validarCodigoFDI, obtenerNombreDiente } = require('../utils/odontogramaUtils');
+const { generarOdontogramaInicial, validarCodigoFDI, obtenerNombreDiente, validarEstadoClinico, validarCara, validarCompatibilidadEstados, validarEstadoSuperficie } = require('../utils/odontogramaUtils');
 
 /**
  * Inicializar odontograma en una consulta existente
@@ -918,17 +918,67 @@ const actualizarDienteOdontograma = async (req, res) => {
       });
     }
 
-    // Actualizar campos permitidos
-    if (datosActualizacion.estadoGeneral) diente.estadoGeneral = datosActualizacion.estadoGeneral;
+    // ==============================
+    // VALIDACIÓN DE ESTADO GENERAL
+    // ==============================
+    if (datosActualizacion.estadoGeneral) {
+      if (!validarEstadoClinico(datosActualizacion.estadoGeneral)) {
+        return res.status(400).json({
+          success: false,
+          mensaje: `Estado clínico inválido: ${datosActualizacion.estadoGeneral}`
+        });
+      }
+
+      // Validar compatibilidad de estados
+      const compatibilidad = validarCompatibilidadEstados(diente.estadoGeneral, datosActualizacion.estadoGeneral);
+      if (!compatibilidad.valido) {
+        return res.status(400).json({
+          success: false,
+          mensaje: compatibilidad.mensaje
+        });
+      }
+
+      diente.estadoGeneral = datosActualizacion.estadoGeneral;
+    }
     
+    // ==============================
+    // VALIDACIÓN DE SUPERFICIES
+    // ==============================
     if (datosActualizacion.superficies) {
-      Object.keys(datosActualizacion.superficies).forEach(superficie => {
-        if (diente.superficies[superficie]) {
-          if (datosActualizacion.superficies[superficie].estado) {
-            diente.superficies[superficie].estado = datosActualizacion.superficies[superficie].estado;
+      Object.keys(datosActualizacion.superficies).forEach(cara => {
+        // Validar que la cara sea válida
+        if (!validarCara(cara)) {
+          return res.status(400).json({
+            success: false,
+            mensaje: `Cara inválida: ${cara}. Caras válidas: M, D, O, V, L, P`
+          });
+        }
+
+        if (diente.superficies[cara]) {
+          // Validar estado de superficie
+          if (datosActualizacion.superficies[cara].estado) {
+            if (!validarEstadoSuperficie(datosActualizacion.superficies[cara].estado)) {
+              return res.status(400).json({
+                success: false,
+                mensaje: `Estado de superficie inválido para cara ${cara}: ${datosActualizacion.superficies[cara].estado}`
+              });
+            }
+
+            // Validar compatibilidad: CARIES + OBTURADO en misma cara
+            const estadoActual = diente.superficies[cara].estado;
+            const nuevoEstado = datosActualizacion.superficies[cara].estado;
+            
+            if (estadoActual === 'OBTURADO' && nuevoEstado === 'CARIES') {
+              return res.status(400).json({
+                success: false,
+                mensaje: `PROHIBIDO: La cara ${cara} ya está obturada, no puede tener caries`
+              });
+            }
+
+            diente.superficies[cara].estado = nuevoEstado;
           }
-          if (datosActualizacion.superficies[superficie].observacion !== undefined) {
-            diente.superficies[superficie].observacion = datosActualizacion.superficies[superficie].observacion;
+          if (datosActualizacion.superficies[cara].observacion !== undefined) {
+            diente.superficies[cara].observacion = datosActualizacion.superficies[cara].observacion;
           }
         }
       });

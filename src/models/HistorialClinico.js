@@ -344,6 +344,8 @@ const historialClinicoSchema = new mongoose.Schema({
     // 6. ODONTOGRAMA (Skill 8)
     // ==============================
     // Odontograma completo pero OPCIONAL (puede ser null)
+    // Estados clínicos según estándares profesionales
+    // Caras: M=Mesial, D=Distal, O=Oclusal/Incisal, V=Vestibular, L=Lingual, P=Palatina
     odontograma: {
       fechaActualizacion: {
         type: Date,
@@ -369,58 +371,74 @@ const historialClinicoSchema = new mongoose.Schema({
         estadoGeneral: {
           type: String,
           enum: [
-            'sano',
-            'cariado',
-            'obturado',
-            'coronado',
-            'endodonciado',
-            'ausente',
-            'implante',
-            'protesis',
-            'resto_radicular',
-            'fracturado',
-            'en_erupcion'
+            'SANO',
+            'CARIES',
+            'OBTURADO',
+            'SELLANTE_NECESARIO',
+            'SELLANTE_REALIZADO',
+            'EXTRACCION_INDICADA',
+            'PERDIDA_POR_CARIES',
+            'PERDIDA_OTRA_CAUSA',
+            'ENDODONCIA',
+            'CORONA',
+            'PROTESIS_FIJA',
+            'PROTESIS_REMOVIBLE',
+            'PROTESIS_TOTAL'
           ],
-          default: 'sano'
+          default: 'SANO'
         },
         superficies: {
-          vestibular: {
+          // M = Mesial
+          M: {
             estado: {
               type: String,
-              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'mancha'],
-              default: 'sano'
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
           },
-          palatina: {
+          // D = Distal
+          D: {
             estado: {
               type: String,
-              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'mancha'],
-              default: 'sano'
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
           },
-          oclusal: {
+          // O = Oclusal/Incisal
+          O: {
             estado: {
               type: String,
-              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'sellante'],
-              default: 'sano'
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
           },
-          mesial: {
+          // V = Vestibular
+          V: {
             estado: {
               type: String,
-              enum: ['sano', 'caries', 'obturado', 'fractura', 'contacto_defectuoso'],
-              default: 'sano'
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
           },
-          distal: {
+          // L = Lingual
+          L: {
             estado: {
               type: String,
-              enum: ['sano', 'caries', 'obturado', 'fractura', 'contacto_defectuoso'],
-              default: 'sano'
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          },
+          // P = Palatina
+          P: {
+            estado: {
+              type: String,
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
           }
