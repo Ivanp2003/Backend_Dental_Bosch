@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protegerRuta, autorizarRoles } = require('../middlewares/authMiddleware');
+const citasController = require('../controllers/citasController');
 const {
   obtenerPerfil,
   actualizarPerfil,
@@ -74,6 +75,11 @@ router.get('/mis-citas', autorizarRoles('doctor'), obtenerMisCitas);
 // PUT /api/doctores/citas/:id/estado
 // Body: { estado: "finalizada|cancelada", motivoCancelacion: "si se cancela", notas: "si se finaliza" }
 router.put('/citas/:id/estado', autorizarRoles('doctor'), cambiarEstadoCita);
+
+// Crear cita (doctor)
+// POST /api/doctores/citas
+// Body: { doctor, paciente, fecha, horaInicio, horaFin, motivo, creadoPor }
+router.post('/citas', autorizarRoles('doctor'), citasController.crearCita);
 
 // ========== RUTAS DE ADMINISTRADOR ==========
 
