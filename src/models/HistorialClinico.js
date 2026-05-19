@@ -343,16 +343,116 @@ const historialClinicoSchema = new mongoose.Schema({
     // ==============================
     // 6. ODONTOGRAMA (Skill 8)
     // ==============================
-    // PENDIENTE - Solo dejar estructura para futuro
+    // Odontograma completo pero OPCIONAL (puede ser null)
     odontograma: {
-      pendiente: {
-        type: Boolean,
-        default: true
-      },
-      data: {
-        type: mongoose.Schema.Types.Mixed,
+      fechaActualizacion: {
+        type: Date,
         default: null
-      }
+      },
+      tipoDenticion: {
+        type: String,
+        enum: ['permanente', 'temporal', 'mixta'],
+        default: null
+      },
+      observaciones: {
+        type: String,
+        trim: true,
+        maxlength: [1000, 'Las observaciones no pueden exceder 1000 caracteres'],
+        default: null
+      },
+      dientes: [{
+        codigoFDI: {
+          type: String,
+          required: true,
+          match: [/^[1-8][1-8]$/, 'Código FDI inválido']
+        },
+        estadoGeneral: {
+          type: String,
+          enum: [
+            'sano',
+            'cariado',
+            'obturado',
+            'coronado',
+            'endodonciado',
+            'ausente',
+            'implante',
+            'protesis',
+            'resto_radicular',
+            'fracturado',
+            'en_erupcion'
+          ],
+          default: 'sano'
+        },
+        superficies: {
+          vestibular: {
+            estado: {
+              type: String,
+              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'mancha'],
+              default: 'sano'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          },
+          palatina: {
+            estado: {
+              type: String,
+              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'mancha'],
+              default: 'sano'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          },
+          oclusal: {
+            estado: {
+              type: String,
+              enum: ['sano', 'caries', 'obturado', 'fractura', 'desgaste', 'sellante'],
+              default: 'sano'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          },
+          mesial: {
+            estado: {
+              type: String,
+              enum: ['sano', 'caries', 'obturado', 'fractura', 'contacto_defectuoso'],
+              default: 'sano'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          },
+          distal: {
+            estado: {
+              type: String,
+              enum: ['sano', 'caries', 'obturado', 'fractura', 'contacto_defectuoso'],
+              default: 'sano'
+            },
+            observacion: { type: String, trim: true, maxlength: 200, default: '' }
+          }
+        },
+        movilidad: {
+          type: String,
+          enum: [null, 'grado_I', 'grado_II', 'grado_III'],
+          default: null
+        },
+        tratamientosPendientes: [{
+          tipo: {
+            type: String,
+            enum: ['extraccion', 'endodoncia', 'obturacion', 'corona', 'limpieza', 'cirugia', 'otro']
+          },
+          prioridad: {
+            type: String,
+            enum: ['alta', 'media', 'baja'],
+            default: 'media'
+          },
+          descripcion: {
+            type: String,
+            trim: true,
+            maxlength: 300
+          }
+        }],
+        observaciones: {
+          type: String,
+          trim: true,
+          maxlength: 500,
+          default: ''
+        }
+      }]
     },
     
     // ==============================

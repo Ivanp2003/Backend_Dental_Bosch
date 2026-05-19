@@ -798,6 +798,268 @@ function validarCIE10(codigo) {
   return regex.test(codigo.toUpperCase());
 }
 
+// ==============================
+// ODONTOGRAMA - FUNCIONES ESPECÍFICAS
+// ==============================
+
+const { generarOdontogramaInicial, validarCodigoFDI, obtenerNombreDiente } = require('../utils/odontogramaUtils');
+
+/**
+ * Inicializar odontograma en una consulta existente
+ * POST /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/inicializar
+ * Roles: doctor, admin
+ */
+const inicializarOdontograma = async (req, res) => {
+  try {
+    const { pacienteId, consultaId } = req.params;
+    const { tipoDenticion } = req.body;
+
+    // Validar tipo de dentición
+    if (!tipoDenticion || !['permanente', 'temporal', 'mixta'].includes(tipoDenticion)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Tipo de dentición inválido. Debe ser: permanente, temporal o mixta'
+      });
+    }
+
+    // Buscar el historial y la consulta
+    const historial = await HistorialClinico.findOne({
+      paciente: pacienteId,
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    const consulta = historial.consultas.id(consultaId);
+
+    // Verificar si ya tiene odontograma con dientes
+    if (consulta.odontograma && consulta.odontograma.dientes && consulta.odontograma.dientes.length > 0) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Esta consulta ya tiene un odontograma inicializado'
+      });
+    }
+
+    // Generar odontograma inicial
+    consulta.odontograma = generarOdontogramaInicial(tipoDenticion);
+    await historial.save();
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Odontograma inicializado correctamente',
+      odontograma: consulta.odontograma
+    });
+
+  } catch (error) {
+    console.error('Error en inicializarOdontograma:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al inicializar el odontograma',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Actualizar un diente específico del odontograma
+ * PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/diente/:codigoFDI
+ * Roles: doctor, admin
+ */
+const actualizarDienteOdontograma = async (req, res) => {
+  try {
+    const { pacienteId, consultaId, codigoFDI } = req.params;
+    const datosActualizacion = req.body;
+
+    // Buscar historial y consulta
+    const historial = await HistorialClinico.findOne({
+      paciente: pacienteId,
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    const consulta = historial.consultas.id(consultaId);
+
+    // Verificar que el odontograma esté inicializado
+    if (!consulta.odontograma || !consulta.odontograma.dientes || consulta.odontograma.dientes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Odontograma no inicializado. Debe inicializarlo primero.'
+      });
+    }
+
+    // Validar código FDI
+    if (!validarCodigoFDI(codigoFDI, consulta.odontograma.tipoDenticion)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: `Código FDI ${codigoFDI} inválido para dentición ${consulta.odontograma.tipoDenticion}`
+      });
+    }
+
+    // Buscar el diente en el array
+    const diente = consulta.odontograma.dientes.find(d => d.codigoFDI === codigoFDI);
+
+    if (!diente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: `Diente ${codigoFDI} no encontrado en el odontograma`
+      });
+    }
+
+    // Actualizar campos permitidos
+    if (datosActualizacion.estadoGeneral) diente.estadoGeneral = datosActualizacion.estadoGeneral;
+    
+    if (datosActualizacion.superficies) {
+      Object.keys(datosActualizacion.superficies).forEach(superficie => {
+        if (diente.superficies[superficie]) {
+          if (datosActualizacion.superficies[superficie].estado) {
+            diente.superficies[superficie].estado = datosActualizacion.superficies[superficie].estado;
+          }
+          if (datosActualizacion.superficies[superficie].observacion !== undefined) {
+            diente.superficies[superficie].observacion = datosActualizacion.superficies[superficie].observacion;
+          }
+        }
+      });
+    }
+    
+    if (datosActualizacion.movilidad !== undefined) diente.movilidad = datosActualizacion.movilidad;
+    if (datosActualizacion.tratamientosPendientes) diente.tratamientosPendientes = datosActualizacion.tratamientosPendientes;
+    if (datosActualizacion.observaciones !== undefined) diente.observaciones = datosActualizacion.observaciones;
+
+    // Actualizar fecha de modificación del odontograma
+    consulta.odontograma.fechaActualizacion = new Date();
+
+    await historial.save();
+
+    res.status(200).json({
+      success: true,
+      mensaje: `Diente ${obtenerNombreDiente(codigoFDI)} actualizado correctamente`,
+      diente
+    });
+
+  } catch (error) {
+    console.error('Error en actualizarDienteOdontograma:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar el diente',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Obtener odontograma completo de una consulta
+ * GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma
+ * Roles: doctor, admin, paciente
+ */
+const obtenerOdontograma = async (req, res) => {
+  try {
+    const { pacienteId, consultaId } = req.params;
+
+    const historial = await HistorialClinico.findOne({
+      paciente: pacienteId,
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    const consulta = historial.consultas.id(consultaId);
+
+    // Retornar odontograma si existe, o null si no está inicializado
+    if (!consulta.odontograma || !consulta.odontograma.dientes || consulta.odontograma.dientes.length === 0) {
+      return res.status(200).json({
+        success: true,
+        odontograma: null,
+        mensaje: 'Odontograma no inicializado para esta consulta'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      odontograma: consulta.odontograma
+    });
+
+  } catch (error) {
+    console.error('Error en obtenerOdontograma:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al obtener el odontograma',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Actualizar observaciones generales del odontograma
+ * PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/observaciones
+ * Roles: doctor, admin
+ */
+const actualizarObservacionesOdontograma = async (req, res) => {
+  try {
+    const { pacienteId, consultaId } = req.params;
+    const { observaciones } = req.body;
+
+    const historial = await HistorialClinico.findOne({
+      paciente: pacienteId,
+      activo: true,
+      'consultas._id': consultaId
+    });
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada'
+      });
+    }
+
+    const consulta = historial.consultas.id(consultaId);
+
+    if (!consulta.odontograma || !consulta.odontograma.dientes || consulta.odontograma.dientes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Odontograma no inicializado'
+      });
+    }
+
+    consulta.odontograma.observaciones = observaciones || '';
+    consulta.odontograma.fechaActualizacion = new Date();
+
+    await historial.save();
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Observaciones actualizadas correctamente',
+      observaciones: consulta.odontograma.observaciones
+    });
+
+  } catch (error) {
+    console.error('Error en actualizarObservacionesOdontograma:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar observaciones',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   crearHistorialClinico,
   agregarConsulta,
@@ -806,5 +1068,10 @@ module.exports = {
   actualizarConsulta,
   eliminarConsulta,
   eliminarHistorial,
-  obtenerEstadisticasHistorial
+  obtenerEstadisticasHistorial,
+  // Nuevas funciones de odontograma
+  inicializarOdontograma,
+  actualizarDienteOdontograma,
+  obtenerOdontograma,
+  actualizarObservacionesOdontograma
 };

@@ -73,6 +73,49 @@ router.delete('/:pacienteId/consulta/:consultaId',
   historialClinicoController.eliminarConsulta
 );
 
+// ==============================
+// 🦷 ODONTOGRAMA (OPCIONAL)
+// ==============================
+
+// Inicializar odontograma en una consulta
+// POST /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/inicializar
+// Roles: doctor, admin
+router.post('/:pacienteId/consulta/:consultaId/odontograma/inicializar',
+  autorizarRoles('doctor', 'admin'),
+  historialClinicoController.inicializarOdontograma
+);
+
+// Obtener odontograma completo de una consulta
+// GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma
+// Roles: doctor, admin, paciente
+router.get('/:pacienteId/consulta/:consultaId/odontograma',
+  (req, res, next) => {
+    // Si es paciente, solo puede ver sus propios odontogramas
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('doctor', 'admin', 'paciente'),
+  historialClinicoController.obtenerOdontograma
+);
+
+// Actualizar un diente específico del odontograma
+// PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/diente/:codigoFDI
+// Roles: doctor, admin
+router.put('/:pacienteId/consulta/:consultaId/odontograma/diente/:codigoFDI',
+  autorizarRoles('doctor', 'admin'),
+  historialClinicoController.actualizarDienteOdontograma
+);
+
+// Actualizar observaciones generales del odontograma
+// PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/observaciones
+// Roles: doctor, admin
+router.put('/:pacienteId/consulta/:consultaId/odontograma/observaciones',
+  autorizarRoles('doctor', 'admin'),
+  historialClinicoController.actualizarObservacionesOdontograma
+);
+
 // 📄 Obtener historial completo de paciente
 // GET /api/historial-clinico/:pacienteId
 // Roles: admin, doctor, paciente (solo su propio historial)
