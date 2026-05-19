@@ -698,7 +698,7 @@ const historialClinicoSchema = new mongoose.Schema({
   timestamps: true,
   versionKey: false,
   toJSON: { virtuals: false },
-  toObject: { virtuals: true }
+  toObject: { virtuals: false }
 });
 
 // ==============================
