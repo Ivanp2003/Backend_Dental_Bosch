@@ -9,8 +9,24 @@ const crearCita = async (req, res) => {
   try {
     console.log('📅 Creando nueva cita');
     
-    const { paciente, doctor, fecha, horaInicio, horaFin, motivo } = req.body;
-    
+    let { paciente, doctor, fecha, horaInicio, horaFin, motivo } = req.body;
+
+    // Si el usuario es doctor, auto-asignar su propio ID de doctor
+    let doctorAutenticado = null;
+    if (req.usuario.rol === 'doctor') {
+      doctorAutenticado = await Doctor.findOne({ usuario: req.usuario.id });
+      if (!doctorAutenticado) {
+        return res.status(404).json({
+          success: false,
+          mensaje: 'Perfil de doctor no encontrado'
+        });
+      }
+      // Si no se envió doctor en el body, usar el del doctor autenticado
+      if (!doctor) {
+        doctor = doctorAutenticado._id.toString();
+      }
+    }
+
     // Validaciones básicas
     const camposRequeridos = ['doctor', 'fecha', 'horaInicio', 'horaFin', 'motivo'];
     if (req.usuario.rol !== 'paciente') {
@@ -59,13 +75,13 @@ const crearCita = async (req, res) => {
       pacienteId = pacienteData._id.toString();
     }
     
-    // Si es doctor, validar que pueda crear la cita
+    // Si es doctor, validar que pueda crear la cita (solo para sí mismo)
     if (req.usuario.rol === 'doctor') {
-      const doctorData = await Doctor.findOne({ usuario: req.usuario.id });
-      if (!doctorData || doctorData._id.toString() !== doctor) {
+      if (doctorAutenticado._id.toString() !== doctor.toString()) {
+        console.log('❌ Doctor autenticado:', doctorAutenticado._id.toString(), 'vs doctor del body:', doctor);
         return res.status(403).json({
           success: false,
-          mensaje: 'Acción no autorizada'
+          mensaje: 'Un doctor solo puede crear citas para sí mismo'
         });
       }
     }
