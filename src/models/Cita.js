@@ -114,6 +114,7 @@ citaSchema.index(
 
 // Virtuals
 citaSchema.virtual('duracion').get(function() {
+  if (!this.horaInicio || !this.horaFin) return null;
   const inicio = this.horaInicio.split(':');
   const fin = this.horaFin.split(':');
   const inicioMinutos = parseInt(inicio[0]) * 60 + parseInt(inicio[1]);
@@ -122,6 +123,7 @@ citaSchema.virtual('duracion').get(function() {
 });
 
 citaSchema.virtual('fechaHoraInicio').get(function() {
+  if (!this.horaInicio || !this.fecha) return null;
   const fecha = new Date(this.fecha);
   const [hora, minuto] = this.horaInicio.split(':');
   fecha.setHours(parseInt(hora), parseInt(minuto), 0, 0);
@@ -129,6 +131,7 @@ citaSchema.virtual('fechaHoraInicio').get(function() {
 });
 
 citaSchema.virtual('fechaHoraFin').get(function() {
+  if (!this.horaFin || !this.fecha) return null;
   const fecha = new Date(this.fecha);
   const [hora, minuto] = this.horaFin.split(':');
   fecha.setHours(parseInt(hora), parseInt(minuto), 0, 0);
