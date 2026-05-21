@@ -25,4 +25,19 @@ router.get('/paciente/:pacienteId',
   historialClinicoController.obtenerTratamientosPaciente
 );
 
+// 💊 Obtener tratamiento específico a detalle
+// GET /api/tratamientos/paciente/:pacienteId/consulta/:consultaId/sesion/:sesion
+// Roles: admin, doctor, paciente (solo sus propios tratamientos)
+router.get('/paciente/:pacienteId/consulta/:consultaId/sesion/:sesion',
+  (req, res, next) => {
+    // Si es paciente, solo puede ver sus propios tratamientos
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('admin', 'doctor', 'paciente'),
+  historialClinicoController.obtenerTratamientoDetalle
+);
+
 module.exports = router;

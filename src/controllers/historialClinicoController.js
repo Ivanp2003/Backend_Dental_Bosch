@@ -1122,6 +1122,112 @@ const obtenerOdontograma = async (req, res) => {
 };
 
 /**
+ * Obtener tratamiento específico a detalle
+ * GET /api/tratamientos/paciente/:pacienteId/consulta/:consultaId/sesion/:sesion
+ * Roles: admin, doctor, paciente (solo sus propios tratamientos)
+ */
+const obtenerTratamientoDetalle = async (req, res) => {
+  try {
+    console.log('💊 Obteniendo tratamiento detalle:', req.params);
+    
+    const { pacienteId, consultaId, sesion } = req.params;
+
+    // Validar IDs
+    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(consultaId)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'IDs inválidos'
+      });
+    }
+
+    const sesionNumero = parseInt(sesion);
+    if (isNaN(sesionNumero) || sesionNumero < 1) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Número de sesión inválido'
+      });
+    }
+
+    // Obtener historial con la consulta específica
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true,
+      'consultas._id': consultaId
+    })
+    .populate('consultas.doctor', 'usuario especialidad')
+    .populate('consultas.doctor.usuario', 'nombre apellido email telefono')
+    .populate('paciente', 'usuario')
+    .populate('paciente.usuario', 'nombre apellido cedula');
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Historial clínico o consulta no encontrada'
+      });
+    }
+
+    const consulta = historial.consultas.id(consultaId);
+
+    if (!consulta) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada'
+      });
+    }
+
+    // Buscar el tratamiento específico por número de sesión
+    const tratamiento = consulta.tratamientos?.find(t => t.sesion === sesionNumero);
+
+    if (!tratamiento) {
+      return res.status(404).json({
+        success: false,
+        mensaje: `Tratamiento con sesión ${sesionNumero} no encontrado en esta consulta`
+      });
+    }
+
+    // Construir respuesta detallada
+    const tratamientoDetalle = {
+      ...tratamiento.toObject(),
+      consulta: {
+        id: consulta._id,
+        fecha: consulta.fecha,
+        motivoConsulta: consulta.motivoConsulta,
+        diagnosticos: consulta.diagnosticos
+      },
+      doctor: consulta.doctor ? {
+        id: consulta.doctor._id,
+        nombre: consulta.doctor.usuario ? 
+          `${consulta.doctor.usuario.nombre} ${consulta.doctor.usuario.apellido}` : 
+          'No disponible',
+        especialidad: consulta.doctor.especialidad,
+        email: consulta.doctor.usuario?.email,
+        telefono: consulta.doctor.usuario?.telefono
+      } : null,
+      paciente: historial.paciente ? {
+        id: historial.paciente._id,
+        nombre: historial.paciente.usuario ? 
+          `${historial.paciente.usuario.nombre} ${historial.paciente.usuario.apellido}` : 
+          'No disponible',
+        cedula: historial.paciente.usuario?.cedula
+      } : null
+    };
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Tratamiento obtenido exitosamente',
+      datos: tratamientoDetalle
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerTratamientoDetalle:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
+/**
  * Obtener tratamientos de un paciente
  * GET /api/historial-clinico/:pacienteId/tratamientos
  * Roles: admin, doctor, paciente (solo sus propios tratamientos)
@@ -1277,6 +1383,7 @@ module.exports = {
   eliminarHistorial,
   obtenerEstadisticasHistorial,
   obtenerTratamientosPaciente,
+  obtenerTratamientoDetalle,
   // Nuevas funciones de odontograma
   inicializarOdontograma,
   actualizarDienteOdontograma,
