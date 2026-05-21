@@ -741,7 +741,11 @@ historialClinicoSchema.statics.buscarPorPaciente = function(pacienteId) {
     .populate('paciente.usuario', 'nombre apellido email')
     .populate('consultas.doctor', 'usuario especialidad')
     .populate('consultas.doctor.usuario', 'nombre apellido')
-    .populate('consultas.cita', 'motivo fecha estado')
+    .populate({
+      path: 'consultas.cita',
+      select: 'motivo fecha estado',
+      model: 'Cita'
+    })
     .sort({ 'consultas.fecha': -1 });
 };
 

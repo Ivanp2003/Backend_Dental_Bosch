@@ -1122,6 +1122,83 @@ const obtenerOdontograma = async (req, res) => {
 };
 
 /**
+ * Obtener tratamientos de un paciente
+ * GET /api/historial-clinico/:pacienteId/tratamientos
+ * Roles: admin, doctor, paciente (solo sus propios tratamientos)
+ */
+const obtenerTratamientosPaciente = async (req, res) => {
+  try {
+    console.log('💊 Obteniendo tratamientos del paciente:', req.params.pacienteId);
+    
+    const { pacienteId } = req.params;
+
+    // Validar ID de paciente
+    if (!mongoose.Types.ObjectId.isValid(pacienteId)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de paciente inválido'
+      });
+    }
+
+    // Obtener historial con todos los tratamientos de todas las consultas
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true 
+    })
+    .populate('consultas.doctor', 'usuario especialidad')
+    .populate('consultas.doctor.usuario', 'nombre apellido');
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Historial clínico no encontrado'
+      });
+    }
+
+    // Extraer todos los tratamientos de todas las consultas
+    const todosLosTratamientos = [];
+    
+    historial.consultas.forEach(consulta => {
+      if (consulta.tratamientos && Array.isArray(consulta.tratamientos)) {
+        consulta.tratamientos.forEach(tratamiento => {
+          todosLosTratamientos.push({
+            ...tratamiento.toObject(),
+            consultaId: consulta._id,
+            fechaConsulta: consulta.fecha,
+            doctor: consulta.doctor ? {
+              id: consulta.doctor._id,
+              nombre: consulta.doctor.usuario ? 
+                `${consulta.doctor.usuario.nombre} ${consulta.doctor.usuario.apellido}` : 
+                'No disponible',
+              especialidad: consulta.doctor.especialidad
+            } : null
+          });
+        });
+      }
+    });
+
+    // Ordenar por fecha de tratamiento (más reciente primero)
+    todosLosTratamientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Tratamientos obtenidos exitosamente',
+      datos: {
+        tratamientos: todosLosTratamientos,
+        total: todosLosTratamientos.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerTratamientosPaciente:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
+/**
  * Actualizar observaciones generales del odontograma
  * PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/observaciones
  * Roles: doctor, admin
@@ -1199,6 +1276,7 @@ module.exports = {
   eliminarConsulta,
   eliminarHistorial,
   obtenerEstadisticasHistorial,
+  obtenerTratamientosPaciente,
   // Nuevas funciones de odontograma
   inicializarOdontograma,
   actualizarDienteOdontograma,

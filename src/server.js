@@ -726,6 +726,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/citas', citasRoutes);
 
 app.use('/api/historial-clinico', require('./routers/historialClinicoRoutes'));
+app.use('/api/tratamientos', require('./routers/tratamientosRoutes'));
 
 
 

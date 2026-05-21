@@ -120,7 +120,7 @@ router.put('/:pacienteId/consulta/:consultaId/odontograma/observaciones',
 // GET /api/historial-clinico/:pacienteId
 // Roles: admin, doctor, paciente (solo su propio historial)
 // IMPORTANTE: Debe estar DESPUÉS de las rutas específicas (/consultas, /estadisticas, /consulta/:consultaId)
-router.get('/:pacienteId', 
+router.get('/:pacienteId',
   (req, res, next) => {
     // Si es paciente, solo puede ver su propio historial
     if (req.usuario.rol === 'paciente') {
@@ -128,8 +128,23 @@ router.get('/:pacienteId',
     }
     next();
   },
-  autorizarRoles('admin', 'doctor', 'paciente'), 
+  autorizarRoles('admin', 'doctor', 'paciente'),
   historialClinicoController.obtenerHistorialCompleto
+);
+
+// 💊 Obtener tratamientos de un paciente
+// GET /api/historial-clinico/:pacienteId/tratamientos
+// Roles: admin, doctor, paciente (solo sus propios tratamientos)
+router.get('/:pacienteId/tratamientos',
+  (req, res, next) => {
+    // Si es paciente, solo puede ver sus propios tratamientos
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('admin', 'doctor', 'paciente'),
+  historialClinicoController.obtenerTratamientosPaciente
 );
 
 // 🗑️ ELIMINACIÓN BLOQUEADA - Una HC nunca debe eliminarse
