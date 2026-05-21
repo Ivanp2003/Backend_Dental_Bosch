@@ -1028,15 +1028,39 @@ const actualizarDienteOdontograma = async (req, res) => {
     if (datosActualizacion.tratamientosPendientes) diente.tratamientosPendientes = datosActualizacion.tratamientosPendientes;
     if (datosActualizacion.observaciones !== undefined) diente.observaciones = datosActualizacion.observaciones;
 
-    // Actualizar fecha de modificación del odontograma
-    consulta.odontograma.fechaActualizacion = new Date();
+    // Persistir SOLO el diente y la fecha del odontograma vía update dirigido,
+    // evitando revalidar otras consultas legacy del historial.
+    const fechaActualizacion = new Date();
+    const dienteActualizado = diente.toObject ? diente.toObject() : diente;
 
-    await historial.save();
+    const result = await HistorialClinico.updateOne(
+      { paciente: pacienteId, activo: true },
+      {
+        $set: {
+          'consultas.$[c].odontograma.dientes.$[d]': dienteActualizado,
+          'consultas.$[c].odontograma.fechaActualizacion': fechaActualizacion,
+          updatedBy: req.perfil._id
+        }
+      },
+      {
+        arrayFilters: [
+          { 'c._id': new mongoose.Types.ObjectId(consultaId) },
+          { 'd.codigoFDI': codigoFDI }
+        ]
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'No se pudo localizar el diente para actualizar'
+      });
+    }
 
     res.status(200).json({
       success: true,
       mensaje: `Diente ${obtenerNombreDiente(codigoFDI)} actualizado correctamente`,
-      diente
+      diente: dienteActualizado
     });
 
   } catch (error) {
@@ -1129,15 +1153,31 @@ const actualizarObservacionesOdontograma = async (req, res) => {
       });
     }
 
-    consulta.odontograma.observaciones = observaciones || '';
-    consulta.odontograma.fechaActualizacion = new Date();
+    const nuevasObservaciones = observaciones || '';
+    const fechaActualizacion = new Date();
 
-    await historial.save();
+    const result = await HistorialClinico.updateOne(
+      { paciente: pacienteId, activo: true, 'consultas._id': consultaId },
+      {
+        $set: {
+          'consultas.$.odontograma.observaciones': nuevasObservaciones,
+          'consultas.$.odontograma.fechaActualizacion': fechaActualizacion,
+          updatedBy: req.perfil._id
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
 
     res.status(200).json({
       success: true,
       mensaje: 'Observaciones actualizadas correctamente',
-      observaciones: consulta.odontograma.observaciones
+      observaciones: nuevasObservaciones
     });
 
   } catch (error) {
