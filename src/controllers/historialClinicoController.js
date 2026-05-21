@@ -868,14 +868,32 @@ const inicializarOdontograma = async (req, res) => {
       });
     }
 
-    // Generar odontograma inicial
-    consulta.odontograma = generarOdontogramaInicial(tipoDenticion);
-    await historial.save();
+    // Generar odontograma inicial y persistir SOLO esa subruta para
+    // evitar revalidar otras consultas del historial (que podrían tener
+    // datos legacy incompletos). Update dirigido con operador posicional.
+    const nuevoOdontograma = generarOdontogramaInicial(tipoDenticion);
+
+    const result = await HistorialClinico.updateOne(
+      { paciente: pacienteId, activo: true, 'consultas._id': consultaId },
+      {
+        $set: {
+          'consultas.$.odontograma': nuevoOdontograma,
+          updatedBy: req.perfil._id
+        }
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
 
     res.status(200).json({
       success: true,
       mensaje: 'Odontograma inicializado correctamente',
-      odontograma: consulta.odontograma
+      odontograma: nuevoOdontograma
     });
 
   } catch (error) {
