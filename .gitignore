@@ -15,3 +15,7 @@ uploads/tmp
 # sistema
 .DS_Store
 Thumbs.db
+
+# documentación
+docs/
+

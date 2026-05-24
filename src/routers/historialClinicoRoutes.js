@@ -85,6 +85,21 @@ router.post('/:pacienteId/consulta/:consultaId/odontograma/inicializar',
   historialClinicoController.inicializarOdontograma
 );
 
+// Obtener odontograma visual (enriquecido con metadata para renderizado frontend)
+// GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/visual
+// Roles: doctor, admin, paciente
+// IMPORTANTE: Debe estar ANTES de la ruta GET /odontograma para evitar conflictos de matching
+router.get('/:pacienteId/consulta/:consultaId/odontograma/visual',
+  (req, res, next) => {
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('doctor', 'admin', 'paciente'),
+  historialClinicoController.obtenerOdontogramaVisual
+);
+
 // Obtener odontograma completo de una consulta
 // GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma
 // Roles: doctor, admin, paciente

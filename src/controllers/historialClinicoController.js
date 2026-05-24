@@ -825,6 +825,7 @@ function validarCIE10(codigo) {
 // ==============================
 
 const { generarOdontogramaInicial, validarCodigoFDI, obtenerNombreDiente, validarEstadoClinico, validarCara, validarCompatibilidadEstados, validarEstadoSuperficie } = require('../utils/odontogramaUtils');
+const { obtenerMetadataVisual } = require('../utils/odontogramaVisualUtils');
 
 /**
  * Inicializar odontograma en una consulta existente
@@ -1373,6 +1374,87 @@ const actualizarObservacionesOdontograma = async (req, res) => {
   }
 };
 
+/**
+ * Obtener odontograma enriquecido con metadata visual
+ * GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/visual
+ * Roles: doctor, admin, paciente
+ * 
+ * Retorna los mismos datos clínicos + metadata para renderizado frontend
+ */
+const obtenerOdontogramaVisual = async (req, res) => {
+  try {
+    const { pacienteId, consultaId } = req.params;
+    
+    console.log(`📊 Obteniendo odontograma visual - Paciente: ${pacienteId}, Consulta: ${consultaId}`);
+    
+    // Obtener historial clínico
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId,
+      activo: true,
+      'consultas._id': consultaId
+    });
+    
+    if (!historial) {
+      return res.status(404).json({ 
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial' 
+      });
+    }
+    
+    // Buscar consulta específica
+    const consulta = historial.consultas.id(consultaId);
+    
+    if (!consulta) {
+      return res.status(404).json({ 
+        success: false,
+        mensaje: 'Consulta no encontrada' 
+      });
+    }
+    
+    // Verificar que el odontograma esté inicializado
+    if (!consulta.odontograma || !consulta.odontograma.dientes || consulta.odontograma.dientes.length === 0) {
+      return res.status(200).json({ 
+        success: true,
+        odontograma: null,
+        mensaje: 'Odontograma no inicializado para esta consulta. Use /inicializar primero.'
+      });
+    }
+    
+    // Enriquecer cada diente con metadata visual
+    const odontogramaObj = consulta.odontograma.toObject();
+    const odontogramaEnriquecido = {
+      ...odontogramaObj,
+      dientes: odontogramaObj.dientes.map(diente => {
+        return {
+          ...diente,
+          visual: obtenerMetadataVisual(
+            diente.codigoFDI, 
+            diente.estadoGeneral
+          )
+        };
+      })
+    };
+    
+    res.status(200).json({
+      success: true,
+      odontograma: odontogramaEnriquecido,
+      metadata: {
+        totalDientes: odontogramaEnriquecido.dientes.length,
+        tipoDenticion: odontogramaEnriquecido.tipoDenticion,
+        fechaActualizacion: odontogramaEnriquecido.fechaActualizacion
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error en obtenerOdontogramaVisual:', error);
+    res.status(500).json({ 
+      success: false,
+      mensaje: 'Error al obtener odontograma visual',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   crearHistorialClinico,
   agregarConsulta,
@@ -1384,9 +1466,10 @@ module.exports = {
   obtenerEstadisticasHistorial,
   obtenerTratamientosPaciente,
   obtenerTratamientoDetalle,
-  // Nuevas funciones de odontograma
+  // Funciones de odontograma
   inicializarOdontograma,
   actualizarDienteOdontograma,
   obtenerOdontograma,
-  actualizarObservacionesOdontograma
+  actualizarObservacionesOdontograma,
+  obtenerOdontogramaVisual
 };
