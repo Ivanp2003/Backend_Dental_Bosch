@@ -151,199 +151,49 @@ function obtenerFormaDiente(posicion, cuadrante) {
 
 /**
  * Define paths SVG para cada superficie según tipo de diente
- * Retorna coordenadas path para dibujar divisiones en el diente
+ * Formato compacto: { cara: [path, labelX, labelY] }
+ * El frontend usa la key del objeto como label (M, D, O, V, L, P)
  * 
  * @param {Number} posicion - Posición del diente
  * @param {Number} cuadrante - Cuadrante
- * @returns {Object} Geometría de superficies con paths SVG
+ * @returns {Object} Geometría de superficies en formato compacto
  */
 function obtenerGeometriaSuperficies(posicion, cuadrante) {
   const forma = obtenerFormaDiente(posicion, cuadrante);
   
-  // Geometrías base para círculo de 40px de diámetro
+  // Formato compacto: [path, labelX, labelY]
   const geometrias = {
-    // ===== INCISIVOS =====
     incisivo: {
-      M: { 
-        path: 'M 20,0 L 10,5 L 10,35 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'M',
-        labelX: 12,
-        labelY: 22
-      },
-      D: { 
-        path: 'M 20,0 L 30,5 L 30,35 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'D',
-        labelX: 28,
-        labelY: 22
-      },
-      O: { 
-        path: 'M 10,5 L 30,5 L 30,12 L 10,12 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'O',
-        labelX: 20,
-        labelY: 10
-      },
-      V: { 
-        path: 'M 10,12 L 30,12 L 30,20 L 10,20 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'V',
-        labelX: 20,
-        labelY: 17
-      },
-      L: { 
-        path: 'M 10,20 L 30,20 L 30,28 L 10,28 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'L',
-        labelX: 20,
-        labelY: 25
-      },
-      P: { 
-        path: 'M 10,28 L 30,28 L 30,35 L 10,35 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'P',
-        labelX: 20,
-        labelY: 33
-      }
+      M: ['M 20,0 L 10,5 L 10,35 L 20,40 Z', 12, 22],
+      D: ['M 20,0 L 30,5 L 30,35 L 20,40 Z', 28, 22],
+      O: ['M 10,5 L 30,5 L 30,12 L 10,12 Z', 20, 10],
+      V: ['M 10,12 L 30,12 L 30,20 L 10,20 Z', 20, 17],
+      L: ['M 10,20 L 30,20 L 30,28 L 10,28 Z', 20, 25],
+      P: ['M 10,28 L 30,28 L 30,35 L 10,35 Z', 20, 33]
     },
-    
-    // ===== CANINOS =====
     canino: {
-      M: { 
-        path: 'M 20,0 L 8,8 L 8,32 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'M',
-        labelX: 12,
-        labelY: 22
-      },
-      D: { 
-        path: 'M 20,0 L 32,8 L 32,32 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'D',
-        labelX: 28,
-        labelY: 22
-      },
-      O: { 
-        path: 'M 8,8 L 32,8 L 28,15 L 12,15 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'O',
-        labelX: 20,
-        labelY: 12
-      },
-      V: { 
-        path: 'M 12,15 L 28,15 L 28,22 L 12,22 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'V',
-        labelX: 20,
-        labelY: 19
-      },
-      L: { 
-        path: 'M 12,22 L 28,22 L 28,28 L 12,28 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'L',
-        labelX: 20,
-        labelY: 26
-      },
-      P: { 
-        path: 'M 12,28 L 28,28 L 32,32 L 8,32 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'P',
-        labelX: 20,
-        labelY: 31
-      }
+      M: ['M 20,0 L 8,8 L 8,32 L 20,40 Z', 12, 22],
+      D: ['M 20,0 L 32,8 L 32,32 L 20,40 Z', 28, 22],
+      O: ['M 8,8 L 32,8 L 28,15 L 12,15 Z', 20, 12],
+      V: ['M 12,15 L 28,15 L 28,22 L 12,22 Z', 20, 19],
+      L: ['M 12,22 L 28,22 L 28,28 L 12,28 Z', 20, 26],
+      P: ['M 12,28 L 28,28 L 32,32 L 8,32 Z', 20, 31]
     },
-    
-    // ===== PREMOLARES =====
     premolar: {
-      M: { 
-        path: 'M 20,0 L 5,10 L 5,30 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'M',
-        labelX: 11,
-        labelY: 22
-      },
-      D: { 
-        path: 'M 20,0 L 35,10 L 35,30 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'D',
-        labelX: 29,
-        labelY: 22
-      },
-      O: { 
-        path: 'M 5,10 L 35,10 L 30,17 L 10,17 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'O',
-        labelX: 20,
-        labelY: 14
-      },
-      V: { 
-        path: 'M 10,17 L 30,17 L 30,23 L 10,23 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'V',
-        labelX: 20,
-        labelY: 21
-      },
-      L: { 
-        path: 'M 10,23 L 30,23 L 30,30 L 10,30 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'L',
-        labelX: 20,
-        labelY: 27
-      },
-      P: { 
-        path: 'M 10,30 L 30,30 L 35,30 L 5,30 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'P',
-        labelX: 20,
-        labelY: 32
-      }
+      M: ['M 20,0 L 5,10 L 5,30 L 20,40 Z', 11, 22],
+      D: ['M 20,0 L 35,10 L 35,30 L 20,40 Z', 29, 22],
+      O: ['M 5,10 L 35,10 L 30,17 L 10,17 Z', 20, 14],
+      V: ['M 10,17 L 30,17 L 30,23 L 10,23 Z', 20, 21],
+      L: ['M 10,23 L 30,23 L 30,30 L 10,30 Z', 20, 27],
+      P: ['M 10,30 L 30,30 L 35,30 L 5,30 Z', 20, 32]
     },
-    
-    // ===== MOLARES =====
     molar: {
-      M: { 
-        path: 'M 20,0 L 3,12 L 3,28 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'M',
-        labelX: 10,
-        labelY: 22
-      },
-      D: { 
-        path: 'M 20,0 L 37,12 L 37,28 L 20,40 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'D',
-        labelX: 30,
-        labelY: 22
-      },
-      O: { 
-        path: 'M 3,12 L 37,12 L 32,18 L 8,18 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'O',
-        labelX: 20,
-        labelY: 16
-      },
-      V: { 
-        path: 'M 8,18 L 32,18 L 32,24 L 8,24 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'V',
-        labelX: 20,
-        labelY: 22
-      },
-      L: { 
-        path: 'M 8,24 L 32,24 L 32,28 L 8,28 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'L',
-        labelX: 20,
-        labelY: 27
-      },
-      P: { 
-        path: 'M 8,28 L 32,28 L 37,28 L 3,28 Z', 
-        fill: 'rgba(0,0,0,0.1)',
-        label: 'P',
-        labelX: 20,
-        labelY: 30
-      }
+      M: ['M 20,0 L 3,12 L 3,28 L 20,40 Z', 10, 22],
+      D: ['M 20,0 L 37,12 L 37,28 L 20,40 Z', 30, 22],
+      O: ['M 3,12 L 37,12 L 32,18 L 8,18 Z', 20, 16],
+      V: ['M 8,18 L 32,18 L 32,24 L 8,24 Z', 20, 22],
+      L: ['M 8,24 L 32,24 L 32,28 L 8,28 Z', 20, 27],
+      P: ['M 8,28 L 32,28 L 37,28 L 3,28 Z', 20, 30]
     }
   };
   
