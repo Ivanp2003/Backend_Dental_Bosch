@@ -96,7 +96,13 @@ const usuarioSchema = new mongoose.Schema({
   // Tokens de seguridad
   tokenConfirmacion: String,
   tokenRecuperacion: String,
-  tokenExpiracion: Date
+  tokenExpiracion: Date,
+  
+  // Push notifications (Expo)
+  pushToken: {
+    type: String,
+    default: null
+  }
 }, {
   timestamps: true,
   versionKey: false,

@@ -278,6 +278,26 @@ class CitasService {
         }
       ]);
 
+      // Notificar al doctor via push notification
+      try {
+        const { enviarNotificacionPush } = require('../utils/pushNotifications');
+        const doctorUsuario = await Usuario.findById(
+          doctorExistente.usuario._id || doctorExistente.usuario
+        );
+        if (doctorUsuario && doctorUsuario.pushToken) {
+          const nombrePaciente = `${pacienteExistente.usuario.nombre} ${pacienteExistente.usuario.apellido}`;
+          const fechaFormateada = fechaCita.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          await enviarNotificacionPush(
+            doctorUsuario.pushToken,
+            'Nueva cita agendada',
+            `${nombrePaciente} agendó una cita para el ${fechaFormateada} a las ${horaInicio}`,
+            { citaId: nuevaCita._id.toString(), tipo: 'NUEVA_CITA' }
+          );
+        }
+      } catch (pushError) {
+        console.error('Error enviando push (no crítico):', pushError.message);
+      }
+
       return nuevaCita;
     } catch (error) {
       throw error;
@@ -439,6 +459,25 @@ class CitasService {
       cita.motivoCancelacion = motivoCancelacion;
 
       await cita.save();
+
+      // Notificar al doctor via push notification
+      try {
+        const { enviarNotificacionPush } = require('../utils/pushNotifications');
+        const doctorData = await Doctor.findById(cita.doctor._id || cita.doctor).populate('usuario');
+        if (doctorData && doctorData.usuario) {
+          const doctorUsuario = await Usuario.findById(doctorData.usuario._id || doctorData.usuario);
+          if (doctorUsuario && doctorUsuario.pushToken) {
+            await enviarNotificacionPush(
+              doctorUsuario.pushToken,
+              'Cita cancelada',
+              `Una cita ha sido cancelada. Motivo: ${motivoCancelacion}`,
+              { citaId: cita._id.toString(), tipo: 'CITA_CANCELADA' }
+            );
+          }
+        }
+      } catch (pushError) {
+        console.error('Error enviando push de cancelación (no crítico):', pushError.message);
+      }
 
       return cita;
     } catch (error) {

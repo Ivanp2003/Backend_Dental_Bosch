@@ -11,7 +11,8 @@ const {
   obtenerPerfil,
   actualizarPassword,
   googleCallback,
-  verificarToken
+  verificarToken,
+  guardarPushToken
 } = require('../controllers/authController');
 const { protegerRuta } = require('../middlewares/authMiddleware');
 
@@ -62,5 +63,8 @@ router.get('/perfil', protegerRuta, obtenerPerfil);
 
 // Actualizar contraseña
 router.put('/actualizar-password', protegerRuta, actualizarPassword);
+
+// Guardar push token (Expo notifications)
+router.patch('/push-token', protegerRuta, guardarPushToken);
 
 module.exports = router;

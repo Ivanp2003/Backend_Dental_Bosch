@@ -576,3 +576,35 @@ exports.verificarToken = async (req, res, next) => {
   }
 };
 
+// @desc    Guardar push token de Expo para notificaciones
+// @route   PATCH /api/auth/push-token
+// @access  Private (cualquier usuario autenticado)
+exports.guardarPushToken = async (req, res, next) => {
+  try {
+    const { pushToken } = req.body;
+
+    if (!pushToken || typeof pushToken !== 'string') {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Push token es requerido'
+      });
+    }
+
+    if (!pushToken.startsWith('ExponentPushToken[')) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Push token inválido. Debe ser un ExponentPushToken válido'
+      });
+    }
+
+    await Usuario.findByIdAndUpdate(req.usuario.id, { pushToken });
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Push token guardado correctamente'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
