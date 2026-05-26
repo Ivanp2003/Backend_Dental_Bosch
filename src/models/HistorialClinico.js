@@ -392,7 +392,7 @@ const historialClinicoSchema = new mongoose.Schema({
           M: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
@@ -401,7 +401,7 @@ const historialClinicoSchema = new mongoose.Schema({
           D: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
@@ -410,7 +410,7 @@ const historialClinicoSchema = new mongoose.Schema({
           O: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
@@ -419,7 +419,7 @@ const historialClinicoSchema = new mongoose.Schema({
           V: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
@@ -428,7 +428,7 @@ const historialClinicoSchema = new mongoose.Schema({
           L: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }
@@ -437,7 +437,7 @@ const historialClinicoSchema = new mongoose.Schema({
           P: {
             estado: {
               type: String,
-              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'],
+              enum: ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'],
               default: 'SANO'
             },
             observacion: { type: String, trim: true, maxlength: 200, default: '' }

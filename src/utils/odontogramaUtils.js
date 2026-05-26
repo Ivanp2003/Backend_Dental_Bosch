@@ -245,7 +245,7 @@ function validarCompatibilidadEstados(estadoActual, nuevoEstado) {
  * @returns {Boolean} true si es válido
  */
 function validarEstadoSuperficie(estadoSuperficie) {
-  const estadosValidos = ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO'];
+  const estadosValidos = ['SANO', 'CARIES', 'OBTURADO', 'SELLANTE_REALIZADO', 'SELLANTE_NECESARIO'];
   return estadosValidos.includes(estadoSuperficie);
 }
 
