@@ -835,7 +835,7 @@ const { obtenerMetadataVisual } = require('../utils/odontogramaVisualUtils');
 const inicializarOdontograma = async (req, res) => {
   try {
     const { pacienteId, consultaId } = req.params;
-    const { tipoDenticion } = req.body;
+    const { tipoDenticion, copiarDesdeConsulta } = req.body;
 
     // Validar tipo de dentición
     if (!tipoDenticion || !['permanente', 'temporal', 'mixta'].includes(tipoDenticion)) {
@@ -869,11 +869,66 @@ const inicializarOdontograma = async (req, res) => {
       });
     }
 
-    // Generar odontograma inicial y persistir SOLO esa subruta para
-    // evitar revalidar otras consultas del historial (que podrían tener
-    // datos legacy incompletos). Update dirigido con operador posicional.
-    const nuevoOdontograma = generarOdontogramaInicial(tipoDenticion);
+    let nuevoOdontograma;
+    let mensajeRespuesta = 'Odontograma inicializado correctamente';
 
+    // Si se solicita copiar desde otra consulta, clonar su odontograma
+    if (copiarDesdeConsulta) {
+      if (!mongoose.Types.ObjectId.isValid(copiarDesdeConsulta)) {
+        return res.status(400).json({
+          success: false,
+          mensaje: 'ID de consulta origen inválido'
+        });
+      }
+
+      const consultaOrigen = historial.consultas.id(copiarDesdeConsulta);
+
+      if (!consultaOrigen) {
+        return res.status(404).json({
+          success: false,
+          mensaje: 'Consulta origen no encontrada en el historial'
+        });
+      }
+
+      if (!consultaOrigen.odontograma || !consultaOrigen.odontograma.dientes || consultaOrigen.odontograma.dientes.length === 0) {
+        return res.status(400).json({
+          success: false,
+          mensaje: 'La consulta origen no tiene un odontograma inicializado'
+        });
+      }
+
+      // Clonar el odontograma de la consulta origen (deep copy)
+      const odontogramaOrigen = consultaOrigen.odontograma.toObject();
+      nuevoOdontograma = {
+        fechaActualizacion: new Date(),
+        tipoDenticion: odontogramaOrigen.tipoDenticion,
+        observaciones: odontogramaOrigen.observaciones,
+        dientes: odontogramaOrigen.dientes.map(d => ({
+          codigoFDI: d.codigoFDI,
+          estadoGeneral: d.estadoGeneral,
+          superficies: {
+            M: { estado: d.superficies.M.estado, observacion: d.superficies.M.observacion || '' },
+            D: { estado: d.superficies.D.estado, observacion: d.superficies.D.observacion || '' },
+            O: { estado: d.superficies.O.estado, observacion: d.superficies.O.observacion || '' },
+            V: { estado: d.superficies.V.estado, observacion: d.superficies.V.observacion || '' },
+            L: { estado: d.superficies.L.estado, observacion: d.superficies.L.observacion || '' },
+            P: { estado: d.superficies.P.estado, observacion: d.superficies.P.observacion || '' }
+          },
+          movilidad: d.movilidad,
+          recesion: d.recesion,
+          tratamientosPendientes: d.tratamientosPendientes || [],
+          observaciones: d.observaciones || ''
+        }))
+      };
+
+      mensajeRespuesta = `Odontograma inicializado copiando desde consulta anterior`;
+    } else {
+      // Generar odontograma en blanco (comportamiento original)
+      nuevoOdontograma = generarOdontogramaInicial(tipoDenticion);
+    }
+
+    // Persistir SOLO esa subruta para evitar revalidar otras consultas
+    // del historial (que podrían tener datos legacy incompletos).
     const result = await HistorialClinico.updateOne(
       { paciente: pacienteId, activo: true, 'consultas._id': consultaId },
       {
@@ -893,7 +948,7 @@ const inicializarOdontograma = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      mensaje: 'Odontograma inicializado correctamente',
+      mensaje: mensajeRespuesta,
       odontograma: nuevoOdontograma
     });
 
