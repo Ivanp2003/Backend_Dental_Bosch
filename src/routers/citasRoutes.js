@@ -45,4 +45,8 @@ router.get('/', autorizarRoles('admin'), citasController.obtenerTodasLasCitas);
 // GET /api/citas/disponibilidad?doctorId=doctorId&fecha=2024-01-01
 router.get('/disponibilidad', citasController.obtenerDisponibilidadDoctor);
 
+// 📅 Obtener slots ocupados (cualquier usuario autenticado)
+// GET /api/citas/slots-ocupados?doctor=doctorId&fecha=2024-01-01
+router.get('/slots-ocupados', citasController.obtenerSlotsOcupados);
+
 module.exports = router;

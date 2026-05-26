@@ -533,6 +533,99 @@ const obtenerDisponibilidadDoctor = async (req, res) => {
   }
 };
 
+// 📅 OBTENER SLOTS OCUPADOS (PÚBLICO / PACIENTE)
+const obtenerSlotsOcupados = async (req, res) => {
+  try {
+    console.log('📅 Obteniendo slots ocupados');
+    
+    const { doctor, fecha } = req.query;
+
+    // Validaciones básicas
+    if (!doctor || !mongoose.Types.ObjectId.isValid(doctor)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'ID de doctor inválido o no proporcionado'
+      });
+    }
+
+    if (!fecha) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'La fecha es obligatoria (formato: YYYY-MM-DD)'
+      });
+    }
+
+    // Validar formato de fecha
+    const fechaValida = new Date(fecha);
+    if (isNaN(fechaValida.getTime())) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Formato de fecha inválido. Use YYYY-MM-DD'
+      });
+    }
+
+    // Verificar que el doctor exista y esté activo
+    const doctorExistente = await Doctor.findOne({ 
+      _id: doctor, 
+      activo: true 
+    });
+
+    if (!doctorExistente) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Doctor no encontrado o inactivo'
+      });
+    }
+
+    // Buscar citas pendientes o finalizadas del doctor en esa fecha
+    const citas = await Cita.find({
+      doctor: doctor,
+      fecha: fechaValida,
+      estado: { $in: ['pendiente', 'finalizada'] }
+    }).select('horaInicio horaFin');
+
+    // Extraer todos los slots ocupados (cada cita puede ocupar múltiples slots de 30 min)
+    const slotsOcupados = [];
+    for (const cita of citas) {
+      const [inicioHora, inicioMin] = cita.horaInicio.split(':').map(Number);
+      const [finHora, finMin] = cita.horaFin.split(':').map(Number);
+      
+      const inicioMinutos = inicioHora * 60 + inicioMin;
+      const finMinutos = finHora * 60 + finMin;
+      
+      // Agregar slots de 30 minutos
+      for (let minutos = inicioMinutos; minutos < finMinutos; minutos += 30) {
+        const slotHora = Math.floor(minutos / 60);
+        const slotMin = minutos % 60;
+        const slotStr = `${String(slotHora).padStart(2, '0')}:${String(slotMin).padStart(2, '0')}`;
+        if (!slotsOcupados.includes(slotStr)) {
+          slotsOcupados.push(slotStr);
+        }
+      }
+    }
+
+    // Ordenar slots cronológicamente
+    slotsOcupados.sort();
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Bloques de horarios ocupados obtenidos exitosamente',
+      datos: {
+        doctor: doctor,
+        fecha: fecha,
+        slotsOcupados: slotsOcupados
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerSlotsOcupados:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
 
 module.exports = {
   crearCita,
@@ -542,5 +635,6 @@ module.exports = {
   cancelarCita,
   actualizarEstadoCita,
   finalizarCita,
+  obtenerSlotsOcupados,
   obtenerDisponibilidadDoctor
 };
