@@ -445,7 +445,12 @@ const historialClinicoSchema = new mongoose.Schema({
         },
         movilidad: {
           type: String,
-          enum: [null, 'grado_I', 'grado_II', 'grado_III'],
+          enum: [null, '0', 'I', 'II', 'III'],
+          default: null
+        },
+        recesion: {
+          type: String,
+          enum: [null, '0', 'I', 'II', 'III'],
           default: null
         },
         tratamientosPendientes: [{

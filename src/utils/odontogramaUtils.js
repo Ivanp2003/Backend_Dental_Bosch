@@ -28,6 +28,7 @@ function generarOdontogramaInicial(tipoDenticion = 'permanente') {
             P: { estado: 'SANO', observacion: '' }
           },
           movilidad: null,
+          recesion: null,
           tratamientosPendientes: [],
           observaciones: ''
         });
@@ -51,6 +52,7 @@ function generarOdontogramaInicial(tipoDenticion = 'permanente') {
             P: { estado: 'SANO', observacion: '' }
           },
           movilidad: null,
+          recesion: null,
           tratamientosPendientes: [],
           observaciones: ''
         });

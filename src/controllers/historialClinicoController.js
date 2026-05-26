@@ -1026,6 +1026,7 @@ const actualizarDienteOdontograma = async (req, res) => {
     }
     
     if (datosActualizacion.movilidad !== undefined) diente.movilidad = datosActualizacion.movilidad;
+    if (datosActualizacion.recesion !== undefined) diente.recesion = datosActualizacion.recesion;
     if (datosActualizacion.tratamientosPendientes) diente.tratamientosPendientes = datosActualizacion.tratamientosPendientes;
     if (datosActualizacion.observaciones !== undefined) diente.observaciones = datosActualizacion.observaciones;
 
