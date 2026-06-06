@@ -6,9 +6,9 @@ if (process.env.NODE_ENV === 'production') {
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.error('❌ VARIABLES DE ENTORNO FALTANTES EN PRODUCCIÓN:');
+    console.error(' VARIABLES DE ENTORNO FALTANTES EN PRODUCCIÓN:');
     console.error(missingVars.map(varName => `- ${varName}`).join('\n'));
-    console.error('\n🔧 Configura estas variables en el panel de Render.');
+    console.error('\n Configura estas variables en el panel de Render.');
     process.exit(1);
   }
 }
@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'production') {
 const { configurarEmail } = require('./config/emailConfig');
 const sendgridConfigurado = configurarEmail();
 if (!sendgridConfigurado) {
-  console.warn('⚠️ ADVERTENCIA: SendGrid no está configurado. Los emails de recuperación de contraseña NO se enviarán.');
+  console.warn(' ADVERTENCIA: SendGrid no está configurado. Los emails de recuperación de contraseña NO se enviarán.');
 }
 
 const express = require('express');
@@ -324,7 +324,7 @@ if (process.env.NODE_ENV === 'development') {
 
 
 
-// 🛡️ Middleware de seguridad mejorado
+//  Middleware de seguridad mejorado
 
 app.use((req, res, next) => {
 
@@ -372,7 +372,7 @@ app.get('/', (req, res) => {
 
     version: '3.0.0',
 
-    sprint: 'Sprint 5 - Gestión Segura de Doctores y Mejoras en Citas',
+    sprint: 'Sprint 6 - Notificaciones Push y Slots Ocupados',
 
     seguridad: {
 
@@ -384,7 +384,11 @@ app.get('/', (req, res) => {
 
       softDelete: true,
 
-      validacionCitas: true
+      validacionCitas: true,
+
+      pushNotifications: true,
+
+      slotsOcupados: true
 
     },
 
@@ -394,7 +398,7 @@ app.get('/', (req, res) => {
 
       descripcion: 'Sistema integral de gestión odontológica con módulos de pacientes, doctores, citas y administración',
 
-      tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt', 'Multer'],
+      tecnologias: ['Node.js', 'Express', 'MongoDB', 'JWT', 'Passport', 'Bcrypt', 'Multer', 'node-fetch'],
 
       caracteristicas: [
 
@@ -418,7 +422,11 @@ app.get('/', (req, res) => {
 
         ' Reactivación de doctores',
 
-        ' Gestión mejorada de historial clínico'
+        ' Gestión mejorada de historial clínico',
+
+        ' Notificaciones push con Expo',
+
+        ' Endpoint de slots ocupados para disponibilidad en tiempo real'
 
       ]
 
@@ -450,166 +458,164 @@ app.get('/', (req, res) => {
 
       ' Validaciones de seguridad reforzadas',
 
-      ' Mejoras en gestión de historial clínico'
+      ' Mejoras en gestión de historial clínico',
+
+      ' Notificaciones push con Expo para doctores',
+
+      ' Endpoint de slots ocupados para disponibilidad en tiempo real'
 
     ],
 
     endpoints: {
 
+      // ==============================
+      //  MÓDULO DE AUTENTICACIÓN
+      // ==============================
       auth: {
-
-        registro: 'POST /api/auth/registro',
-
-        login: 'POST /api/auth/login',
-
-        recuperarPassword: 'POST /api/auth/recuperar-password',
-
-        restablecerPassword: 'POST /api/auth/restablecer-password/:token',
-
-        actualizarPassword: 'PUT /api/auth/actualizar-password',
-
-        perfil: 'GET /api/auth/perfil',
-
-        verificarToken: 'GET /api/auth/verificar-token'
-
+        publicas: {
+          registro: 'POST /api/auth/registro',
+          confirmarCuenta: 'GET /api/auth/confirmar/:token',
+          recuperarPassword: 'POST /api/auth/recuperar-password',
+          verificarCodigo: 'POST /api/auth/verificar-codigo',
+          restablecerPassword: 'POST /api/auth/restablecer-password',
+          login: 'POST /api/auth/login',
+          googleAuth: 'GET /api/auth/google',
+          googleCallback: 'GET /api/auth/google/callback'
+        },
+        protegidas: {
+          verificarToken: 'GET /api/auth/verificar-token',
+          perfil: 'GET /api/auth/perfil',
+          actualizarPassword: 'PUT /api/auth/actualizar-password',
+          guardarPushToken: 'PATCH /api/auth/push-token'
+        }
       },
 
-      doctor: {
-
-        todos: 'GET /api/doctores',
-
-        porId: 'GET /api/doctores/:id',
-
-        perfil: 'GET /api/doctores/perfil/doctor',
-
-        actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
-
-        misPacientes: 'GET /api/doctores/mis-pacientes (Doctor)',
-
-        misCitas: 'GET /api/doctores/mis-citas (Doctor)',
-
-        cambiarEstadoCita: 'PUT /api/doctores/citas/:id/estado (Doctor)',
-
-        pendientes: 'GET /api/doctores/pendientes (Admin)',
-
-        aprobados: 'GET /api/doctores/aprobados/lista (Público)',
-
-        cambiarEstado: 'PUT /api/doctores/:id/estado (Admin)',
-
-        ' desactivar': 'DELETE /api/doctores/:id (Admin - Soft Delete)',
-
-        ' reactivar': 'PUT /api/doctores/:id/reactivar (Admin)'
-
+      // ==============================
+      //  MÓDULO DE DOCTORES
+      // ==============================
+      doctores: {
+        publicas: {
+          listarTodos: 'GET /api/doctores',
+          listarAprobados: 'GET /api/doctores/aprobados/lista',
+          obtenerPorId: 'GET /api/doctores/:id'
+        },
+        protegidas: {
+          perfil: 'GET /api/doctores/perfil/doctor',
+          actualizarPerfil: 'PUT /api/doctores/perfil/doctor',
+          misPacientes: 'GET /api/doctores/mis-pacientes (Doctor)',
+          detallePaciente: 'GET /api/doctores/pacientes/:id (Doctor)',
+          misCitas: 'GET /api/doctores/mis-citas (Doctor)',
+          cambiarEstadoCita: 'PUT /api/doctores/citas/:id/estado (Doctor)',
+          crearCita: 'POST /api/doctores/citas (Doctor)'
+        },
+        admin: {
+          listarPendientes: 'GET /api/doctores/pendientes',
+          cambiarEstado: 'PUT /api/doctores/:id/estado',
+          desactivar: 'DELETE /api/doctores/:id (Soft Delete)',
+          reactivar: 'PUT /api/doctores/:id/reactivar',
+          actualizar: 'PUT /api/doctores/:id'
+        }
       },
 
+      // ==============================
+      //  MÓDULO DE PACIENTES
+      // ==============================
       pacientes: {
-
-        registro: 'POST /api/auth/registro (rol: paciente)',
-
-        todos: 'GET /api/pacientes',
-
-        porId: 'GET /api/pacientes/:id',
-
-        porCedula: 'GET /api/pacientes/cedula/:cedula',
-
-        perfil: 'GET /api/pacientes/perfil/paciente',
-
-        actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',
-
-        buscar: 'GET /api/pacientes/buscar',
-
-        actualizar: 'PUT /api/pacientes/:id',
-
-        eliminar: 'DELETE /api/pacientes/:id',
-
-        asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor'
-
+        publicas: {
+          horariosDoctores: 'GET /api/pacientes/doctores/horarios',
+          buscar: 'GET /api/pacientes/buscar',
+          porCedula: 'GET /api/pacientes/cedula/:cedula',
+          porId: 'GET /api/pacientes/:id'
+        },
+        protegidas: {
+          listar: 'GET /api/pacientes (Doctor, Admin)',
+          registrar: 'POST /api/pacientes (Doctor, Admin)',
+          perfil: 'GET /api/pacientes/perfil/paciente',
+          actualizarPerfil: 'PUT /api/pacientes/perfil/paciente',
+          actualizar: 'PUT /api/pacientes/:id (Doctor, Admin)',
+          eliminar: 'DELETE /api/pacientes/:id (Admin)',
+          asignarDoctor: 'PUT /api/pacientes/:id/asignar-doctor (Doctor, Admin)'
+        }
       },
 
+      // ==============================
+      //  MÓDULO DE ADMINISTRACIÓN
+      // ==============================
       admin: {
-
         doctores: {
-
-          crear: 'POST /api/admin/doctores',
-
           listar: 'GET /api/admin/doctores',
-
+          listarPendientes: 'GET /api/admin/doctores-pendientes',
+          listarInactivos: 'GET /api/admin/doctores-inactivos',
+          horarios: 'GET /api/admin/doctores/horarios',
           detalle: 'GET /api/admin/doctores/:id',
-
+          cambiarEstado: 'PUT /api/admin/doctores/:id/estado',
+          actualizarHorario: 'PUT /api/admin/doctores/:id/horario',
           actualizar: 'PUT /api/admin/doctores/:id',
-
-          estado: 'PUT /api/admin/doctores/:id/estado',
-
-          horario: 'PUT /api/admin/doctores/:id/horario',
-
-          horariosTodos: 'GET /api/admin/doctores/horarios'
-
+          reasignarCitas: 'PUT /api/admin/doctores/:id/reasignar-citas',
+          eliminar: 'DELETE /api/admin/doctores/:id',
+          aprobar: 'PUT /api/admin/doctores/:id/aprobar',
+          rechazar: 'PUT /api/admin/doctores/:id/rechazar',
+          limpiarHuerfanos: 'POST /api/admin/doctores/limpiar-huerfanos'
         },
-
         citas: {
-
-          todas: 'GET /api/admin/citas'
-
+          listarTodas: 'GET /api/admin/citas',
+          detalle: 'GET /api/admin/citas/:id',
+          reasignar: 'PATCH /api/admin/citas/:id/reasignar'
         },
-
         pacientes: {
-
           listar: 'GET /api/admin/pacientes',
-
           detalle: 'GET /api/admin/pacientes/:id',
-
-          asignarDoctor: 'PUT /api/admin/pacientes/:id/doctor',
-
+          cambiarDoctor: 'PUT /api/admin/pacientes/:id/doctor',
           eliminar: 'DELETE /api/admin/pacientes/:id'
-
         },
-
-        estadisticas: 'GET /api/admin/estadisticas'
-
+        estadisticas: {
+          generales: 'GET /api/admin/estadisticas'
+        }
       },
 
+      // ==============================
+      //  MÓDULO DE CITAS
+      // ==============================
       citas: {
-
-        ' crear': 'POST /api/citas (Pacientes, Doctores, Admin)',
-
-        misCitas: 'GET /api/citas/mis-citas (Pacientes)',
-
-        citasDoctor: 'GET /api/citas/doctor (Doctores)',
-
-        todas: 'GET /api/citas (Admin)',
-
+        crear: 'POST /api/citas (Paciente, Doctor, Admin)',
+        misCitas: 'GET /api/citas/mis-citas (Paciente)',
+        citasDoctor: 'GET /api/citas/doctor (Doctor)',
+        listarTodas: 'GET /api/citas (Admin)',
+        actualizarEstado: 'PUT /api/citas/:id/estado (Doctor, Admin)',
+        finalizar: 'PUT /api/citas/:id/finalizar (Doctor, Admin)',
         cancelar: 'DELETE /api/citas/:id',
-
-        actualizarEstado: 'PUT /api/citas/:id/estado (Doctores, Admin)',
-
-        finalizar: 'PUT /api/citas/:id/finalizar (Doctores, Admin)',
-
         disponibilidad: 'GET /api/citas/disponibilidad',
-
-        confirmar: 'PUT /api/citas/:id/confirmar (Pacientes)',
-
-        rechazar: 'PUT /api/citas/:id/rechazar (Pacientes)'
-
+        slotsOcupados: 'GET /api/citas/slots-ocupados?doctor=ID&fecha=YYYY-MM-DD'
       },
 
+      // ==============================
+      //  MÓDULO DE HISTORIAL CLÍNICO
+      // ==============================
       historialClinico: {
-
         crear: 'POST /api/historial-clinico/:pacienteId (Admin, Doctor)',
-
-        agregarRegistro: 'POST /api/historial-clinico/:pacienteId/registro (Admin, Doctor)',
-
-        completo: 'GET /api/historial-clinico/:pacienteId (Admin, Doctor, Paciente)',
-
-        registros: 'GET /api/historial-clinico/:pacienteId/registros (Admin, Doctor, Paciente)',
-
+        agregarConsulta: 'POST /api/historial-clinico/:pacienteId/consulta (Admin, Doctor)',
+        consultasFiltradas: 'GET /api/historial-clinico/:pacienteId/consultas (Admin, Doctor, Paciente)',
         estadisticas: 'GET /api/historial-clinico/:pacienteId/estadisticas (Admin, Doctor, Paciente)',
+        actualizarConsulta: 'PUT /api/historial-clinico/:pacienteId/consulta/:consultaId (Admin, Doctor)',
+        eliminarConsulta: 'DELETE /api/historial-clinico/:pacienteId/consulta/:consultaId (Admin, Doctor)',
+        historialCompleto: 'GET /api/historial-clinico/:pacienteId (Admin, Doctor, Paciente)',
+        tratamientos: 'GET /api/historial-clinico/:pacienteId/tratamientos (Admin, Doctor, Paciente)',
+        odontograma: {
+          inicializar: 'POST /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/inicializar (Admin, Doctor)',
+          visual: 'GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/visual (Admin, Doctor, Paciente)',
+          completo: 'GET /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma (Admin, Doctor, Paciente)',
+          actualizarDiente: 'PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/diente/:codigoFDI (Admin, Doctor)',
+          actualizarObservaciones: 'PUT /api/historial-clinico/:pacienteId/consulta/:consultaId/odontograma/observaciones (Admin, Doctor)'
+        }
+      },
 
-        actualizarRegistro: 'PUT /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)',
-
-        eliminarRegistro: 'DELETE /api/historial-clinico/:pacienteId/registro/:registroId (Admin, Doctor)'
-
+      // ==============================
+      //  MÓDULO DE TRATAMIENTOS
+      // ==============================
+      tratamientos: {
+        paciente: 'GET /api/tratamientos/paciente/:pacienteId (Admin, Doctor, Paciente)',
+        detalle: 'GET /api/tratamientos/paciente/:pacienteId/consulta/:consultaId/sesion/:sesion (Admin, Doctor, Paciente)'
       }
-
     },
 
     documentacion: {
@@ -636,7 +642,11 @@ app.get('/', (req, res) => {
 
         'Mejoras en agendado de citas',
 
-        'Validaciones de seguridad reforzadas'
+        'Validaciones de seguridad reforzadas',
+
+        'Notificaciones push con Expo',
+
+        'Endpoint de slots ocupados'
 
       ]
 
@@ -707,7 +717,7 @@ app.get('/health', (req, res) => {
 
 app.use((req, res, next) => {
 
-  console.log(`🔍 ${req.method} ${req.originalUrl}`);
+  console.log(` ${req.method} ${req.originalUrl}`);
 
   console.log('Headers:', req.headers);
 
@@ -830,7 +840,7 @@ SISTEMA DE GESTIÓN ODONTOLÓGICA - DENTAL BOSCH
 
 
 
-    Sprint: Sprint 2 - Gestión de Doctores
+    Sprint: Sprint 6 - Notificaciones Push y Slots Ocupados
 
 
 
