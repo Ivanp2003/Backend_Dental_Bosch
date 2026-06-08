@@ -554,7 +554,9 @@ exports.googleCallback = async (req, res, next) => {
     const token = generarJWT(usuario._id);
 
     // Redirigir al frontend con el token
-    res.redirect(`${process.env.URL_FRONTEND}auth/google/callback?token=${token}`);
+    // Normalizar URL_FRONTEND: asegurar que siempre tenga "/" al final
+    const frontendUrl = (process.env.URL_FRONTEND || '').replace(/\/$/, '');
+    res.redirect(`${frontendUrl}/auth/google/callback?token=${token}`);
 
   } catch (error) {
     next(error);
