@@ -152,9 +152,9 @@ const getAllowedOrigins = () => {
 
   // Si hay orígenes configurados en variables de entorno, usarlos
 
-  if (process.env.CORS_ORIGINS) {
+  if (process.env.CORS_ORIGIN) {
 
-    return process.env.CORS_ORIGINS.split(',').map(origin => origin.trim());
+    return process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
 
   }
 
