@@ -149,53 +149,19 @@ const app = express();
 // Configuración de orígenes permitidos
 
 const getAllowedOrigins = () => {
-
   // Si hay orígenes configurados en variables de entorno, usarlos
-
   if (process.env.CORS_ORIGIN) {
-
     return process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
-
   }
-
   
-
-  // Sino, usar configuración por defecto según entorno
-
-  if (process.env.NODE_ENV === 'production') {
-
-    // En producción permitir tanto Vercel como localhost para desarrollo
-
-    return [
-
-      'https://frontend-dental-bosch.vercel.app',
-
-      'http://localhost:3000',
-
-      'http://localhost:3001',
-
-      'http://localhost:5173'
-
-    ];
-
-  } else {
-
-    // En desarrollo permitir todos los puertos comunes
-
-    return [
-
-      'http://localhost:3000',
-
-      'http://localhost:3001',
-
-      'http://localhost:5173',
-
-      'http://localhost:8000'
-
-    ];
-
-  }
-
+  // Siempre incluir el frontend de Vercel y los puertos de desarrollo
+  return [
+    'https://frontend-dental-bosch.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5173',
+    'http://localhost:8000'
+  ];
 };
 
 
@@ -242,7 +208,7 @@ const corsOptions = {
 
   credentials: true,
 
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
   allowedHeaders: ['Content-Type', 'Authorization'],
 

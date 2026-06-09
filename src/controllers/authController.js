@@ -553,9 +553,16 @@ exports.googleCallback = async (req, res, next) => {
     // Generar token JWT
     const token = generarJWT(usuario._id);
 
-    // Redirigir al frontend con el token
     // Normalizar URL_FRONTEND: asegurar que siempre tenga "/" al final
     const frontendUrl = (process.env.URL_FRONTEND || '').replace(/\/$/, '');
+
+    // Si el usuario se acaba de crear con Google, redirigirlo al perfil
+    // para que actualice su nombre, apellido y datos personales
+    if (usuario.esNuevo) {
+      return res.redirect(`${frontendUrl}/auth/google/callback?token=${token}&nuevo=true`);
+    }
+
+    // Usuario existente: redirección normal al callback del frontend
     res.redirect(`${frontendUrl}/auth/google/callback?token=${token}`);
 
   } catch (error) {

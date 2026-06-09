@@ -38,12 +38,14 @@ passport.use(new GoogleStrategy({
         if (foto) usuario.foto = foto;
         await usuario.save();
 
-        // Fix #2: Crear Paciente si por alguna razón no existe todavía
+        // Crear Paciente si por alguna razón no existe todavía
         const pacienteExiste = await Paciente.findOne({ usuario: usuario._id });
         if (!pacienteExiste && usuario.rol === 'paciente') {
           await Paciente.create({ usuario: usuario._id });
         }
 
+        // Usuario existente — no es nuevo
+        usuario.esNuevo = false;
         return done(null, usuario);
       }
 
@@ -59,7 +61,7 @@ passport.use(new GoogleStrategy({
         estado: 'aprobado'
       });
 
-      // Fix #2: Crear registro de paciente (separado para mejor manejo de errores)
+      // Crear registro de paciente (separado para mejor manejo de errores)
       try {
         await Paciente.create({ usuario: usuario._id });
       } catch (pacienteError) {
@@ -69,6 +71,8 @@ passport.use(new GoogleStrategy({
         }
       }
 
+      // Usuario recién creado — marcar como nuevo para redirigir al perfil
+      usuario.esNuevo = true;
       return done(null, usuario);
     } catch (error) {
       console.error('Error en GoogleStrategy:', error.message);
