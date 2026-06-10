@@ -542,6 +542,119 @@ exports.actualizarPassword = async (req, res, next) => {
   }
 };
 
+// @desc    Login con Google desde React Native / Expo (mobile)
+// @route   POST /api/auth/google/mobile
+// @access  Public
+// El cliente móvil envía el { id_token } obtenido con expo-auth-session
+exports.googleMobileLogin = async (req, res, next) => {
+  try {
+    const { id_token } = req.body;
+
+    if (!id_token) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Se requiere el id_token de Google'
+      });
+    }
+
+    // Verificar el id_token con Google (sin librerías extra)
+    const fetch = require('node-fetch');
+    const googleRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`
+    );
+
+    if (!googleRes.ok) {
+      return res.status(401).json({
+        success: false,
+        mensaje: 'id_token de Google inválido o expirado'
+      });
+    }
+
+    const payload = await googleRes.json();
+
+    // Verificar que el token fue emitido para nuestra app
+    // (acepta el Web Client ID y los clients Android/iOS del mismo proyecto)
+    const allowedClients = [
+      process.env.GOOGLE_CLIENT_ID,           // Web Client ID (ya existente)
+      process.env.GOOGLE_CLIENT_ID_ANDROID,   // Android Client ID (nuevo)
+      process.env.GOOGLE_CLIENT_ID_IOS,       // iOS Client ID (nuevo, opcional)
+    ].filter(Boolean); // ignora los que no estén definidos
+
+    if (!allowedClients.includes(payload.aud)) {
+      return res.status(401).json({
+        success: false,
+        mensaje: 'id_token no pertenece a esta aplicación'
+      });
+    }
+
+    const emailGoogle = payload.email;
+    if (!emailGoogle) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'No se pudo obtener el email de la cuenta de Google'
+      });
+    }
+
+    const nombre   = payload.given_name  || emailGoogle.split('@')[0];
+    const apellido = payload.family_name || 'Google';
+    const googleId = payload.sub;
+    const foto     = payload.picture || null;
+
+    // --- Misma lógica que passport.js ---
+
+    // 1. Buscar por googleId
+    let usuario = await Usuario.findOne({ googleId });
+    if (usuario) {
+      const token = generarJWT(usuario._id);
+      return res.status(200).json({ success: true, token, usuario, esNuevo: false });
+    }
+
+    // 2. Buscar por email y vincular
+    usuario = await Usuario.findOne({ email: emailGoogle });
+    if (usuario) {
+      usuario.googleId  = googleId;
+      usuario.confirmado = true;
+      if (foto) usuario.foto = foto;
+      await usuario.save();
+
+      const pacienteExiste = await Paciente.findOne({ usuario: usuario._id });
+      if (!pacienteExiste && usuario.rol === 'paciente') {
+        await Paciente.create({ usuario: usuario._id });
+      }
+
+      const token = generarJWT(usuario._id);
+      return res.status(200).json({ success: true, token, usuario, esNuevo: false });
+    }
+
+    // 3. Crear nuevo usuario
+    usuario = await Usuario.create({
+      nombre,
+      apellido,
+      email: emailGoogle,
+      googleId,
+      foto,
+      rol: 'paciente',
+      confirmado: true,
+      estado: 'aprobado'
+    });
+
+    try {
+      await Paciente.create({ usuario: usuario._id });
+    } catch (pacienteError) {
+      if (pacienteError.code !== 11000) {
+        console.error('Error al crear Paciente (Google Mobile):', pacienteError.message);
+      }
+    }
+
+    const token = generarJWT(usuario._id);
+    return res.status(201).json({ success: true, token, usuario, esNuevo: true });
+
+  } catch (error) {
+    console.error('❌ Error en googleMobileLogin:', error.message);
+    next(error);
+  }
+};
+
 // @desc    Login con Google - Callback
 // @route   GET /api/auth/google/callback
 // @access  Public

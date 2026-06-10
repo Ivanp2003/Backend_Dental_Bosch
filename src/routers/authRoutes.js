@@ -11,6 +11,7 @@ const {
   obtenerPerfil,
   actualizarPassword,
   googleCallback,
+  googleMobileLogin,
   verificarToken,
   guardarPushToken
 } = require('../controllers/authController');
@@ -36,7 +37,7 @@ router.post('/restablecer-password', restablecerPassword);
 // Login
 router.post('/login', login);
 
-// Login con Google - Iniciar autenticación
+// Login con Google - Iniciar autenticación (flujo web)
 router.get('/google',
   passport.authenticate('google', { 
     scope: ['profile', 'email'],
@@ -44,7 +45,7 @@ router.get('/google',
   })
 );
 
-// Login con Google - Callback
+// Login con Google - Callback (flujo web)
 router.get('/google/callback',
   passport.authenticate('google', { 
     failureRedirect: `${process.env.URL_FRONTEND}login`,
@@ -52,6 +53,10 @@ router.get('/google/callback',
   }),
   googleCallback
 );
+
+// Login con Google desde React Native / Expo (flujo móvil)
+// El cliente envía { id_token } obtenido con expo-auth-session
+router.post('/google/mobile', googleMobileLogin);
 
 // ========== RUTAS PROTEGIDAS ==========
 
