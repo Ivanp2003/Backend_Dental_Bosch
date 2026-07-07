@@ -278,21 +278,39 @@ class CitasService {
         }
       ]);
 
-      // Notificar al doctor via push notification
+      // Notificar a la contraparte via push notification
       try {
         const { enviarNotificacionPush } = require('../utils/pushNotifications');
-        const doctorUsuario = await Usuario.findById(
-          doctorExistente.usuario._id || doctorExistente.usuario
-        );
-        if (doctorUsuario && doctorUsuario.pushToken) {
-          const nombrePaciente = `${pacienteExistente.usuario.nombre} ${pacienteExistente.usuario.apellido}`;
-          const fechaFormateada = fechaCita.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
-          await enviarNotificacionPush(
-            doctorUsuario.pushToken,
-            'Nueva cita agendada',
-            `${nombrePaciente} agendó una cita para el ${fechaFormateada} a las ${horaInicio}`,
-            { citaId: nuevaCita._id.toString(), tipo: 'NUEVA_CITA' }
-          );
+        const fechaFormateada = fechaCita.toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        let receptorId = null;
+        let tituloNotif = '';
+        let mensajeNotif = '';
+
+        if (rolUsuario === 'paciente') {
+            // Notificar al doctor
+            receptorId = doctorExistente.usuario._id || doctorExistente.usuario;
+            const nombrePaciente = `${pacienteExistente.usuario.nombre} ${pacienteExistente.usuario.apellido}`;
+            tituloNotif = 'Nueva cita agendada';
+            mensajeNotif = `${nombrePaciente} agendó una cita para el ${fechaFormateada} a las ${horaInicio}`;
+        } else {
+            // Notificar al paciente (doctor o admin crearon la cita)
+            receptorId = pacienteExistente.usuario._id || pacienteExistente.usuario;
+            const nombreDoctor = `${doctorExistente.usuario.nombre} ${doctorExistente.usuario.apellido}`;
+            tituloNotif = 'Nueva cita agendada';
+            mensajeNotif = `El Dr(a). ${nombreDoctor} agendó una cita para ti el ${fechaFormateada} a las ${horaInicio}`;
+        }
+
+        if (receptorId) {
+            const receptorUsuario = await Usuario.findById(receptorId);
+            if (receptorUsuario && receptorUsuario.pushToken) {
+                await enviarNotificacionPush(
+                    receptorUsuario.pushToken,
+                    tituloNotif,
+                    mensajeNotif,
+                    { citaId: nuevaCita._id.toString(), tipo: 'NUEVA_CITA' }
+                );
+            }
         }
       } catch (pushError) {
         console.error('Error enviando push (no crítico):', pushError.message);
@@ -460,20 +478,38 @@ class CitasService {
 
       await cita.save();
 
-      // Notificar al doctor via push notification
+      // Notificar a la contraparte via push notification
       try {
         const { enviarNotificacionPush } = require('../utils/pushNotifications');
-        const doctorData = await Doctor.findById(cita.doctor._id || cita.doctor).populate('usuario');
-        if (doctorData && doctorData.usuario) {
-          const doctorUsuario = await Usuario.findById(doctorData.usuario._id || doctorData.usuario);
-          if (doctorUsuario && doctorUsuario.pushToken) {
-            await enviarNotificacionPush(
-              doctorUsuario.pushToken,
-              'Cita cancelada',
-              `Una cita ha sido cancelada. Motivo: ${motivoCancelacion}`,
-              { citaId: cita._id.toString(), tipo: 'CITA_CANCELADA' }
-            );
-          }
+        
+        let receptorId = null;
+        let tituloNotif = 'Cita cancelada';
+        let mensajeNotif = `Una cita ha sido cancelada. Motivo: ${motivoCancelacion}`;
+
+        if (canceladoPor === 'paciente') {
+            // Notificar al doctor
+            const doctorData = await Doctor.findById(cita.doctor._id || cita.doctor);
+            if (doctorData) {
+                receptorId = doctorData.usuario._id || doctorData.usuario;
+            }
+        } else {
+            // Notificar al paciente
+            const pacienteData = await Paciente.findById(cita.paciente._id || cita.paciente);
+            if (pacienteData) {
+                receptorId = pacienteData.usuario._id || pacienteData.usuario;
+            }
+        }
+
+        if (receptorId) {
+            const receptorUsuario = await Usuario.findById(receptorId);
+            if (receptorUsuario && receptorUsuario.pushToken) {
+                await enviarNotificacionPush(
+                    receptorUsuario.pushToken,
+                    tituloNotif,
+                    mensajeNotif,
+                    { citaId: cita._id.toString(), tipo: 'CITA_CANCELADA' }
+                );
+            }
         }
       } catch (pushError) {
         console.error('Error enviando push de cancelación (no crítico):', pushError.message);
@@ -568,6 +604,25 @@ class CitasService {
       cita.notas = notas;
 
       await cita.save();
+
+      // Notificar al paciente via push notification
+      try {
+        const { enviarNotificacionPush } = require('../utils/pushNotifications');
+        const pacienteData = await Paciente.findById(cita.paciente._id || cita.paciente);
+        if (pacienteData) {
+            const receptorUsuario = await Usuario.findById(pacienteData.usuario._id || pacienteData.usuario);
+            if (receptorUsuario && receptorUsuario.pushToken) {
+                await enviarNotificacionPush(
+                    receptorUsuario.pushToken,
+                    'Cita finalizada',
+                    'Tu cita ha concluido. ¡Gracias por tu visita!',
+                    { citaId: cita._id.toString(), tipo: 'CITA_FINALIZADA' }
+                );
+            }
+        }
+      } catch (pushError) {
+        console.error('Error enviando push de finalización (no crítico):', pushError.message);
+      }
 
       return cita;
     } catch (error) {
