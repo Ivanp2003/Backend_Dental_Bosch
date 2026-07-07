@@ -273,7 +273,8 @@ exports.verificarCodigoRecuperacion = async (req, res, next) => {
 // @access  Public
 exports.restablecerPassword = async (req, res, next) => {
   try {
-    const { codigo, password } = req.body;
+    const { password } = req.body;
+    const codigo = req.params.codigo || req.body.codigo;
 
     if (!codigo || !password) {
       return res.status(400).json({

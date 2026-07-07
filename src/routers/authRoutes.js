@@ -33,6 +33,7 @@ router.post('/verificar-codigo', verificarCodigoRecuperacion);
 
 // Restablecer contraseña con código
 router.post('/restablecer-password', restablecerPassword);
+router.post('/restablecer-password/:codigo', restablecerPassword);
 
 // Login
 router.post('/login', login);
