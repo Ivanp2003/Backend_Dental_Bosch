@@ -16,7 +16,7 @@ const configurarIndices = async () => {
       { key: { estado: 1 } },
       { key: { activo: 1 } },
       { key: { nombre: 'text', apellido: 'text' } }, // Búsqueda de texto
-      { key: { cedula: 1 }, unique: true } // Índice único para cédula
+      { key: { cedula: 1 }, unique: true, sparse: true } // Índice único para cédula (sparse para permitir nulos)
     ]);
 
     // Índices para colección Paciente

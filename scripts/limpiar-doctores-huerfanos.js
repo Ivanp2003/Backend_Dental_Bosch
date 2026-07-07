@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const Doctor = require('../src/models/Doctor');
-const Usuario = require('../src/models/Usuario');
+const Doctor = require('../../src/models/Doctor');
+const Usuario = require('../../src/models/Usuario');
 require('dotenv').config();
 
 async function limpiarDoctoresHuerfanos() {

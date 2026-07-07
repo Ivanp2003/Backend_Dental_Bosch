@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --testEnvironment=node --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:e2e": "jest --testEnvironment=node --detectOpenHandles --testPathPatterns=tests/e2e",
     "diagnostic": "node diagnostic.js",
     "restore-patients": "node scripts/restaurarDatosPacientes.js",
     "cancelar-vencidas": "node scripts/cancelarCitasVencidas.js"
