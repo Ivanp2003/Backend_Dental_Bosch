@@ -18,8 +18,9 @@ class CitasService {
         throw new Error('Doctor no encontrado o inactivo');
       }
 
-      // Verificar que el doctor trabaje ese día y horario
-      const diaSemana = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase();
+      // Verificar que el doctor trabaje ese día y horario (usando UTC para evitar desfasajes y quitando acentos)
+      let diaSemana = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' }).toLowerCase();
+      diaSemana = diaSemana.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const horarioDia = doctor.horarioAtencion.find(h => h.dia === diaSemana && h.disponible);
       
       if (!horarioDia) {
@@ -683,7 +684,8 @@ class CitasService {
         throw new Error('Doctor no encontrado o inactivo');
       }
 
-      const diaSemana = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long' }).toLowerCase();
+      let diaSemana = new Date(fecha).toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'UTC' }).toLowerCase();
+      diaSemana = diaSemana.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       const horarioDia = doctor.horarioAtencion.find(h => h.dia === diaSemana && h.disponible);
       
       if (!horarioDia) {
