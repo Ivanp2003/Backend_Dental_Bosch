@@ -27,7 +27,7 @@ const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #FF4B98;
       color: white;
       padding: 30px;
       text-align: center;
@@ -43,7 +43,7 @@ const plantillaHTML = (titulo, contenido, enlace, textoBoton) => `
       display: inline-block;
       padding: 12px 30px;
       margin: 20px 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #FF4B98;
       color: white;
       text-decoration: none;
       border-radius: 5px;
@@ -127,8 +127,8 @@ exports.enviarEmailRecuperacion = async (email, nombre, codigo) => {
   const contenido = `
     <p>Hola <strong>${nombre}</strong>,</p>
     <p>Has solicitado restablecer tu contraseña. Usa el siguiente código de verificación en tu aplicación móvil:</p>
-    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #007bff;">
-      <h2 style="color: #007bff; margin: 0; font-size: 32px; letter-spacing: 8px; font-weight: bold;">${codigo}</h2>
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; border: 2px solid #FF4B98;">
+      <h2 style="color: #FF4B98; margin: 0; font-size: 32px; letter-spacing: 8px; font-weight: bold;">${codigo}</h2>
     </div>
     <p>O si estás desde la web, puedes restablecerla haciendo clic en el siguiente botón:</p>
     <p><strong>Este código y enlace expiran en 15 minutos.</strong></p>
@@ -306,7 +306,7 @@ exports.enviarNotificacionReasignacion = async (datosNotificacion) => {
     const contenidoPaciente = `
       <p>Hola <strong>${pacienteNombre}</strong>,</p>
       <p>Te informamos que ha habido un cambio en la asignación de tu doctor:</p>
-      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #007bff;">
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #FF4B98;">
         <p style="margin: 0 0 10px 0;"><strong>Cambio de Doctor:</strong></p>
         <p style="margin: 5px 0;">
           <span style="color: #dc3545;"> Doctor anterior:</span> ${doctorAnteriorNombre}
@@ -315,7 +315,7 @@ exports.enviarNotificacionReasignacion = async (datosNotificacion) => {
           <span style="color: #28a745;"> Nuevo doctor:</span> <strong>${doctorNuevoNombre}</strong>
         </p>
         <p style="margin: 5px 0;">
-          <span style="color: #007bff;"> Especialidad:</span> ${especialidad}
+          <span style="color: #FF4B98;"> Especialidad:</span> ${especialidad}
         </p>
         <p style="margin: 5px 0;">
           <span style="color: #6c757d;"> Fecha del cambio:</span> ${new Date(fechaCambio).toLocaleDateString('es-ES')}
@@ -341,13 +341,13 @@ exports.enviarNotificacionReasignacion = async (datosNotificacion) => {
       <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
         <p style="margin: 0 0 10px 0;"><strong>Detalles de la Asignación:</strong></p>
         <p style="margin: 5px 0;">
-          <span style="color: #007bff;"> Paciente:</span> ${pacienteNombre}
+          <span style="color: #FF4B98;"> Paciente:</span> ${pacienteNombre}
         </p>
         <p style="margin: 5px 0;">
           <span style="color: #6c757d;"> Fecha de asignación:</span> ${new Date(fechaCambio).toLocaleDateString('es-ES')}
         </p>
         <p style="margin: 5px 0;">
-          <span style="color: #007bff;"> Especialidad:</span> ${especialidad}
+          <span style="color: #FF4B98;"> Especialidad:</span> ${especialidad}
         </p>
       </div>
       <p>Por favor, revisa tu panel de doctores para ver los detalles de tus nuevos pacientes y sus citas programadas.</p>
