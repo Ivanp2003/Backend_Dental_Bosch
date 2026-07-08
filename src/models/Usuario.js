@@ -51,9 +51,6 @@ const usuarioSchema = new mongoose.Schema({
         if (value.trim() === '') return true;
         if (!/^[0-9]{10}$/.test(value)) return false;
         
-        // Excepciones para usuarios de prueba
-        if (['0000000000', '1111111111', '2222222222'].includes(value)) return true;
-
         // Algoritmo Módulo 10 para cédulas ecuatorianas
         const provincia = parseInt(value.substring(0, 2), 10);
         if (provincia < 1 || (provincia > 24 && provincia !== 30)) return false;

@@ -1,6 +1,7 @@
 const Usuario = require('../models/Usuario');
 const Doctor = require('../models/Doctor');
 const Paciente = require('../models/Paciente');
+const bcrypt = require('bcryptjs');
 
 const createAdminDoctor = async () => {
   try {
@@ -10,13 +11,13 @@ const createAdminDoctor = async () => {
     if (!adminExiste) {
       console.log('Creando Doctor Administrador por defecto...');
       const usuarioAdmin = await Usuario.create({
-        nombre: 'Admin',
-        apellido: 'Dental Bosch',
+        nombre: 'Elisabel',
+        apellido: 'Bosch',
         email: 'admin@dentalbosch.com',
-        password: 'Admin123',
+        password: await bcrypt.hash('Admin123', 10),
         rol: 'admin',
-        telefono: '8099999999',
-        cedula: '0000000000',
+        telefono: '0987654321',
+        cedula: '1710034065',
         confirmado: true,
         estado: 'aprobado',
       });
@@ -43,13 +44,13 @@ const createAdminDoctor = async () => {
     if (!doctorExiste) {
       console.log('Creando Doctor de prueba por defecto...');
       const usuarioDoctor = await Usuario.create({
-        nombre: 'Doctor',
-        apellido: 'Prueba',
+        nombre: 'Ana',
+        apellido: 'Gomez',
         email: 'doctor@dentalbosch.com',
-        password: 'Docdbosch01',
+        password: await bcrypt.hash('Docdbosch01', 10),
         rol: 'doctor',
-        telefono: '0999999991',
-        cedula: '1111111111',
+        telefono: '0991234567',
+        cedula: '0923456784',
         confirmado: true,
         estado: 'aprobado',
       });
@@ -76,13 +77,13 @@ const createAdminDoctor = async () => {
     if (!pacienteExiste) {
       console.log('Creando Paciente de prueba por defecto...');
       const usuarioPaciente = await Usuario.create({
-        nombre: 'Paciente',
-        apellido: 'Prueba',
+        nombre: 'Luis',
+        apellido: 'Herrera',
         email: 'paciente@dentalbosch.com',
-        password: 'Pac1entedbosch',
+        password: await bcrypt.hash('Pac1entedbosch', 10),
         rol: 'paciente',
-        telefono: '0999999992',
-        cedula: '2222222222',
+        telefono: '0981122334',
+        cedula: '1725489635',
         confirmado: true,
         estado: 'aprobado',
       });
