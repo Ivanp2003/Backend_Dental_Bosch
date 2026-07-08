@@ -334,11 +334,9 @@ app.get('/', (req, res) => {
 
     success: true,
 
-    mensaje: ' API Sistema de Gestión Odontológica - Dental Bosch v3.0',
+    mensaje: ' API Sistema de Gestión Odontológica - Dental Bosch v3.1',
 
-    version: '3.0.0',
-
-    sprint: 'Sprint 6 - Notificaciones Push y Slots Ocupados',
+    version: '1.0',
 
     seguridad: {
 
@@ -390,7 +388,11 @@ app.get('/', (req, res) => {
 
         ' Gestión mejorada de historial clínico',
 
-        ' Notificaciones push con Expo',
+        ' Notificaciones push con Expo implementadas en backend',
+
+        ' Corrección de husos horarios y acentos en fechas',
+
+        ' Usuarios de prueba autogenerados',
 
         ' Endpoint de slots ocupados para disponibilidad en tiempo real'
 

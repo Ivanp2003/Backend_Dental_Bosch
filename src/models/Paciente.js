@@ -60,7 +60,8 @@ const pacienteSchema = new mongoose.Schema({
     nombre: {
       type: String,
       required: false,
-      trim: true
+      trim: true,
+      match: [/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre del contacto de emergencia solo puede contener letras y espacios']
     },
     telefono: {
       type: String,
@@ -71,7 +72,8 @@ const pacienteSchema = new mongoose.Schema({
     parentesco: {
       type: String,
       required: false,
-      trim: true
+      trim: true,
+      match: [/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El parentesco solo puede contener letras y espacios']
     }
   },
   
