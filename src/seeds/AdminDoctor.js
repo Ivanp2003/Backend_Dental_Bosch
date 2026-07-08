@@ -89,6 +89,23 @@ const createAdminDoctor = async () => {
       });
       await Paciente.create({
         usuario: usuarioPaciente._id,
+        fechaNacimiento: new Date('1990-05-15'),
+        genero: 'masculino',
+        direccion: {
+          calle: 'Av Principal 123',
+          ciudad: 'Quito',
+          provincia: 'Pichincha'
+        },
+        contactoEmergencia: {
+          nombre: 'Maria Herrera',
+          telefono: '0998877665',
+          parentesco: 'Madre'
+        },
+        infoMedica: {
+          alergias: ['Penicilina'],
+          condiciones: ['Ninguna'],
+          notas: 'Paciente de prueba para desarrollo'
+        }
       });
       console.log('Paciente de prueba creado exitosamente');
     }
