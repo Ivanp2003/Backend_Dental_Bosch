@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dental_bosch').then(async () => {
+mongoose.connect(process.env.MONGODB_URI_PRODUCTION || process.env.MONGODB_URI || 'mongodb://localhost:27017/dental_bosch').then(async () => {
   const Usuario = require('./src/models/Usuario');
   await Usuario.deleteMany({ email: { $in: ['doctor@dentalbosch.com', 'paciente@dentalbosch.com'] } });
   
