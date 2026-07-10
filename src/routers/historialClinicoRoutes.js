@@ -18,6 +18,21 @@ router.post('/:pacienteId',
   historialClinicoController.crearHistorialClinico
 );
 
+// 🔍 Obtener consulta específica
+// GET /api/historial-clinico/:pacienteId/consulta/:consultaId
+// Roles: admin, doctor, paciente (solo su propia consulta)
+router.get('/:pacienteId/consulta/:consultaId',
+  (req, res, next) => {
+    // Si es paciente, solo puede ver sus propias consultas
+    if (req.usuario.rol === 'paciente') {
+      return verificarAccesoPropio(req, res, next);
+    }
+    next();
+  },
+  autorizarRoles('admin', 'doctor', 'paciente'),
+  historialClinicoController.obtenerConsultaEspecifica
+);
+
 // 📋 Agregar consulta al historial (endpoint más importante)
 // POST /api/historial-clinico/:pacienteId/consulta
 // Roles: admin, doctor

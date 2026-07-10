@@ -154,12 +154,23 @@ class CitasService {
         throw new Error('IDs de paciente o doctor inválidos');
       }
 
-      // Validar fecha futura
+      // Validar fecha futura ignorando zonas horarias (comparar solo YYYY-MM-DD en hora de Ecuador)
       const fechaCita = new Date(fecha);
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
+      const fechaCitaStr = fechaCita.toISOString().split('T')[0];
       
-      if (fechaCita < hoy) {
+      // Obtener fecha actual en Ecuador
+      const formatter = new Intl.DateTimeFormat('es-EC', {
+        timeZone: 'America/Guayaquil',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = formatter.formatToParts(new Date());
+      const p = {};
+      parts.forEach(part => p[part.type] = part.value);
+      const hoyStr = `${p.year}-${p.month}-${p.day}`;
+      
+      if (fechaCitaStr < hoyStr) {
         throw new Error('No se pueden programar citas en fechas pasadas');
       }
 

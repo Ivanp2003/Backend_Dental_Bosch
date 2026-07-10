@@ -481,10 +481,13 @@ const actualizarConsulta = async (req, res) => {
         const utc = fechaFinCita.getTime() + fechaFinCita.getTimezoneOffset() * 60000;
         const fechaFinEcuador = new Date(utc + (ZONA_HORARIA_ECUADOR * 3600000));
 
-        if (ahoraEcuador > fechaFinEcuador) {
+        // Agregar una ventana de gracia de 72 horas después de que finalice la cita para facilitar pruebas
+        const ventanaGraciaCita = new Date(fechaFinEcuador.getTime() + 72 * 60 * 60 * 1000);
+
+        if (ahoraEcuador > ventanaGraciaCita) {
           return res.status(403).json({
             success: false,
-            mensaje: 'Esta consulta ya no puede modificarse. El período de edición terminó al finalizar la cita.',
+            mensaje: 'Esta consulta ya no puede modificarse. Han pasado más de 72 horas desde que finalizó la cita.',
             detalle: `La cita asociada finalizó el ${fechaFinEcuador.toLocaleString('es-EC')}.`
           });
         }
@@ -493,12 +496,12 @@ const actualizarConsulta = async (req, res) => {
 
     if (!consultaExistente.cita) {
       const fechaConsulta = new Date(consultaExistente.fecha);
-      const ventanaGracia = new Date(fechaConsulta.getTime() + 24 * 60 * 60 * 1000);
+      const ventanaGracia = new Date(fechaConsulta.getTime() + 72 * 60 * 60 * 1000);
 
       if (ahoraEcuador > ventanaGracia) {
         return res.status(403).json({
           success: false,
-          mensaje: 'Esta consulta ya no puede modificarse. Han pasado más de 24 horas desde su creación.'
+          mensaje: 'Esta consulta ya no puede modificarse. Han pasado más de 72 horas desde su creación.'
         });
       }
     }
@@ -604,6 +607,68 @@ const actualizarConsulta = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error en actualizarConsulta:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: error.message || 'Error interno del servidor'
+    });
+  }
+};
+
+// ==============================
+// 🔍 OBTENER CONSULTA ESPECÍFICA
+// ==============================
+// GET /api/historial-clinico/:pacienteId/consulta/:consultaId
+// Roles: admin, doctor, paciente (solo su propia consulta)
+const obtenerConsultaEspecifica = async (req, res) => {
+  try {
+    console.log('🔍 Obteniendo consulta específica:', req.params.consultaId);
+    
+    const { pacienteId, consultaId } = req.params;
+
+    // Validar IDs
+    if (!mongoose.Types.ObjectId.isValid(pacienteId) || !mongoose.Types.ObjectId.isValid(consultaId)) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'IDs inválidos'
+      });
+    }
+
+    // Verificar que el historial existe
+    const historial = await HistorialClinico.findOne({ 
+      paciente: pacienteId, 
+      activo: true,
+      'consultas._id': consultaId
+    })
+    .populate('paciente', 'usuario')
+    .populate('paciente.usuario', 'nombre apellido email')
+    .populate('consultas.doctor', 'usuario especialidad')
+    .populate('consultas.doctor.usuario', 'nombre apellido')
+    .populate('consultas.cita', 'motivo fecha estado');
+
+    if (!historial) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    const consultaEspecifica = historial.consultas.id(consultaId);
+
+    if (!consultaEspecifica) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Consulta no encontrada en el historial'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Consulta obtenida exitosamente',
+      datos: consultaEspecifica
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerConsultaEspecifica:', error);
     res.status(500).json({
       success: false,
       mensaje: error.message || 'Error interno del servidor'
@@ -1516,6 +1581,7 @@ module.exports = {
   agregarConsulta,
   obtenerHistorialCompleto,
   obtenerConsultasFiltradas,
+  obtenerConsultaEspecifica,
   actualizarConsulta,
   eliminarConsulta,
   eliminarHistorial,

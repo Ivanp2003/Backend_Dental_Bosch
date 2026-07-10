@@ -19,7 +19,22 @@ const citaSchema = new mongoose.Schema({
     required: [true, 'La fecha es obligatoria'],
     validate: {
       validator: function(value) {
-        return value >= new Date().setHours(0,0,0,0); // No permitir fechas pasadas
+        if (!value) return false;
+        const fechaCitaStr = value.toISOString().split('T')[0];
+        
+        // Obtener fecha actual en Ecuador
+        const formatter = new Intl.DateTimeFormat('es-EC', {
+          timeZone: 'America/Guayaquil',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const parts = formatter.formatToParts(new Date());
+        const p = {};
+        parts.forEach(part => p[part.type] = part.value);
+        const hoyStr = `${p.year}-${p.month}-${p.day}`;
+        
+        return fechaCitaStr >= hoyStr; // No permitir fechas pasadas
       },
       message: 'La fecha no puede ser anterior a hoy'
     }
