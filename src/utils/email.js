@@ -187,8 +187,7 @@ exports.enviarEmailBienvenida = async (email, nombre, rol) => {
     await sgMail.send(msg);
     console.log('Email de bienvenida enviado a:', email);
   } catch (error) {
-    console.error('Error al enviar email de bienvenida:', error.message);
-    throw error;
+    console.error('Error al enviar email de bienvenida (no crítico):', error.message);
   }
 };
 
