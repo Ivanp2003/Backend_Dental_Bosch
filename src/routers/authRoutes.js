@@ -9,6 +9,7 @@ const {
   restablecerPassword,
   login,
   obtenerPerfil,
+  actualizarPerfil,
   actualizarPassword,
   googleCallback,
   googleMobileLogin,
@@ -67,6 +68,9 @@ router.get('/verificar-token', protegerRuta, verificarToken);
 // Obtener perfil genérico
 router.get('/perfil', protegerRuta, obtenerPerfil);
 
+// Actualizar perfil genérico (admin, paciente, etc.)
+router.put('/perfil', protegerRuta, actualizarPerfil);
+
 // Actualizar contraseña
 router.put('/actualizar-password', protegerRuta, actualizarPassword);
 
@@ -74,3 +78,4 @@ router.put('/actualizar-password', protegerRuta, actualizarPassword);
 router.patch('/push-token', protegerRuta, guardarPushToken);
 
 module.exports = router;
+

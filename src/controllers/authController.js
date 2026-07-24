@@ -731,3 +731,55 @@ exports.guardarPushToken = async (req, res, next) => {
   }
 };
 
+// @desc    Actualizar perfil del usuario (genérico: nombre, apellido, telefono)
+// @route   PUT /api/auth/perfil
+// @access  Private
+exports.actualizarPerfil = async (req, res, next) => {
+  try {
+    const { sanitizarDatosPerfil, validarActualizacionPerfil } = require('../utils/validators');
+    const datosSanitizados = sanitizarDatosPerfil(req.body);
+    
+    const validacion = validarActualizacionPerfil(datosSanitizados, req.usuario.rol);
+    if (!validacion.esValido) {
+      return res.status(400).json({
+        success: false,
+        mensaje: 'Error en la validación de datos del perfil',
+        errores: validacion.errores
+      });
+    }
+
+    const camposActualizables = {};
+    if (datosSanitizados.nombre) camposActualizables.nombre = datosSanitizados.nombre;
+    if (datosSanitizados.apellido) camposActualizables.apellido = datosSanitizados.apellido;
+    if (datosSanitizados.telefono) camposActualizables.telefono = datosSanitizados.telefono;
+
+    const usuarioActualizado = await Usuario.findByIdAndUpdate(
+      req.usuario.id,
+      camposActualizables,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!usuarioActualizado) {
+      return res.status(404).json({
+        success: false,
+        mensaje: 'Usuario no encontrado'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      mensaje: 'Perfil actualizado exitosamente',
+      data: usuarioActualizado
+    });
+
+  } catch (error) {
+    console.error('Error en actualizarPerfil:', error);
+    res.status(500).json({
+      success: false,
+      mensaje: 'Error al actualizar el perfil',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor'
+    });
+  }
+};
+
+

@@ -756,25 +756,25 @@ historialClinicoSchema.statics.buscarPorPaciente = function(pacienteId) {
 
 // Agregar consulta al historial
 historialClinicoSchema.statics.agregarConsulta = async function(pacienteId, consultaData, usuarioId) {
+  const updateOps = {
+    $push: { consultas: consultaData },
+    $set: { 
+      updatedBy: usuarioId,
+      'metricas.ultimaVisita': consultaData.fecha 
+    },
+    $inc: { 'metricas.totalConsultas': 1 }
+  };
+
+  if (consultaData.tipoConsulta === 'urgencia') {
+    updateOps.$inc['metricas.emergenciasAtendidas'] = 1;
+  }
+
   const historial = await this.findOneAndUpdate(
     { paciente: pacienteId, activo: true },
-    { 
-      $push: { consultas: consultaData },
-      $set: { updatedBy: usuarioId },
-      $inc: { 'metricas.totalConsultas': 1 }
-    },
+    updateOps,
     { returnDocument: 'after', new: true, runValidators: true }
   );
-  
-  if (historial) {
-    // Actualizar métricas
-    historial.metricas.ultimaVisita = consultaData.fecha;
-    if (consultaData.tipoConsulta === 'urgencia') {
-      historial.metricas.emergenciasAtendidas += 1;
-    }
-    await historial.save();
-  }
-  
+
   return historial;
 };
 
